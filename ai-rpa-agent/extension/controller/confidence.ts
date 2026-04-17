@@ -15,28 +15,6 @@ export const CONFIDENCE_THRESHOLD = 0.7;
  */
 export const HIGH_CONFIDENCE_THRESHOLD = 0.85;
 
-export type Decision =
-  | { kind: "execute" }
-  | { kind: "confirm"; reason: string }
-  | { kind: "reject"; reason: string };
-
-export function decide(params: {
-  intentKind: string;
-  confidence: number;
-  highRisk: boolean;
-}): Decision {
-  if (params.intentKind === "unknown") {
-    return { kind: "reject", reason: "unknown_intent" };
-  }
-  if (params.highRisk) {
-    return { kind: "confirm", reason: "high_risk_intent" };
-  }
-  if (params.confidence >= CONFIDENCE_THRESHOLD) {
-    return { kind: "execute" };
-  }
-  return { kind: "confirm", reason: `low_confidence:${params.confidence.toFixed(2)}` };
-}
-
 export function isHighRisk(intentKind: string): boolean {
   return intentKind === "set_status" || intentKind === "schedule";
 }
@@ -56,9 +34,9 @@ export function isHighRisk(intentKind: string): boolean {
 //     line carrying `correlationId`.
 //
 // The mapping is intentionally *classification only* — the actual
-// `execute` / `confirm` / `reject` decision still lives in `decide()` +
-// the controller, which additionally considers risk class and intent
-// kind (`unknown` → reject regardless of score).
+// `execute` / `confirm` / `reject` decision lives in
+// `controller/decision.ts::decideAction`, which additionally considers
+// risk class and intent kind (`unknown` → reject regardless of score).
 
 export type ConfidenceLevel = "high" | "medium" | "low";
 

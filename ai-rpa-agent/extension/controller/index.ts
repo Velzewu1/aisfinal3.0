@@ -1,13 +1,55 @@
 import type { AgentEvent, Intent, LlmInterpretation, ScheduleResult } from "@ai-rpa/schemas";
+import { ActionPlan, DomAction } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import type { MessageOf } from "../shared/messages.js";
 import { decideAction } from "./decision.js";
 import { planActions } from "./planner.js";
 import { BackendClient } from "./backend-client.js";
+import { attachContext } from "./context.js";
+import { validateLlmOutput } from "./validate.js";
+import { interpretUtterance } from "../llm/interpret.js";
+import type { NormalizedUtteranceEvent } from "../voice/normalize.js";
 
 const log = createLogger("controller");
 const backend = new BackendClient();
+
+// Policy allowlists. Zod enforces structural shape (non-empty strings);
+// these enums enforce the controller-side allowlist that the LLM prompt
+// narrates but cannot itself guarantee. Keep these in sync with
+// `llm/interpret.ts` and `content/selectors.ts`.
+const ALLOWED_NAV_TARGETS: ReadonlySet<string> = new Set([
+  "primary_exam",
+  "epicrisis",
+  "schedule",
+]);
+const ALLOWED_STATUS_ENTITIES: ReadonlySet<string> = new Set([
+  "primary_exam",
+  "epicrisis",
+]);
+const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
+  "draft",
+  "submitted",
+  "final",
+  "completed",
+]);
+
+function checkIntentPolicy(intent: Intent): string | null {
+  if (intent.kind === "navigate") {
+    if (!ALLOWED_NAV_TARGETS.has(intent.target)) {
+      return `navigate_target:${intent.target}`;
+    }
+  }
+  if (intent.kind === "set_status") {
+    if (!ALLOWED_STATUS_ENTITIES.has(intent.entity)) {
+      return `set_status_entity:${intent.entity}`;
+    }
+    if (!ALLOWED_STATUSES.has(intent.status)) {
+      return `set_status_status:${intent.status}`;
+    }
+  }
+  return null;
+}
 
 interface PendingDecision {
   correlationId: string;
@@ -45,13 +87,115 @@ async function dispatchExecution(correlationId: string, intent: Intent, schedule
     return;
   }
 
+  // Runtime gate at the decision -> execution boundary. TypeScript types
+  // alone do not protect the executor from malformed plans; an explicit
+  // `ActionPlan.safeParse` ensures no unvalidated payload reaches the
+  // content script via `chrome.tabs.sendMessage`.
+  const plan = ActionPlan.safeParse({ correlationId, actions });
+  if (!plan.success) {
+    const issues = plan.error.issues
+      .slice(0, 10)
+      .map((i) => `${i.path.join(".") || "<root>"}:${i.code}`);
+    const errorToken = `action_plan_invalid:${issues.join(",") || "unknown"}`;
+    log.error("action plan validation failed", { issues }, correlationId);
+    for (const action of actions) {
+      const single = DomAction.safeParse(action);
+      if (single.success) {
+        await emit(
+          makeEvent("dom_action_failed", correlationId, {
+            action: single.data,
+            error: errorToken,
+          }),
+        );
+      }
+    }
+    return;
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
     log.warn("no active tab", undefined, correlationId);
     return;
   }
 
-  await chrome.tabs.sendMessage(tab.id, { type: "execute_plan", correlationId, actions });
+  await chrome.tabs.sendMessage(tab.id, {
+    type: "execute_plan",
+    correlationId: plan.data.correlationId,
+    actions: plan.data.actions,
+  });
+}
+
+async function readApiKey(): Promise<string | null> {
+  try {
+    const stored = await chrome.storage.local.get("OPENAI_API_KEY");
+    const key = stored["OPENAI_API_KEY"];
+    return typeof key === "string" && key.length > 0 ? key : null;
+  } catch (err: unknown) {
+    log.warn("storage read failed", String(err));
+    return null;
+  }
+}
+
+function truncateForEvent(raw: unknown): string | undefined {
+  try {
+    const s = typeof raw === "string" ? raw : JSON.stringify(raw);
+    if (typeof s !== "string") return undefined;
+    return s.length > 10_000 ? s.slice(0, 10_000) : s;
+  } catch {
+    return undefined;
+  }
+}
+
+async function runFromUtterance(correlationId: string, text: string): Promise<void> {
+  const normalized: NormalizedUtteranceEvent = Object.freeze({
+    type: "utterance_normalized",
+    correlationId,
+    timestamp: nowIso(),
+    rawText: text,
+    normalizedText: text,
+    durationMs: 0,
+  });
+
+  const contextualized = attachContext(normalized);
+
+  const apiKey = await readApiKey();
+  if (!apiKey) {
+    log.error("OPENAI_API_KEY missing in chrome.storage.local", undefined, correlationId);
+    await emit(
+      makeEvent("validation_failed", correlationId, {
+        errors: ["llm_api_key_missing"],
+      }),
+    );
+    return;
+  }
+
+  let raw: unknown;
+  try {
+    raw = await interpretUtterance(contextualized, { apiKey });
+  } catch (err: unknown) {
+    const token =
+      err instanceof Error && err.message.length > 0 ? err.message : "llm_parse_error";
+    log.error("llm interpret failed", token, correlationId);
+    await emit(
+      makeEvent("validation_failed", correlationId, {
+        errors: [token],
+      }),
+    );
+    return;
+  }
+
+  const validation = validateLlmOutput(raw, correlationId);
+  if (!validation.ok) {
+    await emit(
+      makeEvent("validation_failed", correlationId, {
+        errors: [validation.error],
+        raw: truncateForEvent(raw),
+      }),
+    );
+    return;
+  }
+
+  await runWithInterpretation(correlationId, validation.data);
 }
 
 async function runWithInterpretation(correlationId: string, interpretation: LlmInterpretation): Promise<void> {
@@ -59,6 +203,18 @@ async function runWithInterpretation(correlationId: string, interpretation: LlmI
   await emit(makeEvent("validation_passed", correlationId, { schemaVersion: interpretation.schemaVersion }));
 
   const { intent } = interpretation;
+
+  const policyError = checkIntentPolicy(intent);
+  if (policyError) {
+    log.warn("intent rejected by policy", { policyError, intentKind: intent.kind }, correlationId);
+    await emit(
+      makeEvent("validation_failed", correlationId, {
+        errors: ["out_of_policy_value", policyError],
+      }),
+    );
+    return;
+  }
+
   const decision = decideAction(interpretation, correlationId);
 
   log.info(
@@ -122,8 +278,16 @@ export const controller = {
           sizeBytes: msg.audio.sizeBytes,
         }),
       );
+      log.info("input received", { type: msg.type }, correlationId);
+      return { accepted: true };
     }
-    log.info("input received", { type: msg.type }, correlationId);
+
+    log.info("input received", { type: msg.type, chars: msg.text.length }, correlationId);
+    try {
+      await runFromUtterance(correlationId, msg.text);
+    } catch (err: unknown) {
+      log.error("pipeline failed", String(err), correlationId);
+    }
     return { accepted: true };
   },
 
@@ -144,6 +308,7 @@ export const controller = {
 
     const { intent } = pending.interpretation;
     if (intent.kind === "schedule") {
+      await emit(makeEvent("schedule_requested", msg.correlationId, { request: intent.request }));
       try {
         const result = await backend.schedule(intent.request, msg.correlationId);
         await emit(makeEvent("schedule_generated", msg.correlationId, { result }));

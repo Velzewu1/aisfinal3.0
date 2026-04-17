@@ -1,6 +1,13 @@
-import { VoiceRecorder } from "../voice/index.js";
+import {
+  VoiceRecorder,
+  preprocessAudio,
+  transcribeAudio,
+  normalizeUtterance,
+} from "../voice/index.js";
 import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
+import { suggestNext, SUGGESTION_TEXT } from "../controller/proactivity.js";
+import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
 
 
 const log = createLogger("sidepanel");
@@ -51,11 +58,74 @@ stopBtn?.addEventListener("click", () => {
       appendLog(
         `voice_captured ${capture.correlationId} (${capture.durationMs}ms, ${capture.audioBlob.size}B)`,
       );
+
+      await runVoicePipeline(capture.correlationId, capture);
     } catch (err: unknown) {
       appendLog(`stop failed: ${String(err)}`);
     }
   })();
 });
+
+async function readApiKey(): Promise<string | null> {
+  try {
+    const stored = await chrome.storage.local.get("OPENAI_API_KEY");
+    const key = stored["OPENAI_API_KEY"];
+    return typeof key === "string" && key.length > 0 ? key : null;
+  } catch (err: unknown) {
+    log.warn("storage read failed", String(err));
+    return null;
+  }
+}
+
+async function runVoicePipeline(
+  correlationId: string,
+  capture: Awaited<ReturnType<VoiceRecorder["stopRecording"]>>,
+): Promise<void> {
+  const apiKey = await readApiKey();
+  if (!apiKey) {
+    appendLog(
+      "OPENAI_API_KEY missing in chrome.storage.local; run chrome.storage.local.set({ OPENAI_API_KEY: 'sk-...' })",
+    );
+    return;
+  }
+
+  let preprocessed;
+  try {
+    preprocessed = await preprocessAudio(capture);
+  } catch (err: unknown) {
+    appendLog(`audio_preprocessing_failed ${correlationId}: ${String(err)}`);
+    return;
+  }
+
+  let transcribed;
+  try {
+    transcribed = await transcribeAudio(preprocessed, { apiKey });
+  } catch (err: unknown) {
+    appendLog(`transcription_failed ${correlationId}: ${String(err)}`);
+    return;
+  }
+  appendLog(`text_transcribed ${correlationId}: ${transcribed.text}`);
+
+  let normalized;
+  try {
+    normalized = normalizeUtterance(transcribed);
+  } catch (err: unknown) {
+    appendLog(`normalization_failed ${correlationId}: ${String(err)}`);
+    return;
+  }
+  appendLog(`text_normalized ${correlationId}: ${normalized.normalizedText}`);
+
+  try {
+    await chrome.runtime.sendMessage({
+      type: "user_utterance",
+      correlationId: normalized.correlationId,
+      text: normalized.normalizedText,
+    });
+    appendLog(`user_utterance ${normalized.correlationId} dispatched`);
+  } catch (err: unknown) {
+    appendLog(`dispatch_failed ${correlationId}: ${String(err)}`);
+  }
+}
 
 sendBtn?.addEventListener("click", () => {
   void (async () => {
@@ -88,3 +158,39 @@ async function sendConfirmation(accepted: boolean): Promise<void> {
   });
   appendLog(`user_confirmation ${lastCorrelationId}: ${accepted}`);
 }
+
+// ------------------------------------------------------------------ //
+// Step 10 — proactive UI hints.                                       //
+//                                                                     //
+// Listen for durable AgentEvents fan-out from the background router   //
+// and surface a short nudge after an `execute` decision on a `fill`   //
+// intent (e.g. "Осмотр заполнен. Сформировать расписание?").         //
+//                                                                     //
+// Purely presentational: no executions, no new messages emitted.      //
+// ------------------------------------------------------------------ //
+
+const intentByCorrelation = new Map<string, IntentKind>();
+
+function isEventEnvelope(m: unknown): m is { type: "event"; event: AgentEvent } {
+  if (m === null || typeof m !== "object") return false;
+  const obj = m as { type?: unknown; event?: unknown };
+  return obj.type === "event" && typeof obj.event === "object" && obj.event !== null;
+}
+
+chrome.runtime.onMessage.addListener((msg: unknown) => {
+  if (!isEventEnvelope(msg)) return;
+  const ev = msg.event;
+
+  if (ev.type === "intent_parsed") {
+    intentByCorrelation.set(ev.correlationId, ev.payload.interpretation.intent.kind);
+    return;
+  }
+
+  if (ev.type === "decision_made") {
+    const kind = intentByCorrelation.get(ev.correlationId);
+    intentByCorrelation.delete(ev.correlationId);
+    if (ev.payload.decision !== "execute" || kind !== "fill") return;
+    const suggestion = suggestNext(kind);
+    if (suggestion) appendLog(`hint: ${SUGGESTION_TEXT[suggestion]}`);
+  }
+});

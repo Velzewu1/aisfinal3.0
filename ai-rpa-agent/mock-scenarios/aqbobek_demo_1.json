@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "aqbobek_demo_1",
+  "clinic": "Aqbobek",
+  "host_system": "Damumed",
+  "description": "Deterministic 60–90s demo flow: primary exam → complaints → schedule.",
+  "utterances": [
+    "Пациент Иванов",
+    "Жалобы: головная боль и слабость",
+    "Заполни первичный осмотр",
+    "Составь расписание ЛФК и массажа на 9 дней"
+  ]
+}
