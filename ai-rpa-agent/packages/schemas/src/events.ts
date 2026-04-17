@@ -8,8 +8,9 @@ import { ScheduleRequest, ScheduleResult } from "./schedule.js";
  * `AgentEvent.type` values map to the agent loop in `docs/02_agent_loop.md`.
  * Primary emitters (extension):
  * - Step 1 `voice_captured` — sidepanel → background (`controller/index` also mirrors on ingest).
- * - Steps 2–3 `audio_preprocessed`, `speech_to_text_completed` — `extension/controller/index.ts` (voice path, post–`voice_captured`).
- * - Step 4 `utterance_normalized` — `extension/controller/index.ts` (`runFromUtterance`, voice + typed).
+ * - Step 2 `audio_preprocessed` — `extension/controller/index.ts` (voice path, post–`voice_captured`).
+ * - Step 3 `text_transcribed` (+ legacy `speech_to_text_completed`) — same.
+ * - Step 4 `text_normalized` (+ legacy `utterance_normalized`) — `runFromUtterance` (voice + typed).
  * - Step 5 `context_attached` — `extension/controller/context.ts`.
  * - Step 8 `confidence_evaluated` — `extension/controller/confidence.ts`.
  * - Step 11 `action_plan_created` — `extension/controller/planner.ts`.
@@ -18,7 +19,9 @@ export const EventType = z.enum([
   "voice_captured",
   "audio_preprocessed",
   "speech_to_text_completed",
+  "text_transcribed",
   "utterance_normalized",
+  "text_normalized",
   "context_attached",
   "intent_parsed",
   "validation_passed",
@@ -60,22 +63,38 @@ export const AudioPreprocessedEvent = BaseEvent.extend({
   }),
 });
 
+const SpeechToTextPayload = z.object({
+  chars: z.number().int().nonnegative(),
+  durationMs: z.number().int().nonnegative(),
+  language: z.string().min(1).optional(),
+});
+
 export const SpeechToTextCompletedEvent = BaseEvent.extend({
   type: z.literal("speech_to_text_completed"),
-  payload: z.object({
-    chars: z.number().int().nonnegative(),
-    durationMs: z.number().int().nonnegative(),
-    language: z.string().min(1).optional(),
-  }),
+  payload: SpeechToTextPayload,
+});
+
+/** Canonical step-3 perception event; same payload as `speech_to_text_completed`. */
+export const TextTranscribedEvent = BaseEvent.extend({
+  type: z.literal("text_transcribed"),
+  payload: SpeechToTextPayload,
+});
+
+const UtteranceNormalizedPayload = z.object({
+  rawChars: z.number().int().nonnegative(),
+  normalizedChars: z.number().int().nonnegative(),
+  detectedLanguage: z.string().min(1).optional(),
 });
 
 export const UtteranceNormalizedEvent = BaseEvent.extend({
   type: z.literal("utterance_normalized"),
-  payload: z.object({
-    rawChars: z.number().int().nonnegative(),
-    normalizedChars: z.number().int().nonnegative(),
-    detectedLanguage: z.string().min(1).optional(),
-  }),
+  payload: UtteranceNormalizedPayload,
+});
+
+/** Canonical step-4 perception event; same payload as `utterance_normalized`. */
+export const TextNormalizedEvent = BaseEvent.extend({
+  type: z.literal("text_normalized"),
+  payload: UtteranceNormalizedPayload,
 });
 
 export const ContextAttachedEvent = BaseEvent.extend({
@@ -185,7 +204,9 @@ export const AgentEvent = z.discriminatedUnion("type", [
   VoiceCapturedEvent,
   AudioPreprocessedEvent,
   SpeechToTextCompletedEvent,
+  TextTranscribedEvent,
   UtteranceNormalizedEvent,
+  TextNormalizedEvent,
   ContextAttachedEvent,
   IntentParsedEvent,
   ValidationPassedEvent,

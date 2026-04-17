@@ -29,10 +29,29 @@ export const SetStatusAction = z.object({
   status: z.string().min(1),
 });
 
+/** One rendered slot in the host schedule grid (`day:start-end` minute encoding in `time`). */
+export const InjectScheduleSlot = z.object({
+  time: z.string().min(1),
+  doctorId: z.string().min(1),
+  procedureId: z.string().min(1),
+});
+export type InjectScheduleSlot = z.infer<typeof InjectScheduleSlot>;
+
+/**
+ * Strict DOM / host payload for `inject_schedule`.
+ * API `ScheduleResult` from `./schedule.ts` is mapped to this shape in the planner.
+ */
+export const InjectSchedulePayload = z.object({
+  grid: z.string().min(1),
+  slots: z.array(InjectScheduleSlot),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+export type InjectSchedulePayload = z.infer<typeof InjectSchedulePayload>;
+
 export const InjectScheduleAction = z.object({
   kind: z.literal("inject_schedule"),
   grid: z.string().min(1),
-  payload: z.unknown(),
+  payload: InjectSchedulePayload,
 });
 
 export const DomAction = z.discriminatedUnion("kind", [

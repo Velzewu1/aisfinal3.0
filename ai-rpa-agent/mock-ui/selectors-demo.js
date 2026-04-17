@@ -34,18 +34,23 @@
         el.innerHTML = "<em>schedule payload missing</em>";
         return;
       }
-      const rows = (payload.assignments || [])
+      const slots = payload.slots || [];
+      const status =
+        payload.metadata && typeof payload.metadata.status === "string"
+          ? payload.metadata.status
+          : "unknown";
+      const rows = slots
         .map(
-          (a) =>
-            `<tr><td>${a.procedureId}</td><td>${a.doctorId}</td><td>${a.day}</td><td>${a.startMinute}</td><td>${a.endMinute}</td></tr>`,
+          (s) =>
+            `<tr><td>${s.procedureId}</td><td>${s.doctorId}</td><td colspan="2">${s.time}</td></tr>`,
         )
         .join("");
       el.innerHTML = `
         <table>
-          <thead><tr><th>procedure</th><th>doctor</th><th>day</th><th>start</th><th>end</th></tr></thead>
+          <thead><tr><th>procedure</th><th>doctor</th><th colspan="2">time (day:start-end)</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <p>status: <strong>${payload.status}</strong></p>
+        <p>status: <strong>${status}</strong></p>
       `;
     });
   });

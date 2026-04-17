@@ -1,4 +1,4 @@
-import type { DomAction, ExecutorResult } from "@ai-rpa/schemas";
+import type { DomAction, ExecutorResult, InjectSchedulePayload } from "@ai-rpa/schemas";
 import { selectByDataAttr } from "./selectors.js";
 import { createLogger } from "../shared/logger.js";
 
@@ -83,9 +83,10 @@ async function dispatch(action: DomAction): Promise<void> {
       if (!(host instanceof HTMLElement)) {
         throw new Error(`dom_target_missing: data-schedule-grid="${action.grid}"`);
       }
-      host.setAttribute("data-schedule-payload", JSON.stringify(action.payload));
+      const schedulePayload: InjectSchedulePayload = action.payload;
+      host.setAttribute("data-schedule-payload", JSON.stringify(schedulePayload));
       host.dispatchEvent(
-        new CustomEvent("schedule-injected", { bubbles: true, detail: action.payload }),
+        new CustomEvent("schedule-injected", { bubbles: true, detail: schedulePayload }),
       );
       return;
     }

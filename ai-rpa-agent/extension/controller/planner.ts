@@ -1,4 +1,10 @@
-import type { AgentEvent, DomAction, Intent, ScheduleResult } from "@ai-rpa/schemas";
+import type {
+  AgentEvent,
+  DomAction,
+  InjectSchedulePayload,
+  Intent,
+  ScheduleResult,
+} from "@ai-rpa/schemas";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 
 /**
@@ -18,6 +24,20 @@ export function planActions(
   return actions;
 }
 
+function toInjectSchedulePayload(grid: string, result: ScheduleResult): InjectSchedulePayload {
+  const metadata: Record<string, unknown> = { status: result.status };
+  if (result.objective !== undefined) metadata.objective = result.objective;
+  return {
+    grid,
+    slots: result.assignments.map((a) => ({
+      time: `${a.day}:${a.startMinute}-${a.endMinute}`,
+      doctorId: a.doctorId,
+      procedureId: a.procedureId,
+    })),
+    metadata,
+  };
+}
+
 function buildActions(intent: Intent, scheduleResult?: ScheduleResult): DomAction[] {
   switch (intent.kind) {
     case "fill":
@@ -35,11 +55,12 @@ function buildActions(intent: Intent, scheduleResult?: ScheduleResult): DomActio
 
     case "schedule": {
       if (!scheduleResult) return [];
+      const grid = "primary";
       return [
         {
           kind: "inject_schedule",
-          grid: "primary",
-          payload: scheduleResult,
+          grid,
+          payload: toInjectSchedulePayload(grid, scheduleResult),
         },
       ];
     }

@@ -7,8 +7,13 @@ const log = createLogger("supabase-sync");
 /**
  * Append-only sync: persists events to the Supabase `ai_rpa_events` table.
  *
- * Row shape mirrors `infra/supabase/0001_events.sql`:
- *   id / correlation_id / type / ts / payload (+ inserted_at defaults).
+ * Row shape matches `infra/supabase/0001_events.sql` exactly:
+ *   - `id` — UUID text primary key (see `rowPrimaryKey`).
+ *   - `correlation_id` — `event.correlationId`
+ *   - `type` — `event.type` (not `event_type`)
+ *   - `ts` — `event.ts` (canonical **event** time, ISO timestamptz)
+ *   - `payload` — `event.payload` (jsonb; inner payload only; event shape unchanged)
+ *   - `inserted_at` — wall-clock **persistence** time (ISO timestamptz)
  *
  * Invariants:
  *   - Non-blocking relative to the agent loop: a failed insert never throws,
@@ -22,6 +27,21 @@ const log = createLogger("supabase-sync");
 
 let cachedClient: SupabaseClient | null = null;
 let cachedKeyFingerprint: string | null = null;
+
+/** UUID for `ai_rpa_events.id`: use the v4 embedded in `cid_<uuid>` event ids, else generate. */
+function rowPrimaryKey(eventId: string): string {
+  if (eventId.startsWith("cid_")) {
+    const uuid = eventId.slice("cid_".length);
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid)
+    ) {
+      return uuid.toLowerCase();
+    }
+  }
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  throw new Error("crypto.randomUUID unavailable");
+}
 
 async function getClient(correlationId?: string): Promise<SupabaseClient | null> {
   try {
@@ -67,11 +87,12 @@ export async function syncEvent(event: AgentEvent): Promise<void> {
     }
 
     const { error } = await supabaseClient.from("ai_rpa_events").insert({
-      id: event.id,
+      id: rowPrimaryKey(event.id),
       correlation_id: event.correlationId,
       type: event.type,
       ts: event.ts,
       payload: event.payload,
+      inserted_at: new Date().toISOString(),
     });
 
     if (error !== null) {

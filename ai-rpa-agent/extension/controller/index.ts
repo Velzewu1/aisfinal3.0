@@ -198,15 +198,18 @@ async function runFromUtterance(
     return;
   }
 
-  await emit(
-    makeEvent("utterance_normalized", correlationId, {
-      rawChars: normalized.rawText.length,
-      normalizedChars: normalized.normalizedText.length,
-      ...(normalized.hints?.detectedLanguage
-        ? { detectedLanguage: normalized.hints.detectedLanguage }
-        : {}),
-    }),
-  );
+  const normalizedPayload: Extract<
+    AgentEvent,
+    { type: "utterance_normalized" }
+  >["payload"] = {
+    rawChars: normalized.rawText.length,
+    normalizedChars: normalized.normalizedText.length,
+    ...(normalized.hints?.detectedLanguage
+      ? { detectedLanguage: normalized.hints.detectedLanguage }
+      : {}),
+  };
+  await emit(makeEvent("utterance_normalized", correlationId, normalizedPayload));
+  await emit(makeEvent("text_normalized", correlationId, normalizedPayload));
 
   const contextualized = attachContext(normalized);
 
@@ -387,13 +390,16 @@ export const controller = {
         return { accepted: false, step: "transcribe" as const, error: String(err) };
       }
 
-      await emit(
-        makeEvent("speech_to_text_completed", correlationId, {
-          chars: transcribed.text.length,
-          durationMs: transcribed.durationMs,
-          ...(transcribed.language ? { language: transcribed.language } : {}),
-        }),
-      );
+      const transcribedPayload: Extract<
+        AgentEvent,
+        { type: "speech_to_text_completed" }
+      >["payload"] = {
+        chars: transcribed.text.length,
+        durationMs: transcribed.durationMs,
+        ...(transcribed.language ? { language: transcribed.language } : {}),
+      };
+      await emit(makeEvent("speech_to_text_completed", correlationId, transcribedPayload));
+      await emit(makeEvent("text_transcribed", correlationId, transcribedPayload));
 
       return { accepted: true, text: transcribed.text, durationMs: transcribed.durationMs };
     }

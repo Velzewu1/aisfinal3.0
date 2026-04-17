@@ -72,9 +72,17 @@ validate structured intents, decide plans, or mutate the host page DOM. All
 | `extension/controller/`            | decision  | no              | yes (backend)     | **yes**  |
 | `extension/content/`               | execution | **yes**         | no                | no       |
 | `extension/background/`            | audit     | no              | yes (Supabase)    | no       |
-| `extension/sidepanel/`             | UI        | its own DOM only| no                | no       |
+| `extension/sidepanel/`             | UI orchestrator | its own DOM only | indirect (perception / STT) | no       |
 | `backend/api/`                     | service   | no              | —                 | no       |
 | `backend/core/scheduler.py`        | service   | no              | —                 | no       |
+
+**`extension/sidepanel/`:** orchestrates the **perception** path from the UI (e.g.
+audio capture handoff, preprocessing triggers, transcription kickoff, utterance
+normalization triggers) via `chrome.runtime` messages to the service worker /
+controller — it does **not** perform STT `fetch` itself, but those steps can
+**induce** STT network calls inside `extension/voice`. It remains outside
+decision, validation, and execution: no `LlmInterpretation` validation, no
+policy gate, no `DomAction` execution.
 
 ## 4. Why the controller exists
 
@@ -144,7 +152,9 @@ other legitimate cross-layer shape.
 - The **content script** is the executor; it is the only thing running in the
   page context.
 - The **side panel** is the user surface (push-to-talk, text fallback,
-  confirmation buttons, event timeline).
+  confirmation buttons, event timeline) and a **UI orchestrator** for perception
+  steps (messages that lead to preprocessing, STT, and normalization); it does
+  not validate, decide, or execute automation.
 
 ## 8. Extension points
 
