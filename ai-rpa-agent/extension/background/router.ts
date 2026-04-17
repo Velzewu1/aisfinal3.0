@@ -64,6 +64,9 @@ export const router = {
       case "user_confirmation":
         return controller.onUserConfirmation(msg);
 
+      case "schedule_from_context":
+        return controller.onScheduleFromContext(msg);
+
       case "executor_finished":
         return controller.onExecutorFinished(msg);
 

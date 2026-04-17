@@ -1,4 +1,5 @@
 import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation } from "@ai-rpa/schemas";
+import type { ScheduleRequestBuildInput } from "../controller/schedule-request-from-context.js";
 
 /**
  * Message bus shape used between modules.
@@ -14,12 +15,27 @@ import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation } from "@
  */
 
 export type ExtensionMessage =
-  | { type: "voice_captured"; correlationId: string; audio: { mimeType: string; sizeBytes: number; durationMs: number } }
-  | { type: "user_utterance"; correlationId: string; text: string }
+  | {
+      type: "voice_captured";
+      correlationId: string;
+      audio: { mimeType: string; sizeBytes: number; durationMs: number; data: ArrayBuffer };
+    }
+  | { type: "user_utterance"; correlationId: string; text: string; transcribedDurationMs?: number }
   | { type: "llm_interpretation"; correlationId: string; interpretation: LlmInterpretation }
   | { type: "execute_plan"; correlationId: string; actions: DomAction[] }
   | { type: "executor_finished"; correlationId: string; result: ExecutorResult }
   | { type: "user_confirmation"; correlationId: string; accepted: boolean }
+  | {
+      type: "schedule_from_context";
+      correlationId: string;
+      context: {
+        currentPage: string;
+        activeForm?: string;
+        patientId?: string;
+        patientName?: string;
+      };
+      build?: ScheduleRequestBuildInput;
+    }
   | { type: "event"; event: AgentEvent };
 
 export type MessageOf<T extends ExtensionMessage["type"]> = Extract<ExtensionMessage, { type: T }>;

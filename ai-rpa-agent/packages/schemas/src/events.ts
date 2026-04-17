@@ -4,6 +4,16 @@ import { LlmInterpretation } from "./intent.js";
 import { DomAction, ExecutorResult } from "./action.js";
 import { ScheduleRequest, ScheduleResult } from "./schedule.js";
 
+/**
+ * `AgentEvent.type` values map to the agent loop in `docs/02_agent_loop.md`.
+ * Primary emitters (extension):
+ * - Step 1 `voice_captured` — sidepanel → background (`controller/index` also mirrors on ingest).
+ * - Steps 2–3 `audio_preprocessed`, `speech_to_text_completed` — `extension/controller/index.ts` (voice path, post–`voice_captured`).
+ * - Step 4 `utterance_normalized` — `extension/controller/index.ts` (`runFromUtterance`, voice + typed).
+ * - Step 5 `context_attached` — `extension/controller/context.ts`.
+ * - Step 8 `confidence_evaluated` — `extension/controller/confidence.ts`.
+ * - Step 11 `action_plan_created` — `extension/controller/planner.ts`.
+ */
 export const EventType = z.enum([
   "voice_captured",
   "audio_preprocessed",

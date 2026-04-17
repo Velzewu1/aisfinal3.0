@@ -1,5 +1,5 @@
-import { VoiceRecorder, preprocessAudio, transcribeAudio } from "../voice/index.js";
-import { newCorrelationId, nowIso } from "../shared/correlation.js";
+import { VoiceRecorder } from "../voice/index.js";
+import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 import { suggestNext, SUGGESTION_TEXT } from "../controller/proactivity.js";
 import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
@@ -41,108 +41,68 @@ stopBtn?.addEventListener("click", () => {
     try {
       const capture = await recorder.stopRecording();
       lastCorrelationId = capture.correlationId;
-      await chrome.runtime.sendMessage({
+      const audioData = await capture.audioBlob.arrayBuffer();
+      const voiceRes = (await chrome.runtime.sendMessage({
         type: "voice_captured",
         correlationId: capture.correlationId,
         audio: {
           mimeType: capture.mimeType,
           sizeBytes: capture.audioBlob.size,
           durationMs: capture.durationMs,
+          data: audioData,
         },
-      });
+      })) as { ok: boolean; error?: string; result?: VoicePipelineResult };
+
       appendLog(
         `voice_captured ${capture.correlationId} (${capture.durationMs}ms, ${capture.audioBlob.size}B)`,
       );
 
-      await runVoicePipeline(capture.correlationId, capture);
+      if (!voiceRes.ok) {
+        appendLog(`voice_pipeline_failed ${capture.correlationId}: ${voiceRes.error ?? "unknown"}`);
+        return;
+      }
+
+      const vr = voiceRes.result;
+      if (!vr?.accepted) {
+        if (vr?.step === "config" && vr.error) {
+          appendLog(vr.error);
+        } else if (vr?.error) {
+          const prefix =
+            vr.step === "preprocess"
+              ? "audio_preprocessing_failed"
+              : vr.step === "transcribe"
+                ? "transcription_failed"
+                : "voice_pipeline_failed";
+          appendLog(`${prefix} ${capture.correlationId}: ${vr.error}`);
+        }
+        return;
+      }
+
+      appendLog(`text_transcribed ${capture.correlationId}: ${vr.text}`);
+      try {
+        await chrome.runtime.sendMessage({
+          type: "user_utterance",
+          correlationId: capture.correlationId,
+          text: vr.text,
+          transcribedDurationMs: vr.durationMs,
+        });
+        appendLog(`user_utterance ${capture.correlationId} dispatched`);
+      } catch (err: unknown) {
+        appendLog(`dispatch_failed ${capture.correlationId}: ${String(err)}`);
+      }
     } catch (err: unknown) {
       appendLog(`stop failed: ${String(err)}`);
     }
   })();
 });
 
-async function emitAgentEvent(event: AgentEvent): Promise<void> {
-  try {
-    await chrome.runtime.sendMessage({ type: "event", event });
-  } catch (err: unknown) {
-    log.warn("emit failed", String(err), event.correlationId);
-  }
-}
-
-async function readApiKey(): Promise<string | null> {
-  try {
-    const stored = await chrome.storage.local.get("OPENAI_API_KEY");
-    const key = stored["OPENAI_API_KEY"];
-    return typeof key === "string" && key.length > 0 ? key : null;
-  } catch (err: unknown) {
-    log.warn("storage read failed", String(err));
-    return null;
-  }
-}
-
-async function runVoicePipeline(
-  correlationId: string,
-  capture: Awaited<ReturnType<VoiceRecorder["stopRecording"]>>,
-): Promise<void> {
-  const apiKey = await readApiKey();
-  if (!apiKey) {
-    appendLog(
-      "OPENAI_API_KEY missing in chrome.storage.local; run chrome.storage.local.set({ OPENAI_API_KEY: 'sk-...' })",
-    );
-    return;
-  }
-
-  let preprocessed;
-  try {
-    preprocessed = await preprocessAudio(capture);
-  } catch (err: unknown) {
-    appendLog(`audio_preprocessing_failed ${correlationId}: ${String(err)}`);
-    return;
-  }
-  await emitAgentEvent({
-    id: newCorrelationId(),
-    type: "audio_preprocessed",
-    correlationId,
-    ts: nowIso(),
-    payload: {
-      durationMs: preprocessed.durationMs,
-      mimeType: preprocessed.mimeType,
-      sizeBytes: preprocessed.normalizedBlob.size,
-      sampleRateHint: preprocessed.sampleRateHint,
-    },
-  });
-
-  let transcribed;
-  try {
-    transcribed = await transcribeAudio(preprocessed, { apiKey });
-  } catch (err: unknown) {
-    appendLog(`transcription_failed ${correlationId}: ${String(err)}`);
-    return;
-  }
-  appendLog(`text_transcribed ${correlationId}: ${transcribed.text}`);
-  await emitAgentEvent({
-    id: newCorrelationId(),
-    type: "speech_to_text_completed",
-    correlationId,
-    ts: nowIso(),
-    payload: {
-      chars: transcribed.text.length,
-      durationMs: transcribed.durationMs,
-      ...(transcribed.language ? { language: transcribed.language } : {}),
-    },
-  });
-
-  try {
-    await chrome.runtime.sendMessage({
-      type: "user_utterance",
-      correlationId,
-      text: transcribed.text,
-    });
-    appendLog(`user_utterance ${correlationId} dispatched`);
-  } catch (err: unknown) {
-    appendLog(`dispatch_failed ${correlationId}: ${String(err)}`);
-  }
-}
+type VoicePipelineResult =
+  | { accepted: true; text: string; durationMs: number }
+  | {
+      accepted: false;
+      step?: "config" | "preprocess" | "transcribe";
+      error: string;
+    };
 
 sendBtn?.addEventListener("click", () => {
   void (async () => {

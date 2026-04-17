@@ -13,8 +13,8 @@ const log = createLogger("supabase-sync");
  * Invariants:
  *   - Non-blocking relative to the agent loop: a failed insert never throws,
  *     so the pipeline cannot be crashed by the audit sink.
- *   - Failures are NOT silent: each one emits a `console.error` carrying
- *     `correlationId` + event type so the audit gap is visible in devtools.
+ *   - Failures are NOT silent: each one logs via `createLogger` (`warn`/`error`)
+ *     with `correlationId` + event metadata so the audit gap is visible.
  *   - No decision logic, no DOM, no LLM. Only a single INSERT per event.
  *   - Client is lazily constructed once `SUPABASE_URL` and
  *     `SUPABASE_ANON_KEY` are present in `chrome.storage.local`.
@@ -23,7 +23,7 @@ const log = createLogger("supabase-sync");
 let cachedClient: SupabaseClient | null = null;
 let cachedKeyFingerprint: string | null = null;
 
-async function getClient(): Promise<SupabaseClient | null> {
+async function getClient(correlationId?: string): Promise<SupabaseClient | null> {
   try {
     const stored = await chrome.storage.local.get([
       "SUPABASE_URL",
@@ -45,17 +45,21 @@ async function getClient(): Promise<SupabaseClient | null> {
     cachedKeyFingerprint = fingerprint;
     return cachedClient;
   } catch (err: unknown) {
-    console.error("[supabase-sync] client init failed", String(err));
+    log.error(
+      "supabase client init failed",
+      { error: String(err) },
+      correlationId,
+    );
     return null;
   }
 }
 
 export async function syncEvent(event: AgentEvent): Promise<void> {
   try {
-    const supabaseClient = await getClient();
+    const supabaseClient = await getClient(event.correlationId);
     if (supabaseClient === null) {
-      log.debug(
-        "supabase creds missing; event not persisted",
+      log.warn(
+        "supabase client unavailable; event not persisted",
         { id: event.id, type: event.type },
         event.correlationId,
       );
@@ -71,22 +75,25 @@ export async function syncEvent(event: AgentEvent): Promise<void> {
     });
 
     if (error !== null) {
-      console.error("[supabase-sync] insert failed", {
-        correlationId: event.correlationId,
-        eventType: event.type,
-        eventId: event.id,
-        message: error.message,
-        code: error.code,
-      });
+      log.error(
+        "supabase insert failed",
+        {
+          eventType: event.type,
+          eventId: event.id,
+          message: error.message,
+          code: error.code,
+        },
+        event.correlationId,
+      );
       return;
     }
 
     log.debug("event persisted", { id: event.id, type: event.type }, event.correlationId);
   } catch (err: unknown) {
-    console.error("[supabase-sync] sync failed", {
-      correlationId: event.correlationId,
-      eventType: event.type,
-      error: String(err),
-    });
+    log.error(
+      "supabase sync failed",
+      { eventType: event.type, eventId: event.id, error: String(err) },
+      event.correlationId,
+    );
   }
 }

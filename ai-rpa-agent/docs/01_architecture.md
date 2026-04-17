@@ -11,7 +11,7 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│  PERCEPTION            voice capture, normalization                │
+│  PERCEPTION            voice capture, normalization, STT (API)   │
 └────────────────────────────────────────────────────────────────────┘
                                │ utterance + metadata
                                ▼
@@ -53,15 +53,20 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
 | Service     | `backend/*`                     | **Trusted** — no DOM knowledge.        |
 | Audit       | `extension/background`, `infra/supabase` | **Trusted** — append-only.    |
 
-**Invariant:** nothing in the AI zone may trigger a side effect (DOM, network
-mutation, storage) directly. All effects flow
+**Invariant:** untrusted **outputs** from the AI zone (`extension/llm`) must not
+drive DOM mutation, storage mutation, or integration side effects without
+validation and controller approval. The LLM client may still call its provider
+over the network. **Perception** (`extension/voice`) may call the network
+**only** for speech-to-text (e.g. Whisper via `fetch`); it does **not**
+validate structured intents, decide plans, or mutate the host page DOM. All
+**control-path** effects (approved automation, scheduling) flow
 `Validation → Controller → (Executor | Backend)`.
 
 ## 3. Module map
 
 | Path                               | Layer     | May mutate DOM? | May call network? | Decides? |
 |------------------------------------|-----------|-----------------|-------------------|----------|
-| `extension/voice/`                 | perception| no              | no                | no       |
+| `extension/voice/`                 | perception| no              | yes (STT only)    | no       |
 | `extension/llm/`                   | reasoning | no              | yes (provider)    | no       |
 | `packages/schemas/`                | contract  | no              | no                | no       |
 | `extension/controller/`            | decision  | no              | yes (backend)     | **yes**  |

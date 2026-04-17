@@ -1,5 +1,5 @@
-import type { AgentEvent, Intent, LlmInterpretation, ScheduleResult } from "@ai-rpa/schemas";
-import { ActionPlan, DomAction } from "@ai-rpa/schemas";
+import type { AgentEvent, Intent, ScheduleResult } from "@ai-rpa/schemas";
+import { ActionPlan, DomAction, LlmInterpretation } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import type { MessageOf } from "../shared/messages.js";
@@ -9,8 +9,15 @@ import { BackendClient } from "./backend-client.js";
 import { attachContext } from "./context.js";
 import { validateLlmOutput } from "./validate.js";
 import { interpretUtterance } from "../llm/interpret.js";
-import { normalizeUtterance, type NormalizedUtteranceEvent } from "../voice/normalize.js";
+import {
+  preprocessAudio,
+  transcribeAudio,
+  normalizeUtterance,
+  type NormalizedUtteranceEvent,
+} from "../voice/index.js";
 import type { TranscribedTextEvent } from "../voice/transcribe.js";
+import type { VoiceCapturedEvent } from "../voice/recorder.js";
+import { tryBuildScheduleRequestFromContext } from "./schedule-request-from-context.js";
 
 const log = createLogger("controller");
 const backend = new BackendClient();
@@ -160,16 +167,20 @@ function truncateForEvent(raw: unknown): string | undefined {
   }
 }
 
-async function runFromUtterance(correlationId: string, text: string): Promise<void> {
-  // Step 4 (utterance normalization) runs only here: voice sends raw STT text
-  // from the sidepanel; typed text uses the same path. `normalizeUtterance`
+async function runFromUtterance(
+  correlationId: string,
+  text: string,
+  transcribedDurationMs = 0,
+): Promise<void> {
+  // Step 4 (utterance normalization) runs only here: voice STT and typed text
+  // share this path via `user_utterance`. `normalizeUtterance`
   // expects a `TranscribedTextEvent` shim.
   const transcribedShim: TranscribedTextEvent = Object.freeze({
     type: "transcribed_text",
     correlationId,
     timestamp: nowIso(),
     text,
-    durationMs: 0,
+    durationMs: transcribedDurationMs,
   });
 
   let normalized: NormalizedUtteranceEvent;
@@ -311,6 +322,20 @@ async function runWithInterpretation(correlationId: string, interpretation: LlmI
   await dispatchExecution(correlationId, intent);
 }
 
+function voiceMessageToCapture(
+  correlationId: string,
+  audio: MessageOf<"voice_captured">["audio"],
+): VoiceCapturedEvent {
+  return Object.freeze({
+    type: "voice_captured",
+    timestamp: Date.now(),
+    correlationId,
+    audioBlob: new Blob([audio.data], { type: audio.mimeType }),
+    mimeType: audio.mimeType,
+    durationMs: audio.durationMs,
+  });
+}
+
 export const controller = {
   async onInput(msg: MessageOf<"voice_captured"> | MessageOf<"user_utterance">): Promise<unknown> {
     const { correlationId } = msg;
@@ -324,12 +349,58 @@ export const controller = {
         }),
       );
       log.info("input received", { type: msg.type }, correlationId);
-      return { accepted: true };
+
+      const apiKey = await readApiKey();
+      if (!apiKey) {
+        return {
+          accepted: false,
+          step: "config" as const,
+          error:
+            "OPENAI_API_KEY missing in chrome.storage.local; run chrome.storage.local.set({ OPENAI_API_KEY: 'sk-...' })",
+        };
+      }
+
+      const capture = voiceMessageToCapture(correlationId, msg.audio);
+
+      let preprocessed;
+      try {
+        preprocessed = await preprocessAudio(capture);
+      } catch (err: unknown) {
+        log.error("audio preprocess failed", String(err), correlationId);
+        return { accepted: false, step: "preprocess" as const, error: String(err) };
+      }
+
+      await emit(
+        makeEvent("audio_preprocessed", correlationId, {
+          durationMs: preprocessed.durationMs,
+          mimeType: preprocessed.mimeType,
+          sizeBytes: preprocessed.normalizedBlob.size,
+          sampleRateHint: preprocessed.sampleRateHint,
+        }),
+      );
+
+      let transcribed;
+      try {
+        transcribed = await transcribeAudio(preprocessed, { apiKey });
+      } catch (err: unknown) {
+        log.error("transcription failed", String(err), correlationId);
+        return { accepted: false, step: "transcribe" as const, error: String(err) };
+      }
+
+      await emit(
+        makeEvent("speech_to_text_completed", correlationId, {
+          chars: transcribed.text.length,
+          durationMs: transcribed.durationMs,
+          ...(transcribed.language ? { language: transcribed.language } : {}),
+        }),
+      );
+
+      return { accepted: true, text: transcribed.text, durationMs: transcribed.durationMs };
     }
 
     log.info("input received", { type: msg.type, chars: msg.text.length }, correlationId);
     try {
-      await runFromUtterance(correlationId, msg.text);
+      await runFromUtterance(correlationId, msg.text, msg.transcribedDurationMs ?? 0);
     } catch (err: unknown) {
       log.error("pipeline failed", String(err), correlationId);
     }
@@ -339,6 +410,50 @@ export const controller = {
   async onInterpretation(msg: MessageOf<"llm_interpretation">): Promise<unknown> {
     await runWithInterpretation(msg.correlationId, msg.interpretation);
     return { accepted: true };
+  },
+
+  /**
+   * System path: validated UI/session context → deterministic `ScheduleRequest`
+   * → same decision + backend + executor chain as LLM-produced schedule intents.
+   */
+  async onScheduleFromContext(
+    msg: MessageOf<"schedule_from_context">,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const built = tryBuildScheduleRequestFromContext(msg.context, msg.build);
+    if (!built.ok) {
+      await emit(
+        makeEvent("validation_failed", msg.correlationId, {
+          errors: [built.error],
+        }),
+      );
+      return { ok: false, error: built.error };
+    }
+
+    const interpretation = LlmInterpretation.safeParse({
+      schemaVersion: "1.0.0",
+      intent: { kind: "schedule", request: built.request },
+      confidence: 1,
+    });
+
+    if (!interpretation.success) {
+      const issues = interpretation.error.issues
+        .slice(0, 10)
+        .map((i) => `${i.path.join(".") || "<root>"}:${i.code}`);
+      await emit(
+        makeEvent("validation_failed", msg.correlationId, {
+          errors: issues.length > 0 ? issues : ["interpretation_parse_failed"],
+        }),
+      );
+      return { ok: false, error: "interpretation_parse_failed" };
+    }
+
+    try {
+      await runWithInterpretation(msg.correlationId, interpretation.data);
+    } catch (err: unknown) {
+      log.error("schedule_from_context pipeline failed", String(err), msg.correlationId);
+      return { ok: false, error: String(err) };
+    }
+    return { ok: true };
   },
 
   async onUserConfirmation(msg: MessageOf<"user_confirmation">): Promise<unknown> {
