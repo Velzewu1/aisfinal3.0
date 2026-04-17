@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mock Damumed · Epicrisis</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="tabs">
+      <button data-nav="primary_exam">Primary exam</button>
+      <button data-nav="epicrisis" class="active">Epicrisis</button>
+      <button data-nav="schedule">Schedule</button>
+    </nav>
+
+    <main>
+      <h1>Discharge epicrisis</h1>
+
+      <form class="grid" onsubmit="event.preventDefault()">
+        <label>Admission date
+          <input type="date" data-field="admission_date" />
+        </label>
+        <label>Discharge date
+          <input type="date" data-field="discharge_date" />
+        </label>
+        <label>Final diagnosis
+          <input type="text" data-field="final_diagnosis" />
+        </label>
+        <label>Treatment summary
+          <textarea data-field="treatment_summary" rows="5"></textarea>
+        </label>
+        <label>Recommendations
+          <textarea data-field="recommendations" rows="4"></textarea>
+        </label>
+
+        <div class="actions">
+          <button type="button" data-action="save_epicrisis">Save</button>
+          <button type="button" data-action="submit_epicrisis" class="primary">Finalize</button>
+        </div>
+      </form>
+
+      <section class="status">
+        <span>Epicrisis status:</span>
+        <span data-status-entity="epicrisis" data-status="draft">draft</span>
+      </section>
+    </main>
+
+    <script src="./selectors-demo.js"></script>
+  </body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI RPA Agent</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 12px;
+      }
+      button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #888;
+        background: #fff;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .log {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px;
+        height: 50vh;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        white-space: pre-wrap;
+      }
+      .muted {
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AI RPA Agent</h1>
+    <p class="muted">Controller &amp; executor are live. LLM is not wired in this scaffold.</p>
+
+    <div class="row">
+      <button id="record" class="primary">Start recording</button>
+      <button id="stop">Stop</button>
+    </div>
+
+    <div class="row">
+      <input id="utter" placeholder="or type an utterance…" style="flex:1;padding:6px;" />
+      <button id="send">Send</button>
+    </div>
+
+    <div class="row">
+      <button id="accept">Confirm pending</button>
+      <button id="reject">Reject pending</button>
+    </div>
+
+    <div id="log" class="log">ready.</div>
+
+    <script type="module" src="../dist/sidepanel.js"></script>
+  </body>
+</html>

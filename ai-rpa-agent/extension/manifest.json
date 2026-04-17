@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "AI RPA Agent",
+  "version": "0.1.0",
+  "description": "Enterprise AI RPA for healthcare web automation.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:5173/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "dist/background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "action": {
+    "default_title": "Open AI RPA side panel"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:5173/*",
+        "https://*/*"
+      ],
+      "js": ["dist/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidepanel/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

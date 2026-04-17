@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mock Damumed · Schedule</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="tabs">
+      <button data-nav="primary_exam">Primary exam</button>
+      <button data-nav="epicrisis">Epicrisis</button>
+      <button data-nav="schedule" class="active">Schedule</button>
+    </nav>
+
+    <main>
+      <h1>Schedule</h1>
+
+      <form class="grid" onsubmit="event.preventDefault()">
+        <label>Procedure
+          <input type="text" data-field="procedure_name" />
+        </label>
+        <label>Preferred doctor
+          <input type="text" data-field="preferred_doctor" />
+        </label>
+        <label>Earliest day (0-8)
+          <input type="number" min="0" max="8" data-field="earliest_day" />
+        </label>
+
+        <div class="actions">
+          <button type="button" data-action="request_schedule" class="primary">Request schedule</button>
+        </div>
+      </form>
+
+      <section>
+        <h2>Generated grid</h2>
+        <div class="schedule-grid" data-schedule-grid="primary" data-status="empty">
+          <em>No schedule injected yet.</em>
+        </div>
+      </section>
+    </main>
+
+    <script src="./selectors-demo.js"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "ai-rpa-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise AI RPA platform for healthcare web automation (Chrome MV3 extension + FastAPI backend).",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "extension"
+  ],
+  "scripts": {
+    "build:schemas": "npm --workspace @ai-rpa/schemas run build",
+    "build:extension": "npm --workspace @ai-rpa/extension run build",
+    "build": "npm run build:schemas && npm run build:extension",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev:mock-ui": "npx --yes http-server mock-ui -p 5173 -c-1",
+    "dev:backend": "uvicorn backend.api.main:app --reload --port 8000"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.12.12",
+    "typescript": "^5.5.4"
+  }
+}

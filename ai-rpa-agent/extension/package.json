@@ -1,0 +1,21 @@
+{
+  "name": "@ai-rpa/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI RPA Chrome Extension (Manifest V3).",
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ai-rpa/schemas": "*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.4"
+  }
+}

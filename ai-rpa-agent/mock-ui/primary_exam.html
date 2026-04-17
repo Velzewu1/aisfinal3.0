@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mock Damumed · Primary Exam</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="tabs">
+      <button data-nav="primary_exam" class="active">Primary exam</button>
+      <button data-nav="epicrisis">Epicrisis</button>
+      <button data-nav="schedule">Schedule</button>
+    </nav>
+
+    <main>
+      <h1>Primary examination</h1>
+
+      <form class="grid" onsubmit="event.preventDefault()">
+        <label>Patient ID
+          <input type="text" data-field="patient_id" />
+        </label>
+        <label>Full name
+          <input type="text" data-field="patient_name" />
+        </label>
+        <label>Date of birth
+          <input type="date" data-field="patient_dob" />
+        </label>
+        <label>Complaint
+          <textarea data-field="complaint" rows="3"></textarea>
+        </label>
+        <label>Anamnesis
+          <textarea data-field="anamnesis" rows="3"></textarea>
+        </label>
+        <label>Diagnosis (ICD-10)
+          <input type="text" data-field="diagnosis" placeholder="J06.9" />
+        </label>
+
+        <div class="actions">
+          <button type="button" data-action="save_draft">Save draft</button>
+          <button type="button" data-action="submit_exam" class="primary">Submit</button>
+        </div>
+      </form>
+
+      <section class="status">
+        <span>Exam status:</span>
+        <span data-status-entity="primary_exam" data-status="draft">draft</span>
+      </section>
+    </main>
+
+    <script src="./selectors-demo.js"></script>
+  </body>
+</html>
