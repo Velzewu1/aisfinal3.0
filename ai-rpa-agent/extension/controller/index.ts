@@ -2,7 +2,7 @@ import type { AgentEvent, Intent, LlmInterpretation, ScheduleResult } from "@ai-
 import { createLogger } from "../shared/logger.js";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import type { MessageOf } from "../shared/messages.js";
-import { decide, isHighRisk } from "./confidence.js";
+import { decideAction } from "./decision.js";
 import { planActions } from "./planner.js";
 import { BackendClient } from "./backend-client.js";
 
@@ -58,18 +58,25 @@ async function runWithInterpretation(correlationId: string, interpretation: LlmI
   await emit(makeEvent("intent_parsed", correlationId, { interpretation }));
   await emit(makeEvent("validation_passed", correlationId, { schemaVersion: interpretation.schemaVersion }));
 
-  const { intent, confidence } = interpretation;
-  const decision = decide({
-    intentKind: intent.kind,
-    confidence,
-    highRisk: isHighRisk(intent.kind),
-  });
+  const { intent } = interpretation;
+  const decision = decideAction(interpretation, correlationId);
+
+  log.info(
+    "step9_decision",
+    {
+      kind: decision.kind,
+      reason: decision.reason,
+      confidence: decision.confidence,
+      source: "step9_decision",
+    },
+    correlationId,
+  );
 
   await emit(
     makeEvent("decision_made", correlationId, {
       decision: decision.kind,
-      confidence,
-      reason: decision.kind !== "execute" ? decision.reason : undefined,
+      confidence: decision.confidence,
+      reason: decision.reason,
     }),
   );
 
