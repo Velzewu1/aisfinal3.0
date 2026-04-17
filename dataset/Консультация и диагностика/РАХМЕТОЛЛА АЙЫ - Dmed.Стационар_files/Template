@@ -1,0 +1,165 @@
+/* Minification failed. Returning unminified contents.
+(61,63-64): run-time error JS1003: Expected ':': }
+ */
+var Templates = {
+    // Создать шаблон
+    create: function (scope, data) {
+        if (!scope) {
+            showPopupNotification("Scope is empty", NotificationTypes.danger);
+        }
+        if (!data) {
+            showPopupNotification("Data is empty", NotificationTypes.danger);
+        }
+
+        var template = null;
+        $.ajax({
+            type: 'POST',
+            url: '/template/createTemplate',
+            data: JSON.stringify({ scope: scope, data: JSON.stringify(data) }),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                template = result;
+            }
+        });
+
+        return template;
+    },
+
+    // Загрузить из шаблона
+    fromTemplate: function (id, data) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+        $.ajax({
+            type: 'POST',
+            url: '/template/fromTemplate',
+            data: JSON.stringify({ id: id, data: JSON.stringify(data) }),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                data = result;
+            }
+        });
+
+        return data;
+    },
+
+    // Загрузить мед запись из шаблона с переменными мед записи
+    recordFromTemplateWithData: function (id, queryItems) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        if (!queryItems || queryItems.QueryItems.length == 0) {
+            showPopupNotification("QueryItems is empty", NotificationTypes.danger);
+            return null;
+        }
+
+        var record = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/templateVariable/loadTemplateData',
+            data: JSON.stringify({ templateID: id, queryItems }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                record = result;
+            },
+        });
+
+        return record;
+    },
+
+    // Получить шаблон
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var template = null;
+
+        $.ajax({
+            type: 'POST',
+            url: '/template/getTemplate',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                template = result;
+            }
+        });
+
+        return template;
+    },
+
+    // Найти шаблон
+    find: function (criteria) {
+        if (!criteria) {
+            showPopupNotification("Criteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            url: '/template/findTemplate',
+            data: JSON.stringify(criteria),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Сохранить шаблон
+    save: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/template/saveTemplate',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete();
+            }
+        });
+
+        return model;
+    },
+
+    // Удалить шаблон
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/template/deleteTemplate',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+};
+
+// Адреса сервисов редактирование
+var EditTemplateUrls = new Map();
+EditTemplateUrls.set(1, "/template/editAssignmentService");
+EditTemplateUrls.set(2, "/template/editExecuteDrug");
+EditTemplateUrls.set(3, "/template/editAssignmentItem");
+EditTemplateUrls.set(8, "/template/editExecuteDrug");
+EditTemplateUrls.set(9, "/template/editAssignmentLaboratory");
+EditTemplateUrls.set(13, "/template/editSubstance");
+EditTemplateUrls.set(22, "/template/editPrescription");;

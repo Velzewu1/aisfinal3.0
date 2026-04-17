@@ -1,0 +1,463 @@
+/* Minification failed. Returning unminified contents.
+(29,42-43): run-time error JS1003: Expected ':': }
+(49,42-43): run-time error JS1003: Expected ':': }
+(170,26-27): run-time error JS1014: Invalid character: `
+(171,13-14): run-time error JS1195: Expected expression: <
+(171,13-14): run-time error JS1195: Expected expression: <
+(171,13-14): run-time error JS1195: Expected expression: <
+(171,13-14): run-time error JS1195: Expected expression: <
+(177,19-20): run-time error JS1014: Invalid character: `
+(179,18-19): run-time error JS1197: Too many errors. The file might not be a JavaScript file: .
+ */
+//Настройка показателей здоровья
+var HealthIndicatorSettings = {
+    // Удалить настройку показателей здоровья
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/patientHealthIndicator/deleteHealthIndicatorSetting',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить настройку показателей здоровья истории болезни
+    save: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientHealthIndicator/saveHealthIndicatorSetting',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Сохранить настройки показателей здоровья истории болезни
+    saveList: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientHealthIndicator/saveHealthIndicatorSettings',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+};
+
+//Показатели здоровья
+var HealthIndicators = {
+    // Получить показатели здоровья
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientHealthIndicator/list',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+};
+
+var HealthIndicatorBase = function () {
+    var deleteControl = function () {
+        $('#popupHealthIndicatorEdit').closest('.k-animation-container').remove();
+    };
+
+    var deleteControlWindow = function () {
+        $('#wndContentWrapper').remove();
+    };
+
+    //формируем маску ввода над kendoNumericTextBox для показателей здоровья
+    function createNumericControlMaskWrapper(maxValue, decimals) {
+
+        if (decimals > 0) {
+
+            var length = maxValue.toString().length;
+            var splitterLenght = 1;
+            var maxlength = length + splitterLenght + decimals;
+            var beforeSplitterIndex = maxlength - splitterLenght - decimals;
+
+            if (beforeSplitterIndex > 0) {
+
+                $('#ntbHealthIndicator').attr('maxlength', maxlength);
+
+                var input = $("#ntbHealthIndicator").data("kendoNumericTextBox");
+
+                input.element.on("focus", function (e) {
+                    if (e.target.value.length == beforeSplitterIndex) {
+                        e.target.value += '.0';
+                    }
+                });
+
+                input.element.on("keyup", function (e) {
+                    var backspacekeyCode = 8;
+                    if (e.keyCode != backspacekeyCode) {
+                        if (e.target.value.length == beforeSplitterIndex && !e.target.value.includes('.')) {
+                            e.target.value += '.';
+                        }
+                    }
+                });
+            }
+        }
+    };
+
+    var createNumericControl = function (parent, min, max, format, decimals, savecallback, deletecallback) {
+        var value = $(parent).data('value');
+        var outputHtml = '\
+        <div id="popupHealthIndicatorEdit" style="width:200px;display:none;padding:5px;"> \
+            <div class="row"> \
+                <div class="col-md-12"> \
+                    <input id="ntbHealthIndicator" name="ntbHealthIndicator" type="number" style="width:100%;" \
+                        min="' + min + '" max="' + max + '" /> \
+                </div> \
+            </div> \
+        </div>';
+
+        $(parent).append(outputHtml);
+
+        $('#ntbHealthIndicator').kendoNumericTextBox({
+            format: format || 'n0',
+            decimals: decimals || 0,
+            value: value && value.toString().replace(',', '.') || null,
+            spinners: false,
+            change: function (e) {
+                var _value = e.sender.value();
+                if (_value !== null && _value !== undefined) {
+                    savecallback(parent, _value);
+                } else {
+                    deletecallback(parent);
+                }
+            }
+        });
+
+        $('#popupHealthIndicatorEdit').kendoPopup({
+            anchor: $(parent)
+        });
+        $('#popupHealthIndicatorEdit').data('kendoPopup').open();
+
+        if ($('#ntbHealthIndicator').data('kendoNumericTextBox')) {
+            $('#ntbHealthIndicator').data('kendoNumericTextBox').focus();
+        }
+
+        createNumericControlMaskWrapper(max, decimals);
+    };
+
+    var createNumericControlForWindow = function (parent, prevValue, min, max, format, decimals) {
+        var outputHtml = `
+            <div class="row">
+                    <div class="col-md-12">
+                        <input id="ntbHealthIndicator" name="ntbHealthIndicator" type="number" style="width:100%;"
+                            min="${min}" max="${max}" />
+                    </div>
+                </div>
+            </div>`;
+       
+        $(parent).append(outputHtml);
+
+        $('#ntbHealthIndicator').kendoNumericTextBox({
+            format: format || 'n0',
+            decimals: decimals || 0,
+            value: prevValue && prevValue.toString().replace(',', '.') || null,
+            spinners: false
+        });
+
+        if ($('#ntbHealthIndicator').data('kendoNumericTextBox')) {
+            $('#ntbHealthIndicator').data('kendoNumericTextBox').focus();
+        }
+
+        createNumericControlMaskWrapper(max, decimals);
+    }
+
+    var createTextControl = function (parent, maxlength, savecallback, deletecallback) {
+        var value = $(parent).data('value');
+
+        var outputHtml = '\
+<div id="popupHealthIndicatorEdit" style="width:300px;display:none;padding:5px;"> \
+    <div class="row"> \
+        <div class="col-md-12"> \
+            <textarea id="tbHealthIndicator" name="tbHealthIndicator" rows="2" type="text" class="k-textbox" style="width:100%;" \
+                maxlength="' + maxlength + '" /> </textarea>\
+        </div> \
+    </div> \
+</div>';
+
+        $(parent).append(outputHtml);
+
+        $('#tbHealthIndicator').val(value);
+
+        $('#tbHealthIndicator').change(function () {
+            var _value = $('#tbHealthIndicator').val();
+            if (_value) {
+                savecallback(parent, $('#tbHealthIndicator').val());
+            } else {
+                deletecallback(parent);
+            }
+        });
+
+        $('#popupHealthIndicatorEdit').kendoPopup({
+            anchor: $(parent)
+        });
+        $('#popupHealthIndicatorEdit').data('kendoPopup').open();
+
+        if ($('#tbHealthIndicator')) {
+            $('#tbHealthIndicator').focus();
+        }
+    };
+
+    var createTextControlForWindow = function (parent,prevValue, maxlength) {
+        var outputHtml = `
+        <div class="row"> \
+            <div class="col-md-12"> \
+                <textarea id="tbHealthIndicator" name="tbHealthIndicator" rows="2" type="text" class="k-textbox" style="width:100%;" \
+                    maxlength="${maxlength}" /> </textarea>\
+            </div> \
+        </div>`;
+
+        $(parent).append(outputHtml);
+
+        $('#tbHealthIndicator').val(prevValue);
+
+        if ($('#tbHealthIndicator')) {
+            $('#tbHealthIndicator').focus();
+        }
+    };
+
+    var createComboBoxControl = function (parent, savecallback, deletecallback) {
+        var healthIndicatorID = $(parent).data('healthindicatorid');
+        var value = $(parent).data('value');
+
+        var outputHtml = '\
+<div id="popupHealthIndicatorEdit" style="width:200px;display:none;padding:5px;"> \
+    <div class="row"> \
+        <div class="col-md-12"> \
+            <input id="cmbHealthIndicator" class="w-100" name="cmbHealthIndicator" /> \
+        </div> \
+    </div> \
+</div>';
+
+        $(parent).append(outputHtml);
+
+        $('#cmbHealthIndicator').kendoComboBox({
+            dataTextField: 'Name',
+            dataValueField: 'ID',
+            dataSource: {
+                transport: {
+                    read: {
+                        url: '/dictionary/getHealthIndicatorValues',
+                        data: function () {
+                            return {
+                                healthIndicatorID: healthIndicatorID
+                            };
+                        },
+                        dataType: 'json',
+                        type: 'POST'
+                    }
+                }
+            },
+            value: value,
+            change: function (e) {
+                var item = e.sender.dataItem(e.sender.select());
+                if (item) {
+                    savecallback(parent, item.ID);
+                } else {
+                    deletecallback(parent);
+                }
+            }
+        });
+
+        $('#popupHealthIndicatorEdit').kendoPopup({
+            anchor: $(parent),
+        });
+        $('#popupHealthIndicatorEdit').data('kendoPopup').open();
+    };
+
+    var createComboBoxControlForWindow = function (parent, prevValue, healthIndicatorID) {
+        var outputHtml = `
+            <div class="row"> \
+                <div class="col-md-12"> \
+                    <input id="cmbHealthIndicator" class="w-100" name="cmbHealthIndicator" /> \
+                </div> \
+            </div>`;
+
+        $(parent).append(outputHtml);
+
+        $('#cmbHealthIndicator').kendoComboBox({
+            dataTextField: 'Name',
+            dataValueField: 'ID',
+            dataSource: {
+                transport: {
+                    read: {
+                        url: '/dictionary/getHealthIndicatorValues',
+                        data: function () {
+                            return {
+                                healthIndicatorID: healthIndicatorID
+                            };
+                        },
+                        dataType: 'json',
+                        type: 'POST'
+                    }
+                }
+            },
+            value: prevValue
+        });
+    };
+
+    var createCheckControl = function (parent, yes, no, savecallback, deletecallback) {
+        var value = $(parent).data('value');
+
+        var outputHtml = '\
+<div id="popupHealthIndicatorEdit" style="width:200px;display:none;padding:5px;"> \
+    <div class="row"> \
+        <div class="col-md-12"> \
+            <input id="cbHealthIndicator" name="cbHealthIndicator" style="width:100%;" /> \
+        </div> \
+    </div> \
+</div>';
+
+        $(parent).append(outputHtml);
+
+        $('#cbHealthIndicator').kendoComboBox({
+            dataTextField: 'text',
+            dataValueField: 'value',
+            dataSource: [
+                { text: yes, value: 'true' },
+                { text: no, value: 'false' },
+            ],
+            value: value,
+            change: function (e) {
+                var item = e.sender.dataItem(e.sender.select());
+                if (item) {
+                    savecallback(parent, item.value);
+                } else {
+                    deletecallback(parent);
+                }
+            }
+        });
+
+        $('#popupHealthIndicatorEdit').kendoPopup({
+            anchor: $(parent),
+        });
+        $('#popupHealthIndicatorEdit').data('kendoPopup').open();
+    };
+
+    var createCheckControlForWindow = function (parent, prevValue, yes, no) {
+        var outputHtml = `
+            <div class="row">
+                <div class="col-md-12">
+                    <input id="cbHealthIndicator" name="cbHealthIndicator" style="width:100%;" />
+                </div>
+            </div>`;
+
+        $(parent).append(outputHtml);
+
+        $('#cbHealthIndicator').kendoComboBox({
+            dataTextField: 'text',
+            dataValueField: 'value',
+            dataSource: [
+                { text: yes, value: 'true' },
+                { text: no, value: 'false' },
+            ],
+            value: prevValue,
+        });
+
+    };
+
+    var createTimeControl = function (parent, savecallback, deletecallback) {
+        var value = $(parent).data('value');
+
+        var outputHtml = '\
+<div id="popupHealthIndicatorEdit" style="width:200px;display:none;padding:5px;"> \
+    <div class="row"> \
+        <div class="col-md-12"> \
+            <input id="tbHealthIndicator" name="tbHealthIndicator" style="width:100%;" /> \
+        </div> \
+    </div> \
+</div>';
+
+        $(parent).append(outputHtml);
+
+        $('#tbHealthIndicator').kendoMaskedTimePicker({
+            timeOptions: { mask: '00:00', format: 'HH:mm' },
+            value: value,
+            change: function (e) {
+                var _value = e.sender.value();
+                if (_value) {
+                    savecallback(parent, _value.toHourString());
+                } else {
+                    deletecallback(parent);
+                }
+            },
+        });
+
+        $('#popupHealthIndicatorEdit').kendoPopup({
+            anchor: $(parent),
+        });
+        $('#popupHealthIndicatorEdit').data('kendoPopup').open();
+    };
+
+    var createTimeControlForWindow = function (parent) {
+        var outputHtml = `
+            <div class="row"> \
+                <div class="col-md-12"> \
+                    <input id="tbHealthIndicator" name="tbHealthIndicator" style="width:100%;" /> \
+                </div> \
+            </div>`;
+
+        $(parent).append(outputHtml);
+
+        $('#tbHealthIndicator').kendoMaskedTimePicker({
+            timeOptions: { mask: '00:00', format: 'HH:mm' },
+            value: prevValue,
+        });
+    };
+
+    return {
+        deleteControl,
+        deleteControlWindow,
+        createNumericControl,
+        createNumericControlForWindow,
+        createTextControl,
+        createTextControlForWindow,
+        createComboBoxControl,
+        createComboBoxControlForWindow,
+        createCheckControl,
+        createCheckControlForWindow,
+        createTimeControl,
+        createTimeControlForWindow
+    };
+}();;

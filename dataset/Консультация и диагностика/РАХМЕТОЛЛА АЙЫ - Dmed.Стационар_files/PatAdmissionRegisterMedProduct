@@ -1,0 +1,99 @@
+/* Minification failed. Returning unminified contents.
+(29,42-43): run-time error JS1003: Expected ':': }
+(47,42-43): run-time error JS1003: Expected ':': }
+(65,42-43): run-time error JS1003: Expected ':': }
+(84,42-43): run-time error JS1003: Expected ':': }
+ */
+var PatAdmissionRegisterMedProduct = {
+    //Удалить списание ИМН на историю болезни
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/PatientAdmissionRegisterMedProduct/deletePatientAdmissionRegisterMedProduct',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    // Сохранить списание ИМН на историю болезни
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/PatientAdmissionRegisterMedProduct/savePatientAdmissionRegisterMedProduct',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    // Сохранить списание ИМН на историю болезни из шаблона
+    saveFromTemplate: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/PatientAdmissionRegisterMedProduct/savePatientAdmissionRegisterMedProductFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    // Сохранить из шаблона
+    saveMedicalMedProductsFromTemplate: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/PatientAdmissionRegisterMedProduct/savePatientAdmissionRegisterMedProductsFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Получить списание ИМН из шаблона
+    convertFromTemplate: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var assignments = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/PatientAdmissionRegisterMedProduct/convertFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                assignments = result;
+            },
+        });
+
+        return assignments;
+    }
+};;

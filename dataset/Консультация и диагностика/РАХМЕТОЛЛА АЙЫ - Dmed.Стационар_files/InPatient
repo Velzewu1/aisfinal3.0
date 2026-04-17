@@ -1,0 +1,96 @@
+/* Minification failed. Returning unminified contents.
+(12,42-43): run-time error JS1003: Expected ':': }
+ */
+var InPatients = {
+    // Сохранить выписку
+    save: function (model, successComplete) {
+        if (model === null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/statistician/saveInPatient',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    //Отправить выписку
+    send: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/statistician/sendInPatient',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    //Загрузить файл выписки
+    uploadFile: function (data, successComplete) {
+        if (!data) {
+            showPopupNotification("Data is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: "POST",
+            url: '/statistician/uploadFile',
+            contentType: false,
+            processData: false,
+            async: false,
+            data: data,
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    //Удалить файл выписки
+    deleteFile: function (criteria, successComplete) {
+        if (!criteria) {
+            showPopupNotification("Criteria is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/statistician/deleteFile',
+            data: JSON.stringify(criteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    //Сопоставить выписку
+    match: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/statistician/matchInPatient',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+};

@@ -1,0 +1,1 @@
+var PatientAdmissionRegisters={get:function(n){n||showPopupNotification("Id is empty",NotificationTypes.danger);var t=null;return $.ajax({type:"POST",async:!1,url:"/patientAdmissionRegister/getPatientAdmission",data:JSON.stringify({id:n}),contentType:"application/json; charset=utf-8",success:function(n){t=n}}),t}}

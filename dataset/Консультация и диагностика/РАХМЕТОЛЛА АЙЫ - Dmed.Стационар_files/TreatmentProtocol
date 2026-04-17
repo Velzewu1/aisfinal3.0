@@ -1,0 +1,1 @@
+var TreatmentProtocols={get:function(n,t){$.ajax({type:"POST",url:"/treatmentProtocol/tree",data:JSON.stringify(n),contentType:"application/json; charset=utf-8",success:function(n){t&&t(n)},error:function(n){systemErrorNotification(n)}})}}

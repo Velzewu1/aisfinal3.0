@@ -1,0 +1,68 @@
+/* Minification failed. Returning unminified contents.
+(56,42-43): run-time error JS1003: Expected ':': }
+ */
+var MedicalRecords = {
+    // Найти мед форму
+    findMedicalForm: function (criteria) {
+        if (criteria == null) {
+            showPopupNotification("Criteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            url: '/medicalRecord/getMedicalForms',
+            data: JSON.stringify(criteria),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+
+    // Получить мед запись
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalRecord/getMedicalRecord',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Валидировать мед запись
+    validateMedicalRecord: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var validateResult = null;
+        $.ajax({
+            type: 'POST',
+            crossDomain: true,
+            async: false,
+            url: '/medicalRecord/validateMedicalRecord',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                validateResult = result;
+            },
+        });
+
+        return validateResult;
+    }
+};

@@ -1,0 +1,781 @@
+var TINY = TINY || {}, T$ = T$ || function(i) { return document.getElementById(i) }, T$$$ = T$$$ || function() { return document.all ? 1 : 0 };
+TINY.editor = function () {
+    var resourceObj = {}
+
+    function edit(n, obj) {
+        this.n = n;
+        window[n] = this;
+        this.t = T$(obj.id);
+        this.obj = obj;
+        this.xhtml = obj.xhtml;
+        var p = document.createElement("div"), w = document.createElement("div"), h = document.createElement("div"), l = obj.controls.length, i = 0;
+        this.i = document.createElement("iframe");
+        this.i.width = obj.width || "100%";
+        this.i.height = obj.height || "250";
+        this.ie = T$$$();
+        h.className = obj.rowclass || "tinyeditor-header";
+        p.className = obj.cssclass || "tinyeditor";
+        p.style.width = this.i.width + "px";
+        if (obj.controls.length > 0) {
+            p.appendChild(h);
+        }
+        
+        resourceObj.template = obj.resourceObj.template ? obj.resourceObj.template : 'Шаблон';
+        resourceObj.selectTemplate = obj.resourceObj.selectTemplate ? obj.resourceObj.selectTemplate : 'Выбрать шаблон';
+        resourceObj.saveAsTemplate = obj.resourceObj.saveAsTemplate ? obj.resourceObj.saveAsTemplate : 'Сохранить как шаблон';
+        resourceObj.selectTemplateAllBlocks = obj.resourceObj.selectTemplateAllBlocks ? obj.resourceObj.selectTemplateAllBlocks : 'Выбрать шаблон для всех блоков';
+        resourceObj.saveTemplateAllBlocks = obj.resourceObj.saveTemplateAllBlocks ? obj.resourceObj.saveTemplateAllBlocks : 'Сохранить шаблон для всех блоков';
+        resourceObj.addField = obj.resourceObj.addField ? obj.resourceObj.addField : 'Добавить поле';
+        resourceObj.formField = obj.resourceObj.formField ? obj.resourceObj.formField : 'Поле формы';
+        resourceObj.managementElements = obj.resourceObj.managementElements ? obj.resourceObj.managementElements : 'Элементы управления';
+        resourceObj.save = obj.resourceObj.save ? obj.resourceObj.save : 'Сохранить';
+        resourceObj.record = obj.resourceObj.record ? obj.resourceObj.record : 'Запись';
+        resourceObj.img = obj.resourceObj.img ? obj.resourceObj.img : 'Картинка';
+        resourceObj.fileSizeValid = obj.resourceObj.fileSizeValid ? obj.resourceObj.fileSizeValid : 'Размер загружаемого файла больше разрешенного значения';
+        resourceObj.browserNotSupport = obj.resourceObj.browserNotSupport ? obj.resourceObj.browserNotSupport : 'К сожаленю ваш браузер не поддерживает данную функцию. Пожалуйста, загрузите более новую версию браузера.';
+        resourceObj.bold = obj.resourceObj.bold ? obj.resourceObj.bold : 'Жирный';
+        resourceObj.italic = obj.resourceObj.italic ? obj.resourceObj.italic : 'Курсив';
+        resourceObj.underline = obj.resourceObj.underline ? obj.resourceObj.underline : 'Подчеркнутый';
+        resourceObj.strikethrough = obj.resourceObj.strikethrough ? obj.resourceObj.strikethrough : 'Зачеркнутый';
+        resourceObj.subscript = obj.resourceObj.subscript ? obj.resourceObj.subscript : 'Подстрочный знак';
+        resourceObj.superscript = obj.resourceObj.superscript ? obj.resourceObj.superscript : 'Надстрочный знак';
+        resourceObj.orderedlist = obj.resourceObj.orderedlist ? obj.resourceObj.orderedlist : 'Нумерация';
+        resourceObj.unorderedlist = obj.resourceObj.unorderedlist ? obj.resourceObj.unorderedlist : 'Маркеры';
+        resourceObj.outdent = obj.resourceObj.outdent ? obj.resourceObj.outdent : 'Уменьшить отступ';
+        resourceObj.indent = obj.resourceObj.indent ? obj.resourceObj.indent : 'Увеличить отступ';
+        resourceObj.leftalign = obj.resourceObj.leftalign ? obj.resourceObj.leftalign : 'Выровнять по левому краю';
+        resourceObj.centeralign = obj.resourceObj.centeralign ? obj.resourceObj.centeralign : 'Выровнять по центру';
+        resourceObj.rightalign = obj.resourceObj.rightalign ? obj.resourceObj.rightalign : 'Выровнять по правому краю';
+        resourceObj.blockjustify = obj.resourceObj.blockjustify ? obj.resourceObj.blockjustify : 'Выровнять по ширине';
+        resourceObj.undo = obj.resourceObj.undo ? obj.resourceObj.undo : 'Отменить';
+        resourceObj.redo = obj.resourceObj.redo ? obj.resourceObj.redo : 'Повторить';
+        resourceObj.hr = obj.resourceObj.hr ? obj.resourceObj.hr : 'Вставить горизонтальный разрыв';
+        resourceObj.unformat = obj.resourceObj.unformat ? obj.resourceObj.unformat : 'Очистить форматирование';
+        resourceObj.print = obj.resourceObj.print ? obj.resourceObj.print : 'Печать';
+        resourceObj.style = obj.resourceObj.style ? obj.resourceObj.style : 'Стиль';
+        resourceObj.paragraph = obj.resourceObj.paragraph ? obj.resourceObj.paragraph : 'Параграф';
+        resourceObj.header = obj.resourceObj.header ? obj.resourceObj.header : 'Заголовок';
+        resourceObj.color = obj.resourceObj.color ? obj.resourceObj.color : 'Цвет';
+        resourceObj.paintOver = obj.resourceObj.paintOver ? obj.resourceObj.paintOver : 'Закрасить';
+        resourceObj.clearStyles = obj.resourceObj.clearStyles ? obj.resourceObj.clearStyles : 'Очистить стили';
+
+        var c = [], offset = -30;
+        c["bold"] = [4, resourceObj.bold, "a", "bold"];
+        c["italic"] = [5, resourceObj.italic, "a", "italic"];
+        c["underline"] = [6, resourceObj.underline, "a", "underline"];
+        c["strikethrough"] = [7, resourceObj.strikethrough, "a", "strikethrough"];
+        c["subscript"] = [8, resourceObj.subscript, "a", "subscript"];
+        c["superscript"] = [9, resourceObj.superscript, "a", "superscript"];
+        c["orderedlist"] = [10, resourceObj.orderedlist, "a", "insertorderedlist"];
+        c["unorderedlist"] = [11, resourceObj.unorderedlist, "a", "insertunorderedlist"];
+        c["outdent"] = [12, resourceObj.outdent, "a", "outdent"];
+        c["indent"] = [13, resourceObj.indent, "a", "indent"];
+        c["leftalign"] = [14, resourceObj.leftalign, "a", "justifyleft"];
+        c["centeralign"] = [15, resourceObj.centeralign, "a", "justifycenter"];
+        c["rightalign"] = [16, resourceObj.rightalign, "a", "justifyright"];
+        c["blockjustify"] = [17, resourceObj.blockjustify, "a", "justifyfull"];
+        c["undo"] = [18, resourceObj.undo, "a", "undo"];
+        c["redo"] = [19, resourceObj.redo, "a", "redo"];
+        c["image"] = [20, "Insert Image", "i", "insertimage", "Enter Image URL:", "http://"];
+        c["hr"] = [21, resourceObj.hr, "a", "inserthorizontalrule"];
+        c["link"] = [22, "Insert Hyperlink", "i", "createlink", "Enter URL:", "http://"];
+        c["unlink"] = [23, "Remove Hyperlink", "a", "unlink"];
+        c["unformat"] = [24, resourceObj.unformat, "a", "removeformat"];
+        c["print"] = [25, resourceObj.print, "a", "print"];
+
+        for (i; i < l; i++) {
+            var id = obj.controls[i];
+            if (id == "n") {
+                h = document.createElement("div");
+                h.className = obj.rowclass || "tinyeditor-header";
+                p.appendChild(h);
+            } else if (id == "|") {
+                var d = document.createElement("div");
+                d.className = obj.dividerclass || "tinyeditor-divider";
+                h.appendChild(d);
+            } else if (id == "font") {
+                var sel = document.createElement("select"), fonts = obj.fonts || ["sans-serif", "Times New Roman", "Verdana", "Arial", "Georgia"], fl = fonts.length, x = 0;
+                sel.className = "tinyeditor-font";
+                sel.onchange = new Function(this.n + ".ddaction(this, \"fontname\")");
+                sel.options[0] = new Option("Шрифт", "");
+                for (x; x < fl; x++) {
+                    var font = fonts[x];
+                    sel.options[x + 1] = new Option(font, font);
+                }
+                h.appendChild(sel);
+
+            } else if (id == 'save') {
+                var save = document.createElement("div");
+                save.className = "tinyeditor-btns";
+
+                save.innerHTML = '<div class="btn-group"> \
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'+
+                                    resourceObj.save + '<span class="glyphicon glyphicon-menu-down small-text"></span> \
+                                    </button> \
+                                    <ul class="dropdown-menu"> \
+                                        <li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSaveDocx(event)">Документ Word (*.docx)</a></li> \
+                                    </ul> \
+                                  </div>';
+
+                h.appendChild(save);
+            } else if (id == 'templates') {
+                var template = document.createElement("div");
+                template.className = "tinyeditor-btns";
+
+                var menuItem = '';
+
+                if (obj.medicalRecordTypeId == 6 || obj.medicalRecordTypeId == 12 || obj.medicalRecordTypeId == 15 || obj.medicalRecordTypeId == 1 || obj.medicalRecordTypeId == 7) {
+                    menuItem = '<li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectTemplate()">' + resourceObj.selectTemplate + '</a></li> \
+                                <li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSaveTemplate()">' + resourceObj.saveAsTemplate +'</a></li> \
+                                <li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectBlockTemplate()">' + resourceObj.selectTemplateAllBlocks+'</a></li> \
+                                <li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSaveBlockTemplate()">' + resourceObj.saveTemplateAllBlocks+'</a></li>';
+                } else {
+                    menuItem = '<li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectTemplate()">' + resourceObj.selectTemplate + '</a></li> \
+                                <li><a href="#" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSaveTemplate()">' + resourceObj.saveAsTemplate +'</a></li>';
+                }
+
+                template.innerHTML = '<div class="btn-group"> \
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'
+                                    + resourceObj.template + '<span class="glyphicon glyphicon-menu-down small-text"></span> \
+                                    </button> \
+                                    <ul class="dropdown-menu">'+ menuItem +'</ul> \
+                                  </div>';
+
+                h.appendChild(template);
+            } else if (id == 'text-fields') {
+                var field = document.createElement("div");
+                field.className = "tinyeditor-btns";
+
+                field.innerHTML = '<div class="btn-group"> \
+                                        <button class="btn btn-xs btn-default" type="button" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectTemplateVariable();"> \
+                                            <span class="glyphicon glyphicon-plus"></span>'+ resourceObj.addField+
+                                        '</button> \
+                                    </div>';
+                h.appendChild(field);
+            } else if (id == 'data-fields') {
+                var field = document.createElement("div");
+                field.className = "tinyeditor-btns";
+
+                field.innerHTML = '<div class="btn-group"> \
+                                        <button id="btnFormField_' + obj.medicalRecordElementId + '" class="btn btn-xs btn-default" type="button" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectFormVariable();"> \
+                                            <span class="glyphicon glyphicon-plus"></span>' + resourceObj.formField +
+                                        '</button> \
+                                    </div>';
+                h.appendChild(field);
+            } else if (id == 'add-controls') {
+                var field = document.createElement("div");
+                field.className = "tinyeditor-btns";
+
+                field.innerHTML = '<div class="btn-group"> \
+                                        <button id="btnAddControls" class="btn btn-xs btn-default" type="button" onClick="MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onSelectAddControls();"> \
+                                            <span class="glyphicon glyphicon-plus"></span>' + resourceObj.managementElements +
+                                        '</button> \
+                                    </div>';
+                h.appendChild(field);
+            } else if (id == "size") {
+                var sel = document.createElement("select"), sizes = obj.sizes || [1, 2, 3, 4, 5, 6, 7], sl = sizes.length, x = 0;
+                sel.className = "tinyeditor-size";
+                sel.onchange = new Function(this.n + ".ddaction(this, \"fontsize\")");
+                for (x; x < sl; x++) {
+                    var size = sizes[x];
+                    sel.options[x] = new Option(size, size);
+                }
+
+                h.appendChild(sel);
+            } else if (id == "style") {
+                var sel = document.createElement("select"), styles = obj.styles || [[resourceObj.style, ""], [resourceObj.paragraph, "<p>"], [resourceObj.header + " 1", "<h1>"], [resourceObj.header + " 2", "<h2>"], [resourceObj.header + " 3", "<h3>"], [resourceObj.header + " 4", "<h4>"], [resourceObj.header + " 5", "<h5>"], [resourceObj.header + " 6", "<h6>"]], sl = styles.length, x = 0;
+                sel.className = "tinyeditor-style";
+                sel.onchange = new Function(this.n + ".ddaction(this, \"formatblock\")");
+                for (x; x < sl; x++) {
+                    var style = styles[x];
+                    sel.options[x] = new Option(style[0], style[1]);
+                }
+                h.appendChild(sel);
+            } else if (c[id]) {
+                var div = document.createElement("div"), x = c[id], func = x[2], ex, pos = x[0] * offset;
+                div.className = obj.controlclass;
+                div.unselectable = "on";
+                div.style.backgroundPosition = "0px " + pos + "px";
+                div.title = x[1];
+                ex = func == "a" ? ".action(\"" + x[3] + "\", 0, " + (x[4] || 0) + ")" : ".insert(\"" + x[4] + "\", \"" + x[5] + "\", \"" + x[3] + "\")";
+                div.onmousedown = new Function(this.n + (id == "print" ? ".print()" : ex));
+                div.onmouseover = new Function(this.n + ".hover(this, " + pos + ", 1)");
+                div.onmouseout = new Function(this.n + ".hover(this, " + pos + ", 0)");
+                h.appendChild(div);
+                if (this.ie) {
+                    div.unselectable = "on";
+                }
+            } else if (id == 'img') {
+                var img = document.createElement("div");
+                img.className = "tinyeditor-control";
+                img.title = resourceObj.img;
+                img.onclick = function () {
+                    var html = '<input id="img-load" type="file" accept=".png,.jpeg,.jpe,.jpg" />';
+
+                    $('#div-img-load').empty();
+                    $('#div-img-load').append(html);
+
+                    $('#img-load').change(function () {
+                        var files = document.getElementById('img-load').files;
+                        if (files.length > 0) {
+                            var file = files[0];
+                            if (file.size / 1024 / 1024 / 1024 > 512) {
+                                showPopupNotification(resourceObj.fileSizeValid, NotificationTypes.error);
+                                return;
+                            }
+
+                            var fileReader = new FileReader();
+
+                            fileReader.onload = function (e) {
+                                var srcData = e.target.result;
+
+                                var div = document.createElement('div');
+                                div.style = 'width:100%;resize:both;overflow:hidden;padding:5px;';
+
+                                var img = document.createElement('img');
+                                img.src = srcData;
+                                img.style = 'width:100%;';
+
+                                div.appendChild(img);
+                                TINY.editors[obj.bodyid].insertHTML(div.outerHTML);
+                            }
+                            fileReader.readAsDataURL(file);
+                        }
+                    });
+
+                    $('#img-load').trigger('click');
+                };
+                img.style.backgroundPosition = '34px -600px';
+                h.appendChild(img);
+            } else if (id == 'color') {
+                var color = document.createElement('div');
+                color.className = 'tinyeditor-btns';
+                color.title = resourceObj.color;
+                color.innerHTML = '<input id="color-picker" type="color" value="#ffff00" />';
+                h.appendChild(color);
+            } else if (id == 'markup') {
+                var markup = document.createElement('div');
+                markup.className = 'tinyeditor-btns';
+                markup.title = resourceObj.paintOver;
+                markup.onclick = new Function(this.n + '.action("backColor", $("#color-picker").val())');
+                markup.innerHTML = '\
+<button type="button" class="btn btn-default btn-xs"> \
+    <span class="glyphicon glyphicon-adjust"></span> \
+</button>';
+                h.appendChild(markup);
+            } else if (id == 'clearstyles') {
+                var field = document.createElement("div");
+                field.style = "background-image: url(/scripts/tinyeditor/images/clear-styles.png); cursor: pointer; float: left; height: 29px; width: 35px;";
+                field.title = resourceObj.clearStyles;
+                field.onclick = new Function('MedicalRecordsEditor[\'md_' + obj.medicalRecordElementId + '\'].onClearStyles();');
+
+                h.appendChild(field);
+            } else if (id == 'interval-lines') {
+                var field = document.createElement("div");
+                field.className = "tinyeditor-btns interval-lines-wrapper";
+
+                field.innerHTML = '<div class="btn-group"> \
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> \
+                                        <img src="/scripts/tinyeditor/images/interval-lines.png" /> \
+                                    </button> \
+                                    <ul class="dropdown-menu"> \
+                                    </ul> \
+                                  </div>';
+
+                var el_ul = field.getElementsByTagName('ul')[0];
+
+                var interval_list_str = ['1,0', '1,15', '1,5', '2,0', '2,5', '3,0', '4,0', '5,0'];
+                var interval_list_val = [1.125,  1.25,   1.5,   2,     2.5,   3,     4,     5 ];
+
+                for (var j = 0; j < interval_list_str.length; j++) {
+                    var el_li = document.createElement("li");
+
+                    var el_a = document.createElement("a");
+                    el_a.href = '#';
+                    el_a.innerHTML = interval_list_str[j];
+                    el_a.onclick = new Function(this.n + '.changeIntervalLines(' + interval_list_val[j] + ')');
+
+                    el_li.appendChild(el_a);
+                    el_ul.appendChild(el_li);
+                }
+
+                h.appendChild(field);
+            }
+        }
+        this.t.parentNode.insertBefore(p, this.t);
+        this.t.style.width = this.i.width + "px";
+        w.appendChild(this.t);
+        w.appendChild(this.i);
+        p.appendChild(w);
+        this.t.style.display = "none";
+        if (obj.footer) {
+            var f = document.createElement("div");
+            f.className = obj.footerclass || "tinyeditor-footer";
+            if (obj.resize) {
+                var ro = obj.resize, rs = document.createElement("div");
+                rs.className = ro.cssclass || "resize";
+                rs.onmousedown = new Function("event", this.n + ".resize(event);return false");
+                rs.onselectstart = function() { return false };
+                f.appendChild(rs);
+            }
+            p.appendChild(f);
+        }
+        this.e = this.i.contentWindow.document;
+        this.e.open();
+        var m = "<html><head>", bodyid = obj.bodyid ? " id=\"" + obj.bodyid + "\"" : "";
+        if (obj.cssfile) {
+            m += "<link rel=\"stylesheet\" href=\"" + obj.cssfile + "\" />";
+        }
+        if (obj.css) {
+            m += "<style type=\"text/css\">" + obj.css + "</style>";
+        }
+        m += "</head><body" + bodyid + " contenteditable=\"" + (obj.editable ? 'true' : 'false') + "\">" + (obj.content || this.t.value);
+        m += "</body></html>";
+        this.e.write(m);
+        this.e.close();
+        this.e.designMode = "Off";
+        this.d = 1;
+        if (this.xhtml) {
+            try {
+                this.e.execCommand("styleWithCSS", 0, 0);
+            } catch (e) {
+                try {
+                    this.e.execCommand("useCSS", 0, 1);
+                } catch (e) {
+                }
+            }
+        }
+       
+        if (!TINY.editors)
+            TINY.editors = {};
+      
+        TINY.editors[obj.bodyid] = this;
+        
+        this.e.body.addEventListener('paste', function handlePaste(event) {
+
+            var clipboardData, pastedData, file;
+
+            event.stopPropagation();
+            event.preventDefault();
+
+            clipboardData = event.clipboardData || window.clipboardData;
+
+            if (clipboardData.files && clipboardData.files.length > 0) {
+                file = clipboardData.files[0];
+                handleImagePaste(file);
+            }
+            pastedData = clipboardData.getData('text/html');
+
+            if (pastedData) {
+                const tempElement = event.target.ownerDocument.createElement('div');
+                tempElement.innerHTML = pastedData;
+
+                // Удалить все стили из HTML-контента
+                removeAllStyles(tempElement);
+                insertTextAtCursor(tempElement.innerHTML, event.target);
+            } else {
+                pastedData = clipboardData.getData('text/plain');
+                insertTextAtCursor(pastedData, event.target);
+            }
+
+
+            function removeAllStyles(element) {
+                // Удаляем атрибуты style у всех элементов
+                const elementsWithStyleOrClass = element.querySelectorAll('[style], [class], [lang]');
+                elementsWithStyleOrClass.forEach(el => {
+                    if (el.hasAttribute('style')) {
+                        const style = el.style;
+                        const color = style.color; // Сохраняем цвет
+
+                        el.removeAttribute('style'); // Удаляем все стили
+
+                        if (color) {
+                            el.style.color = color; // Восстанавливаем цвет
+                        }
+                    }
+                    
+                    el.removeAttribute('class');
+                    el.removeAttribute('lang');
+                });
+
+                // Удаляем все элементы <style> и <link> и <meta>
+                const styles = element.querySelectorAll('style, link, meta');
+                styles.forEach(style => style.remove());
+
+                // Рекурсивная функция для удаления комментариев
+                function removeComments(node) {
+                    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+                        const child = node.childNodes[i];
+                        if (child.nodeType === Node.COMMENT_NODE) {
+                            node.removeChild(child); // Удалить комментарий
+                        } else if (child.nodeType === Node.ELEMENT_NODE || child.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+                            removeComments(child); // Рекурсивно пройтись по дочерним элементам
+                        }
+                    }
+                }
+
+                removeComments(element);
+            }
+        function insertTextAtCursor(html, element) {
+            // Если элемент - это textarea или input, вставляем текст в него
+            if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+                // Получаем текущую позицию курсора
+                var startPos = element.selectionStart;
+                var endPos = element.selectionEnd;
+
+                // Вставляем текст на место курсора
+                element.value = element.value.substring(0, startPos) + html + element.value.substring(endPos);
+                element.innerHTML = element.value.substring(0, startPos) + html + element.value.substring(endPos);
+
+                // Перемещаем курсор после вставленного текста
+                element.selectionStart = element.selectionEnd = startPos + html.length;
+            } else {
+                var ownerdocument = element.ownerDocument;
+                // Получаем текущее выделение (selection) и его диапазон (range)
+                const sel = ownerdocument.getSelection();
+                if (sel.rangeCount > 0) {
+                    const range = sel.getRangeAt(0);
+
+                    // Удаляем содержимое в диапазоне и вставляем новое
+                    range.deleteContents();
+
+                    // Создаем временный контейнер для HTML-контента
+                    const tempDiv = ownerdocument.createElement("div");
+                    tempDiv.innerHTML = html;
+
+                    // Вставляем каждый дочерний элемент временного контейнера
+                    let fragment = ownerdocument.createDocumentFragment();
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
+
+                    sel.getRangeAt(0).insertNode(fragment);
+                    sel.collapseToEnd();
+                }
+            }
+        }
+
+            function handleImagePaste(file) {
+                if (file.type && file.type.startsWith('image/')) {
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        insertImageAtCursor(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            function insertImageAtCursor(srcData) {
+                let div = document.createElement('div');
+                div.style = 'width:100%;resize:both;overflow:hidden;padding:5px;';
+
+                let img = document.createElement('img');
+                img.src = srcData;
+                img.style = 'width:100%;';
+
+                div.appendChild(img);
+                TINY.editors[obj.bodyid].insertHTML(div.outerHTML);                
+            }
+        });
+    };
+
+    edit.prototype.print = function () {                
+        if (typeof printWithHeaderFooter !== "undefined") {
+            printWithHeaderFooter(this.i.contentWindow.document.body.outerHTML);
+            return;
+        }
+        this.i.contentWindow.print();        
+    };
+    edit.prototype.hover = function(div, pos, dir) {
+        this.getSelection();
+        div.style.backgroundPosition = (dir ? "34px " : "0px ") + (pos) + "px";
+    };
+    edit.prototype.getSelection = function () {
+        if (this.ie && this.e.getSelection) {
+            this.sel = this.e.getSelection();
+            if (this.sel.getRangeAt && this.sel.rangeCount) {
+                this.range = this.sel.getRangeAt(0);
+            }
+        }
+    };
+    edit.prototype.restoreSelection = function () {
+        if (this.range && this.ie) {
+            if (this.e.getSelection) {
+                this.sel = this.e.getSelection();
+                this.sel.removeAllRanges();
+                this.sel.addRange(this.range);
+            }
+        }
+    };
+    edit.prototype.ddaction = function (dd, a) {
+        var i = dd.selectedIndex, v = dd.options[i].value;
+        this.action(a, v);
+
+        var selectionNode = this.getSelectionNode();
+
+        $(selectionNode).css({ 'line-height': '1.1' });
+    };
+    edit.prototype.action = function (cmd, val, ie) {
+        if (ie && !this.ie) {
+            alert(resourceObj.browserNotSupport);
+        } else {
+            this.restoreSelection();
+            this.e.execCommand(cmd, 0, val || null);
+        }
+    };
+    edit.prototype.insert = function (pro, msg, cmd) {
+        var val = prompt(pro, msg);
+        if (val != null && val != "") {
+            this.e.execCommand(cmd, 0, val);
+        }
+    };
+    edit.prototype.setfont = function() {
+        this.restoreSelection();
+        execCommand("formatblock", 0, hType);
+    };
+    edit.prototype.resize = function(e) {
+        if (this.mv) {
+            this.freeze();
+        }
+        this.i.bcs = TINY.cursor.top(e);
+        this.mv = new Function("event", this.n + ".move(event)");
+        this.sr = new Function(this.n + ".freeze()");
+        if (this.ie) {
+            document.attachEvent("onmousemove", this.mv);
+            document.attachEvent("onmouseup", this.sr);
+        } else {
+            document.addEventListener("mousemove", this.mv, 1);
+            document.addEventListener("mouseup", this.sr, 1);
+        }
+    };
+    edit.prototype.move = function(e) {
+        var pos = TINY.cursor.top(e);
+        this.i.height = parseInt(this.i.height) + pos - this.i.bcs;
+        this.i.bcs = pos;
+    };
+    edit.prototype.freeze = function() {
+        if (this.ie) {
+            document.detachEvent("onmousemove", this.mv);
+            document.detachEvent("onmouseup", this.sr);
+        } else {
+            document.removeEventListener("mousemove", this.mv, 1);
+            document.removeEventListener("mouseup", this.sr, 1);
+        }
+    };
+    edit.prototype.toggle = function (post, div) {
+        if (!this.d) {
+            var v = this.t.value;
+            if (div) {
+                div.innerHTML = this.obj.toggletext || "source";
+            }
+            if (this.xhtml && !this.ie) {
+                v = v.replace(/<strong>(.*)<\/strong>/gi, "<span style=\"font-weight:bold;\">$1</span>");
+                v = v.replace(/<em>(.*)<\/em>/gi, "<span style=\"font-weight:italic;\">$1</span>");
+            }
+            this.e.body.innerHTML = v && v.toString() || null;
+            this.t.style.display = "none";
+            this.i.style.display = "block";
+            this.d = 1;
+        } else {
+            var v = this.e.body.innerHTML;
+            if (this.xhtml) {
+                v = v.replace(/<span class="apple-style-span">(.*)<\/span>/gi, "$1");
+                v = v.replace(/ class="apple-style-span"/gi, "");
+                v = v.replace(/<span style="">/gi, "");
+                v = v.replace(/<br>/gi, "<br />");
+                v = v.replace(/<br ?\/?>$/gi, "");
+                v = v.replace(/^<br ?\/?>/gi, "");
+                v = v.replace(/(<img [^>]+[^\/])>/gi, "$1 />");
+                v = v.replace(/<b\b[^>]*>(.*?)<\/b[^>]*>/gi, "<strong>$1</strong>");
+                v = v.replace(/<i\b[^>]*>(.*?)<\/i[^>]*>/gi, "<em>$1</em>");
+                v = v.replace(/<u\b[^>]*>(.*?)<\/u[^>]*>/gi, "<span style=\"text-decoration:underline\">$1</span>");
+                v = v.replace(/<(b|strong|em|i|u) style="font-weight:normal;?">(.*)<\/(b|strong|em|i|u)>/gi, "$2");
+                v = v.replace(/<(b|strong|em|i|u) style="(.*)">(.*)<\/(b|strong|em|i|u)>/gi, "<span style=\"$2\"><$4>$3</$4></span>");
+                v = v.replace(/<span style="font-weight:normal;?">(.*)<\/span>/gi, "$1");
+                v = v.replace(/<span style="font-weight:bold;?">(.*)<\/span>/gi, "<strong>$1</strong>");
+                v = v.replace(/<span style="font-style:italic;?">(.*)<\/span>/gi, "<em>$1</em>");
+                v = v.replace(/<span style="font-weight:bold;?">(.*)<\/span>|<b\b[^>]*>(.*?)<\/b[^>]*>/gi, "<strong>$1</strong>");
+            }
+            if (div) {
+                div.innerHTML = this.obj.toggletext || "wysiwyg";
+            }
+            this.t.value = v;
+            if (!post) {
+                this.t.style.height = this.i.height + "px";
+                this.i.style.display = "none";
+                this.t.style.display = "block";
+                this.d = 0;
+            }
+        }
+    };
+    edit.prototype.post = function() {
+        if (this.d) {
+            this.toggle(1);
+        }
+    };
+
+    edit.prototype.getSelectionNode = function () {
+        var node;
+        if (window.getSelection) {
+            node = this.e.getSelection().anchorNode;
+            return (node.nodeType == 3 ? node.parentNode : node);
+        } else {
+            node = this.e.selection.createRange();
+            return (node.nodeType == 3 ? node.parentNode : node);
+        }
+    }
+
+    edit.prototype.insertHTML = function(html) {
+        var sel, range;
+        if (window.getSelection) {
+            // IE9 and non-IE
+            sel = this.e.getSelection();
+            if (sel.getRangeAt && sel.rangeCount) {
+                range = sel.getRangeAt(0);
+                range.deleteContents();
+
+                // Range.createContextualFragment() would be useful here but is
+                // non-standard and not supported in all browsers (IE9, for one)
+                var el = document.createElement("div");
+                el.innerHTML = html;
+                var frag = document.createDocumentFragment(), node, lastNode;
+                while ((node = el.firstChild)) {
+                    lastNode = frag.appendChild(node);
+                }
+                range.insertNode(frag);
+
+                // Preserve the selection
+                if (lastNode) {
+                    range = range.cloneRange();
+                    range.setStartAfter(lastNode);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
+        } else if (document.selection && document.selection.type != "Control") {
+            // IE < 9
+            this.e.selection.createRange().pasteHTML(html);
+        }
+    }
+
+    edit.prototype.changeIntervalLines = function (interval) {
+        var selection = this.e.getSelection();
+
+        if (selection.isCollapsed) return;
+
+        if (selection.anchorNode === selection.focusNode) {
+            var selectedNode = getParentNodeIncomingBody(getNode(selection.anchorNode));
+            if (!selectedNode) selectedNode = createNode(selection.anchorNode);
+
+            selectedNode.style.lineHeight = interval;
+        }
+        else {
+            var range = selection.getRangeAt(0);
+            var direction = range.endContainer === selection.focusNode ? 'forward' : 'back';
+
+            var startNode = getParentNodeIncomingBody(getNode(selection.anchorNode));
+            if (!startNode) {
+                var nodeType = selection.anchorNode.nodeType;                
+                var offset = range.startOffset;
+
+                startNode = createNode(selection.anchorNode);
+
+                if (nodeType === Node.TEXT_NODE) {
+                    range.setStart(startNode.childNodes[0], offset);
+
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            } 
+
+            var endNode = getParentNodeIncomingBody(getNode(selection.focusNode));
+            if (!endNode) {
+                var nodeType = selection.focusNode.nodeType;
+                var offset = range.startOffset;
+
+                endNode = createNode(selection.focusNode);
+
+                if (nodeType === Node.TEXT_NODE) {
+                    range.setStart(endNode.childNodes[0], offset);
+                    
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            } 
+
+            if (direction === 'back') {
+                var buf = startNode;
+                startNode = endNode;
+                endNode = buf;
+            }
+
+            var nodeList = [];
+            nodeList.push(startNode);
+
+            var nextNode = startNode.nextElementSibling;
+            while (nextNode !== endNode) {
+                if (nextNode.nodeName.toLowerCase() !== 'style') {
+                    nodeList.push(nextNode);
+                }
+                nextNode = nextNode.nextElementSibling;
+            }
+
+            nodeList.push(endNode);
+
+            for (item of nodeList) {
+                item.style.lineHeight = interval;
+            }
+        }
+    }
+
+    var getNode = function (node) {
+        return node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
+    }
+
+    var prevNodeCreate;
+
+    var createNode = function (node) {
+        if (node.nodeName.toLowerCase() === 'body')
+            return prevNodeCreate;
+        
+        var div = document.createElement("div");
+        div.innerHTML = node.nodeValue;
+
+        if (node.nextElementSibling) {
+            node.nextElementSibling.before(div);
+        }
+        else if (node.previousElementSibling) {
+            node.previousElementSibling.after(div);
+        }
+        else {
+            node.parentElement.append(div);
+        }
+
+        node.remove();
+
+        prevNodeCreate = div;        
+        return div;
+    }
+
+    var getParentNodeIncomingBody = function (node) {
+        if (node.nodeName.toLowerCase() === 'body') return null;
+
+        var resultNode = node;
+        var parentNode = node.parentNode;
+
+        while (parentNode.nodeName.toLowerCase() !== 'body') {
+            resultNode = parentNode;
+            parentNode = parentNode.parentNode;
+        }
+
+        return resultNode;
+    }
+
+
+
+    
+
+    return{ edit: edit };
+}();
+TINY.cursor = function() { return{ top: function(e) { return T$$$() ? window.event.clientY + document.documentElement.scrollTop + document.body.scrollTop : e.clientY + window.scrollY } } }();

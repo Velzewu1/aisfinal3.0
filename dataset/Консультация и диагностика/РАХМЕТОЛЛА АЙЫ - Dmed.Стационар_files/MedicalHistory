@@ -1,0 +1,338 @@
+/* Minification failed. Returning unminified contents.
+(88,42-43): run-time error JS1003: Expected ':': }
+(108,42-43): run-time error JS1003: Expected ':': }
+(128,42-43): run-time error JS1003: Expected ':': }
+(265,42-43): run-time error JS1003: Expected ':': }
+(306,42-43): run-time error JS1003: Expected ':': }
+ */
+var MedicalHistories = {
+    // Найти историю болезни
+    find: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/findMedicalHistory',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    // Получить краткую историю
+    getShort: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/getMedicalHistoryShort',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    //Удалить историю болезни
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/deleteMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Получить историю болезни
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/GetMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    // Сохранить историю болезни
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/saveMedicalHistory',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Сохранить изменения в сведениях о госпитализации
+    changeHospital: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/changeHospital',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Сохранить выписку истории болезни
+    saveDischarge: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/saveDischarge',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Изменить триаж
+    triageChange: function (id, triageType, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        if (!triageType) {
+            showPopupNotification("TriageType is empty", NotificationTypes.danger);
+        }
+
+        var model = this.get(id);
+        model.TriageType = triageType;
+        this.save(model, successComplete);
+    },
+    //Продлить ведение истории болезни
+    continue: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/continueMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+    //Восстановить историю из архива
+    restore: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/restoreMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+    // Расчитать количество проведенных койко дней
+    getBedDaysCount: function (inPatientHelpTypeID, hospitalDate, outDateTime) {
+        var bedDays = 0;
+        var currentOutDate = new Date(outDateTime);
+
+        if (currentOutDate == null) return 0;
+        if (inPatientHelpTypeID == 1) {
+            bedDays = Math.floor((currentOutDate.setHours(0, 0, 0) - hospitalDate.setHours(0, 0, 0)) / (1000 * 24 * 60 * 60));
+            return bedDays <= 0 ? 1 : bedDays;
+        }
+
+        while (new Date(hospitalDate.toDateString()) <= new Date(currentOutDate.toDateString())) {
+            if (hospitalDate.getDay() != 6 && hospitalDate.getDay() != 0) {
+                bedDays++;
+            }
+            hospitalDate.setDate(hospitalDate.getDate() + 1)
+        }
+        return bedDays;
+    },
+    //Отклонить выписку истории болезни
+    reject: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/rejectMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+    //Закрыть историю болезни
+    close: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/closeMedicalHistory',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+    // Сохранить детальную информацию о паценте
+    savePatientDetailHistory: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/SavePatientDetailHistory',
+            data: JSON.stringify({ detailHistory:model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить дополнительную информацию для медсестры
+    saveAdditionaNurseInfo: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var response = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/saveAdditionaNurseInfo',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                response = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return response;
+    },
+};
+
+
+//Показатели здоровья в истории болезни
+var MedicalHistoryHealthIndicators = {
+    //Удалить показатель здоровья в истории болезни
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/medicalHistory/deletePatientHealthIndicator',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить показатель здоровья в истории болезни
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalHistory/savePatientHealthIndicator',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    }
+};
+
+// Цвета историй болезни
+var MedicalHistoryHelpTypeColors = new Map();
+MedicalHistoryHelpTypeColors.set(1, "panel-info");
+MedicalHistoryHelpTypeColors.set(2, "panel-success");
+MedicalHistoryHelpTypeColors.set(3, "panel-warning");
+MedicalHistoryHelpTypeColors.set(0, "panel-danger");
+
+// Цвета статусов историй болезни
+var MedicalHistoryStatusColors = new Map();
+MedicalHistoryStatusColors.set(10, "panel-info");
+MedicalHistoryStatusColors.set(20, "panel-warning");
+MedicalHistoryStatusColors.set(30, "panel-success");
+MedicalHistoryStatusColors.set(40, "panel-danger");
+MedicalHistoryStatusColors.set(50, "panel-danger");;

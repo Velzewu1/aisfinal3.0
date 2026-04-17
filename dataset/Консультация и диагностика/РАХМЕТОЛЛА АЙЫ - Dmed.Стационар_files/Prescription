@@ -1,0 +1,104 @@
+/* Minification failed. Returning unminified contents.
+(28,42-43): run-time error JS1003: Expected ':': }
+(66,42-43): run-time error JS1003: Expected ':': }
+(85,42-43): run-time error JS1003: Expected ':': }
+ */
+var Prescriptions = {
+    //Удалить рецепт
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/prescription/deletePrescription',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить рецепт
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/prescription/savePrescription',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Сформировать рецепт
+    form: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/prescription/formPrescription',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Сохранить из шаблона
+    savePrescriptionsFromTemplate: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/prescription/savePrescriptionsFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    // Получить список рецептов из шаблона
+    convertFromTemplate: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var medProductExpenses = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/prescription/convertFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                medProductExpenses = result;
+            },
+        });
+
+        return medProductExpenses;
+    },
+};
+
+// Цвета рецептов
+var PrescriptionStatusColors = new Map();
+PrescriptionStatusColors.set(0, "panel-warning");
+PrescriptionStatusColors.set(30, "panel-success");;

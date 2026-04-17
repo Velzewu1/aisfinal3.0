@@ -1,0 +1,24 @@
+/* Minification failed. Returning unminified contents.
+(12,40-41): run-time error JS1003: Expected ':': }
+ */
+var Pacses = {
+    getLink: function (uid) {
+        if (!uid) {
+            showPopupNotification("Uid is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/pacs/getLink',
+            data: JSON.stringify({ uid }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+};

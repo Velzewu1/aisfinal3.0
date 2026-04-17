@@ -1,0 +1,141 @@
+/* Minification failed. Returning unminified contents.
+(54,42-43): run-time error JS1003: Expected ':': }
+ */
+var PatientMedicalRecords = {
+    // Получить мед записи
+    list: function (searchCriteria) {
+        if (searchCriteria == null) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientMedicalRecord/getMedicalRecords',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+
+    // Получить медицинскую запись
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientMedicalRecord/getMedicalRecord',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить мед запись
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientMedicalRecord/saveMedicalRecord',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+
+                if (successComplete) successComplete(model);
+            },
+        });
+
+        return model;
+    },
+
+    // Найти мед запись
+    find: function (searchCriteria) {
+        if (searchCriteria == null) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientMedicalRecord/findMedicalRecord',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+    //Удалить мед запись
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/patientMedicalRecord/deleteMedicalRecord',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    //Отменить удаление мед записи
+    undoDelete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/patientMedicalRecord/undoDeleteMedicalRecord',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    //Создать объект мед.записи пациента
+    createMedicalRecord: function (criteria) {
+        if (criteria == null) {
+            showPopupNotification("Criteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientMedicalRecord/createPatientMedicalRecord',
+            data: JSON.stringify(criteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    }
+};

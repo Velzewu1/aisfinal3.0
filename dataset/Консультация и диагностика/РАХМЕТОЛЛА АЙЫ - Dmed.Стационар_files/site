@@ -1,0 +1,1498 @@
+/* Minification failed. Returning unminified contents.
+(300,47-48): run-time error JS1195: Expected expression: >
+(300,67-68): run-time error JS1004: Expected ';': )
+(304,5-6): run-time error JS1002: Syntax error: }
+(308,66-67): run-time error JS1004: Expected ';': {
+(652,21-22): run-time error JS1014: Invalid character: `
+(653,9-10): run-time error JS1195: Expected expression: <
+(653,9-10): run-time error JS1195: Expected expression: <
+(653,53-54): run-time error JS1195: Expected expression: <
+(658,13-14): run-time error JS1195: Expected expression: <
+(660,5-6): run-time error JS1014: Invalid character: `
+(663,9-17): run-time error JS1197: Too many errors. The file might not be a JavaScript file: function
+(649,1-141): run-time error JS1301: End of file encountered before function is properly closed: function ConfirmCopyAssignmentsWithCheckbox(attentionConfirm, param, message, confirmationBtnName, cancelBtnName, CopyValueMedAssignmentRec)
+(663,19-20): run-time error JS1195: Expected expression: )
+(663,21-22): run-time error JS1004: Expected ';': {
+(665,43-44): run-time error JS1195: Expected expression: .
+(665,44-51): run-time error JS1197: Too many errors. The file might not be a JavaScript file: checked
+ */
+$(document).ready(function () {
+    $('[data-toggle="tooltip"]').focusin(function () {
+        $('.tooltip').hide();
+    });
+    var $body = $("body");
+    $(document).on({
+        ajaxStart: function () { $body.addClass("loading"); },
+        ajaxStop: function () {
+            $body.removeClass("loading");
+            $('[data-toggle="tooltip"]').focusin(function () {
+                $('.tooltip').hide();
+            });
+        },
+        ajaxError: function (e, jqXHR, ajaxSettings, thrownError) {
+            $body.removeClass("loading");
+            $('[data-toggle="tooltip"]').focusin(function () {
+                $('.tooltip').hide();
+            });
+        }
+    });
+});
+
+function IsNotIE() {
+    if (navigator.appName !== "Netscape") return false;
+    return true;
+}
+
+function Event(url, dataObj, func_success) {
+    baseEvent(url, dataObj, func_success, "json");
+}
+
+function baseEvent(url, dataObj, func_success, dataType) {
+    var ajaxObj = {
+        type: "POST",
+        url: url,
+        data: JSON.stringify(dataObj),
+        contentType: 'application/json; charset=utf-8',
+        success: func_success,
+        error: function (result) {
+            var $dialogError = $("#dialogError");
+
+            $dialogError.dialog({
+                autoOpen: false,
+                width: 1000,
+                height: 700,
+                resizable: false,
+                title: 'Информация об ошибке',
+                buttons: {
+                    "Закрыть": function () {
+                        $(this).dialog("close");
+                    }
+                }
+            });
+
+            $dialogError.html(result.responseText);
+            $dialogError.find('style').empty();
+            $dialogError.dialog("open");
+        }
+    };
+
+    if (dataType.length > 0) {
+        ajaxObj.dataType = dataType;
+    }
+
+    $.ajax(ajaxObj);
+}
+
+function pad(number) {
+    if (number < 10) {
+        return '0' + number;
+    }
+    return number;
+}
+
+var isEqual = function (value, other) {
+    // Get the value type
+    var type = Object.prototype.toString.call(value);
+
+    // If the two objects are not the same type, return false
+    if (type !== Object.prototype.toString.call(other)) return false;
+
+    // If items are not an object or array, return false
+    if (['[object Array]', '[object Object]'].indexOf(type) < 0) return false;
+
+    // Compare the length of the length of the two items
+    var valueLen = type === '[object Array]' ? value.length : Object.keys(value).length;
+    var otherLen = type === '[object Array]' ? other.length : Object.keys(other).length;
+    if (valueLen !== otherLen) return false;
+
+    // Compare two items
+    var compare = function (item1, item2) {
+
+        // Get the object type
+        var itemType = Object.prototype.toString.call(item1);
+
+        // If an object or array, compare recursively
+        if (['[object Array]', '[object Object]'].indexOf(itemType) >= 0) {
+            if (!isEqual(item1, item2)) return false;
+        }
+
+        // Otherwise, do a simple comparison
+        else {
+
+            // If the two items are not the same type, return false
+            if (itemType !== Object.prototype.toString.call(item2)) return false;
+
+            // Else if it's a function, convert to a string and compare
+            // Otherwise, just compare
+            if (itemType === '[object Function]') {
+                if (item1.toString() !== item2.toString()) return false;
+            } else {
+                if (item1 !== item2) return false;
+            }
+
+        }
+    };
+
+    // Compare properties
+    if (type === '[object Array]') {
+        for (var i = 0; i < valueLen; i++) {
+            if (compare(value[i], other[i]) === false) return false;
+        }
+    } else {
+        for (var key in value) {
+            if (value.hasOwnProperty(key)) {
+                if (compare(value[key], other[key]) === false) return false;
+            }
+        }
+    }
+
+    // If nothing failed, return true
+    return true;
+};
+
+var toPhoneNumberFormat = function (phoneNumber, mask) {
+    if (!phoneNumber) return null;
+    if (!mask) return phoneNumber;
+
+    var phoneNumberArray = phoneNumber.split('');
+    var maskArray = mask.split('');
+
+    var result = '';
+    while (phoneNumberArray.length) {
+        while (maskArray.length) {
+            if (maskArray[0] == '_' || maskArray[0] == phoneNumberArray[0]) {
+                maskArray.shift();
+                break;
+            } else {
+                result += maskArray[0];
+                maskArray.shift();
+            }
+        }
+
+        if (result.length >= mask.length) break;
+
+        result += phoneNumberArray[0];
+        phoneNumberArray.shift();
+    }
+
+    return result;
+}
+
+String.prototype.parseJsonDate = function () {
+    var value = this.toString();
+
+    if (value.substr(0, 6) == '/Date(') {
+        var d = new Date(parseInt(value.substr(6)));
+
+        var jformatDate = kendo.toString(d, 'yyyy-dd-MM');
+
+        if (jformatDate.toString().indexOf('NaN.NaN.NaN') >= 0) {
+            return null;
+        }
+
+        return new Date(jformatDate);
+    }
+
+    return null;
+};
+
+String.prototype.parseJsonDateTime = function () {
+    var value = this.toString();
+
+    if (value.substr(0, 6) == '/Date(') {
+        var d = new Date(parseInt(value.substr(6)));
+
+        var jformatDate = kendo.toString(d, 'yyyy-MM-dd HH:mm:ss');
+
+        if (jformatDate.toString().indexOf('NaN.NaN.NaN NaN:NaN:NaN') >= 0) {
+            return null;
+        }
+
+        return new Date(jformatDate);
+    }
+
+    return null;
+};
+
+String.prototype.parseISODate = function () {
+    var parts = this.match(/\d+/g);
+    return new Date(parts[0], parts[1] - 1, parts[2], parts[3] || 0, parts[4] || 0, parts[5] || 0);
+};
+
+String.prototype.parseGOSTDate = function () {
+    var parts = this.match(/\d+/g);
+    return new Date(parts[2], parts[1] - 1, parts[0], parts[3], parts[4], parts[5] || 0);
+};
+
+String.prototype.parseStringDate = function () {
+    var parts = this.match(/\d+/g);
+    return new Date(parts[2], parts[1] - 1, parts[0]);
+}
+
+String.prototype.parseStringDateTime = function () {
+    var parts = this.match(/\d+/g);
+    return new Date(parts[2], parts[1] - 1, parts[0], parts[3], parts[4]);
+}
+
+String.prototype.parseStringTime = function () {
+    if (this.includes(':')) return this;
+    return this[0] + this[1] + ':' + this[2] + this[3];
+}
+
+String.prototype.format = function () {
+    var args = arguments;
+    return this.replace(/\{(\d+)\}/g, function (m, n) {
+        return args[n] ? args[n] : m;
+    });
+};
+
+String.prototype.latinize = (function () {
+    var L = {
+        // 1 ряд
+        'Й': 'Q', 'й': 'q', 'Ц': 'W', 'ц': 'w', 'У': 'E', 'у': 'e', 'К': 'R', 'к': 'r', 'Е': 'T', 'е': 't', 'Н': 'Y', 'н': 'y',
+        'Г': 'U', 'г': 'u', 'Ш': 'I', 'ш': 'i', 'Щ': 'O', 'щ': 'o', 'З': 'P', 'з': 'p', 'Х': '{', 'х': '[', 'Ъ': '}', 'ъ': ']',
+        // 2 ряд
+        'Ф': 'A', 'ф': 'a', 'Ы': 'S', 'ы': 's', 'В': 'D', 'в': 'd', 'А': 'F', 'а': 'f', 'П': 'G', 'п': 'g', 'Р': 'H', 'р': 'h',
+        'О': 'J', 'о': 'j', 'Л': 'K', 'л': 'k', 'Д': 'L', 'д': 'l', 'Ж': ':', 'ж': ';', 'Э': '"', 'э': '\'',
+        // 3 ряд
+        'Я': 'Z', 'я': 'z', 'Ч': 'X', 'ч': 'x', 'С': 'C', 'с': 'c', 'М': 'V', 'м': 'v', 'И': 'B', 'и': 'b', 'Т': 'N', 'т': 'n',
+        'Ь': 'M', 'ь': 'm', 'Б': '<', 'б': ',', 'Ю': '>', 'ю': '.', ',': '?', '.': '/',
+        // Дополнительно
+        'Ё': '~', 'ё': '`'
+    },
+        r = '',
+        k;
+    for (k in L) r += k;
+    r = new RegExp('[' + r + ']', 'g');
+    k = function (a) {
+        return a in L ? L[a] : '';
+    };
+    return function () {
+        return this.replace(r, k);
+    };
+})();
+
+Date.prototype.toISOString = function () {
+    return this.getFullYear() + '-' + pad(this.getMonth() + 1) + '-' + pad(this.getDate()) + 'T' + pad(this.getHours()) + ':' + pad(this.getMinutes()) + ':' + pad(this.getSeconds());
+}
+
+Date.prototype.toISODateString = function () {
+    return this.getFullYear() + '-' + pad(this.getMonth() + 1) + '-' + pad(this.getDate());
+}
+
+Date.prototype.toISOStringWithoutSeconds = function () {
+    return this.getFullYear() + '-' + pad(this.getMonth() + 1) + '-' + pad(this.getDate()) + 'T' + pad(this.getHours()) + ':' + pad(this.getMinutes()) + ':00';
+}
+
+Date.prototype.toHourString = function () {
+    return pad(this.getHours()) + ':' + pad(this.getMinutes());
+}
+
+Date.prototype.toGOSTString = function () {
+    return pad(this.getDate()) + '.' + pad(this.getMonth() + 1) + '.' + this.getFullYear() + ' ' + pad(this.getHours()) + ':' + pad(this.getMinutes());
+}
+
+Date.prototype.toGOSTWithoutYearString = function () {
+    return pad(this.getDate()) + '.' + pad(this.getMonth() + 1) + ' ' + pad(this.getHours()) + ':' + pad(this.getMinutes());
+}
+
+Date.prototype.toGOSTDateString = function () {
+    return pad(this.getDate()) + '.' + pad(this.getMonth() + 1) + '.' + this.getFullYear();
+}
+
+Date.prototype.toGOSTString = function () {
+    return pad(this.getDate()) + '.' + pad(this.getMonth() + 1) + '.' + this.getFullYear() + ' ' + pad(this.getHours()) + ':' + pad(this.getMinutes());
+}
+
+Array.prototype.max = function () {
+    return Math.max.apply(null, this);
+};
+
+Array.prototype.min = function () {
+    return Math.min.apply(null, this);
+};
+
+Array.prototype.uniqueByID = function () {
+    var uniqueArray = [];
+    for (let i = 0; i < this.length; i++) {
+        var uniqueValue = uniqueArray.find(o => o.ID == this[i].ID);
+        if (!uniqueValue) {
+            uniqueArray.push(this[i]);
+        }
+    }
+    return uniqueArray;
+};
+
+function performAjaxRequest(url, dataObj, funcSuccess, dataType) {
+    var ajaxObj = {
+        type: "POST",
+        url: url,
+        data: JSON.stringify(dataObj),
+        contentType: 'application/json; charset=utf-8',
+        success: funcSuccess,
+        error: function (result) {
+            var $dialogError = $("#dialogError");
+
+            $dialogError.dialog({
+                autoOpen: false,
+                width: 1000,
+                height: 700,
+                resizable: false,
+                title: 'Информация об ошибке',
+                buttons: {
+                    "Закрыть": function () {
+                        $(this).dialog("close");
+                    }
+                }
+            });
+
+            $dialogError.html(result.responseText);
+            $dialogError.find('style').empty();
+            $dialogError.dialog("open");
+        }
+    };
+
+    if (dataType && dataType.length > 0) {
+        ajaxObj.dataType = dataType;
+    }
+
+    $.ajax(ajaxObj);
+}
+
+function openDialogEvent(url, dataObj, dlgForm, funcSuccess) {
+    var isDialogOpened = dlgForm.attr('isDialogOpened');
+
+    dlgForm.dialog('open');
+
+    if (isDialogOpened == undefined) {
+        dlgForm.attr('isDialogOpened', false);
+        isDialogOpened = false;
+    }
+
+    if (isDialogOpened == 'true') {
+        isDialogOpened = true;
+    }
+
+    if (isDialogOpened == 'false') {
+        isDialogOpened = false;
+    }
+
+    if (isDialogOpened) {
+        return;
+    }
+    else {
+        isDialogOpened = true;
+        dlgForm.attr('isDialogOpened', true);
+    }
+
+    if (url && url.length > 0) {
+        performAjaxRequest(url, dataObj, function(data) {
+            dlgForm.html(data);
+
+            if (funcSuccess) {
+                funcSuccess(data);
+            }
+        });
+    }
+}
+
+function closeDialog(dialogObj) {
+    $(dialogObj).dialog('close');
+    $(dialogObj).html("");
+    $(dialogObj).attr('isDialogOpened', false);
+}
+
+$.validator.setDefaults({
+    ignore: [],
+    errorPlacement: function (error, element) {
+        if ($(element).closest('.k-combobox').length > 0) {
+            $(element).closest('.k-combobox').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-datepicker').length > 0) {
+            $(element).closest('.k-datepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-datetimepicker').length > 0) {
+            $(element).closest('.k-datetimepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-numerictextbox').length > 0) {
+            $(element).closest('.k-numerictextbox').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-timepicker').length > 0) {
+            $(element).closest('.k-timepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-dropdown').length > 0) {
+            $(element).closest('.k-dropdown').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-editor').length > 0) {
+            $(element).closest('.k-editor').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else if ($(element).closest('.k-multiselect').length > 0) {
+            $(element).closest('.k-multiselect').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        } else {
+            $(element).tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+        }
+    },
+    success: function(label, element) {
+        $(label).tooltip("destroy");
+    },
+    highlight: function (element, errorClass, validClass) {
+        if ($(element).closest('.k-combobox').length > 0) {
+            $(element).closest('.k-combobox').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-datepicker').length > 0) {
+            $(element).closest('.k-datepicker').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-datetimepicker').length > 0) {
+            $(element).closest('.k-datetimepicker').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-numerictextbox').length > 0) {
+            $(element).closest('.k-numerictextbox').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-timepicker').length > 0) {
+            $(element).closest('.k-timepicker').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-dropdown').length > 0) {
+            $(element).closest('.k-dropdown').find('.k-state-default').addClass('element-validation-error');
+        } else if ($(element).closest('.k-editor').length > 0) {
+            $(element).closest('.k-editor').addClass('element-validation-error');
+        } else if ($(element).closest('.k-multiselect').length > 0) {
+            $(element).closest('.k-multiselect').addClass('element-validation-error');
+        } else {
+            $(element).addClass('element-validation-error');
+        }
+        $(element).closest('.validation-frame').addClass('validation-frame-error');
+        $('label[for="' + $(element).attr('id') + '"]').addClass('field-validation-error');
+    },
+    unhighlight: function (element, errorClass, validClass) {
+        if (!$(element).attr('id')) return;
+
+        if ($(element).closest('.k-combobox').length > 0) {
+            $(element).closest('.k-combobox').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-datepicker').length > 0) {
+            $(element).closest('.k-datepicker').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-datetimepicker').length > 0) {
+            $(element).closest('.k-datetimepicker').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-numerictextbox').length > 0) {
+            $(element).closest('.k-numerictextbox').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-timepicker').length > 0) {
+            $(element).closest('.k-timepicker').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-dropdown').length > 0) {
+            $(element).closest('.k-dropdown').find('.k-state-default').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-editor').length > 0) {
+            $(element).closest('.k-editor').removeClass('element-validation-error');
+        } else if ($(element).closest('.k-multiselect').length > 0) {
+            $(element).closest('.k-multiselect').removeClass('element-validation-error');
+        } else {
+            $(element).removeClass('element-validation-error');
+        }
+        $(element).closest('.validation-frame').removeClass('validation-frame-error');
+        $('label[for="' + $(element).attr('id') + '"]').removeClass('field-validation-error');
+    },
+    onkeyup: function (element) { this.element(element); },
+    invalidHandler: function (event, validator) {
+        var errorMessages = '';
+        validator.errorList.forEach(function (error) {
+            errorMessages += error.message + '<br />';
+        });
+        showPopupNotification(errorMessages, NotificationTypes.error);
+    }
+});
+
+var NotificationTypes = {
+    info: "info",
+    error: "error",
+    danger: "danger",
+    success: "success",
+    warning: "warning"
+}
+
+function showPopupNotification(message, notificationType) {
+    var notification = $("#popupNotification").data("kendoNotification");
+
+    if (!notificationType)
+        notificationType = NotificationTypes.info;
+
+    var formatedmessage = '';
+    var messages = message.split('<br />');
+    for (var i = 0; i < messages.length; i++) {
+        for (var j = 0; j < messages[i].length; j++) {
+            if (j != 0 && j % 200 == 0) {
+                formatedmessage += messages[i][j] + '<br />';
+            } else {
+                formatedmessage += messages[i][j];
+            }
+        }
+        if (i + 1 < messages.length) {
+            formatedmessage += '<br />';
+        }
+    }
+
+    notification.show(formatedmessage, notificationType);
+}
+
+function showPopupNotificationModal(modalPopupNotification, message, notificationType) {
+    var notification = $(modalPopupNotification).data("kendoNotification");
+
+    if (!notificationType)
+        notificationType = NotificationTypes.info;
+    
+    var formatedmessage = '';
+    var messages = message.split('<br />');
+    for (var i = 0; i < messages.length; i++) {
+        for (var j = 0; j < messages[i].length; j++) {
+            if (j != 0 && j % 200 == 0) {
+                formatedmessage += messages[i][j] + '<br />';
+            } else {
+                formatedmessage += messages[i][j];
+            }
+        }
+        if (i + 1 < messages.length) {
+            formatedmessage += '<br />';
+        }
+    }
+
+    notification.show(formatedmessage, notificationType);
+}
+
+function systemErrorNotification(exception) {
+    var responseText = $("<span></span>").html(exception.responseText);
+    var errorMessage = $(responseText).find('title:first').html();
+
+    showPopupNotification(errorMessage, NotificationTypes.error);
+}
+
+function openAjaxDialog(init) {
+    $.ajax({
+        url: init.url || '',
+        type: init.type || 'POST',
+        data: JSON.stringify(init.data),
+        contentType: 'application/json; charset=utf-8',
+        success: function (view) {
+            if (init.success && typeof (init.success) == "function")
+                init.success(view);
+
+            $(init.selector + ' .modal-body').html(view);
+
+            if (init.title)
+                $(init.selector + ' .modal-title').html(init.title);
+
+            $(init.selector).draggable({
+                handle: ".modal-header"
+            });
+
+            if (init.htmlAttributes) {
+                for (var attr in init.htmlAttributes) {
+                    if (!init.htmlAttributes.hasOwnProperty(attr)) continue;
+
+                    $(init.selector + ' .modal-body').attr(attr, init.htmlAttributes[attr]);
+                }
+            }
+
+            $(init.selector).modal('show');
+
+            $(init.selector).on('hidden.bs.modal', function (e) {
+                $(init.selector + ' .modal-body').html(null);
+                if (init.onHidden)
+                    init.onHidden();
+            });
+        },
+        error: function (ex) {
+            if (init.error && typeof (init.error) == "function")
+                init.error(ex);
+
+            systemErrorNotification(ex);
+        },
+        complete: function () {
+            if (init.complete && typeof (init.complete) == "function")
+                init.complete();
+        }
+    });
+}
+
+
+var attentionConfirmation = function (param) {
+    var param = {
+        message: param.message ? param.message : '',
+        attentionConfirmBtnName: param.attentionConfirmBtnName ? param.attentionConfirmBtnName : 'Да',
+        attentionCancelBtnName: param.attentionCancelBtnName ? param.attentionCancelBtnName : 'Нет'
+    }
+    return kendo.template("<div class='notification'>" +
+        "<div class='row attention-title-border'>" +
+            "<div class='attention-title-text'>" +
+                "<H4>Внимание!</H4>" +
+            "</div>" +
+        "</div> " +
+
+        "<div class='attention-message'>" + param.message + "</div>" +
+
+        "<div style='text-align: center;'>" +
+            "<button class='attention-confirm'>" + param.attentionConfirmBtnName + "</button>" +
+            "<button class='attention-cancel'>" + param.attentionCancelBtnName + "</button>" +
+        "</div>" +
+        "</div> "
+    );
+}
+
+function ConfirmKendoWindow(attentionConfirm, message, confirmationBtnName, cancelBtnName) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(attentionConfirmation({ message: message, attentionConfirmBtnName: confirmationBtnName, attentionCancelBtnName: cancelBtnName })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm,.attention-cancel")
+        .click(function () {
+            if ($(this).hasClass("attention-confirm")) {
+                attentionConfirm();
+            }
+            kendoWindow.data("kendoWindow").close();
+        })
+        .end();
+}
+
+function ConfirmKendoWindowWithParam(attentionConfirm, param, message, confirmationBtnName, cancelBtnName) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(attentionConfirmation({ message: message, attentionConfirmBtnName: confirmationBtnName, attentionCancelBtnName: cancelBtnName })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm,.attention-cancel")
+        .click(function () {
+            if ($(this).hasClass("attention-confirm")) {
+                attentionConfirm(param);
+            }
+            kendoWindow.data("kendoWindow").close();
+        })
+        .end();
+}
+function ConfirmCopyAssignmentsWithCheckbox(attentionConfirm, param, message, confirmationBtnName, cancelBtnName, CopyValueMedAssignmentRec) {
+    const checkboxId = "copyWithRecsCheckbox_" + Math.random().toString(36).substr(2, 9);
+
+    const content = `
+        <div style="margin-bottom: 10px;">${message}</div>
+        <div style="margin-top: 10px;">
+            <label>
+                <input type="checkbox" id="${checkboxId}" />
+                ${CopyValueMedAssignmentRec}
+            </label>
+        </div>
+    `;
+
+    ConfirmKendoWindowWithParam(
+        function () {
+            const checkbox = document.getElementById(checkboxId);
+            const copyWithRecs = checkbox?.checked ?? false;
+            attentionConfirm(copyWithRecs);
+        },
+        param,
+        content,
+        confirmationBtnName,
+        cancelBtnName
+    );
+}
+
+function ConfirmKendoWindowWithCancel(attentionConfirm, attentionCancel, message, confirmationBtnName, cancelBtnName) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(attentionConfirmation({ message: message, attentionConfirmBtnName: confirmationBtnName, attentionCancelBtnName: cancelBtnName })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm,.attention-cancel")
+        .click(function () {
+            if ($(this).hasClass("attention-confirm")) {
+                attentionConfirm();
+            }
+            if ($(this).hasClass("attention-cancel")) {
+                attentionCancel();
+            }
+            kendoWindow.data("kendoWindow").close();
+        })
+        .end();
+}
+
+function ConfirmKendoWindowWithParamWithCancel(attentionConfirm, paramConfirm, attentionCancel, paramnCancel, message, confirmationBtnName, cancelBtnName) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+    
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(attentionConfirmation({ message: message, attentionConfirmBtnName: confirmationBtnName, attentionCancelBtnName: cancelBtnName })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm,.attention-cancel")
+        .click(function () {
+            if ($(this).hasClass("attention-confirm")) {
+                attentionConfirm(paramConfirm);
+            }
+            if ($(this).hasClass("attention-cancel")) {
+                attentionCancel(paramnCancel);
+            }
+            kendoWindow.data("kendoWindow").close();
+        })
+        .end();
+}
+
+var alertTemplate = kendo.template("<div class='notification'>" +
+        "<div class='row attention-title-border'>" +
+            "<div class='attention-title-text'>" +
+                "<H4>Внимание!</H4>" +
+            "</div>" +
+        "</div> " +
+
+        "<div class='attention-message'>#= message #</div>" +
+
+        "<div style='text-align: center;'>" +
+            "<button class='attention-confirm'>Ок</button>" +
+        "</div>" +
+        "</div> "
+);
+
+function AlertKendoWindow(message, callback) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(alertTemplate({ message: message })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm")
+        .click(function () {
+            kendoWindow.data("kendoWindow").close();
+            callback();
+        })
+        .end();
+}
+
+function SetKendoCulture(culture) {
+    var defaultCulture = "ru-RU";
+
+    if (culture){ kendo.culture(culture); return }
+
+    kendo.culture(defaultCulture);
+    kendo.culture().numberFormat["."] = ".";
+}
+
+SetKendoCulture();
+
+/**
+ * Генерирует строку в виде GUID
+ * @returns {} 
+ */
+function guid() {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+          .toString(16)
+          .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+      s4() + '-' + s4() + s4() + s4();
+}
+
+function getAge(birth) {
+
+    var today = new Date();
+    var nowyear = today.getFullYear();
+    var nowmonth = today.getMonth();
+    var nowday = today.getDate();
+
+    var res = birth.split(".");
+
+    var birthyear = parseInt(res[2]);
+    var birthmonth = parseInt(res[1]);
+    var birthday = parseInt(res[0]);
+
+    var age = nowyear - birthyear;
+    var age_month = nowmonth - birthmonth;
+    var age_day = nowday - birthday;
+
+    if (age_month < 0 || (age_month == 0 && age_day < 0)) {
+        age = parseInt(age) - 1;
+    }
+
+    return age;
+}
+
+//Высчитывает количество лет на текущую дату, либо на заданную
+//birthDate - Дата рождения
+//date - дата к расчету (необязательный параметр)
+function getCalculatedAge(birthDate, date) {
+    if (!birthDate) {
+        throw 'Произошла ошибка, дата рождения не указана \n birthDate - ' + birthDate + "!";
+    }
+
+    date = !date ? new Date() : date;
+
+    if (typeof (birthDate) != "object" || typeof (date) != "object") {
+        throw "Произошла ошибка, переданные параметры не соответствуют типу \"Date\"!";
+    }
+
+    if (date < birthDate) {
+        console.log("Дата постановки меньше чем дата рождения: \n\t Дата рождения - " + birthDate + "\n\t Дата постановки - " + date + "\n\t Результат расчета возраста равен 0");
+        return 0;
+    }
+
+    var dateNumberWithoutYear = date.getMonth() * 100 + date.getDate();
+    var birthDateNumberWithoutYear = birthDate.getMonth() * 100 + birthDate.getDate();
+
+    //Возраст = текущий год - год рождения
+    var age = date.getFullYear() - birthDate.getFullYear();
+
+    //Если ДР в этом году ещё предстоит, то вычитаем из age один год
+    if (birthDateNumberWithoutYear > dateNumberWithoutYear) {
+        age = age - 1;
+    }
+
+    return age;
+}
+
+//Высчитывает количество дней на текущую дату, либо на заданную
+//birthDate - Дата рождения
+//date - дата к расчету (необязательный параметр)
+function getCalculatedAgeDays(birthDate, date) {
+    if (!birthDate) {
+        throw 'Произошла ошибка, дата рождения не указана \n birthDate - ' + birthDate + "!";
+    }
+
+    date = !date ? new Date() : date;
+
+    if (typeof (birthDate) != "object" || typeof (date) != "object") {
+        throw "Произошла ошибка, переданные параметры не соответствуют типу \"Date\"!";
+    }
+
+    if (date < birthDate) {
+        console.log("Дата постановки меньше чем дата рождения: \n\t Дата рождения - " + birthDate + "\n\t Дата постановки - " + date + "\n\t Результат расчета возраста равен 0");
+        return 0;
+    }
+
+    var ageDifMs = date - birthDate,
+        age = Math.floor(ageDifMs / (24 * 60 * 60 * 1000));
+
+    return age;
+}
+
+function getConditionAge(birthDate, date) {
+    if (!birthDate) {
+        throw 'Произошла ошибка, дата рождения не указана \n birthDate - ' + birthDate + "!";
+    }
+
+    date = !date ? new Date() : date;
+
+    if (typeof (birthDate) != "object" || typeof (date) != "object") {
+        throw "Произошла ошибка, переданные параметры не соответствуют типу \"Date\"!";
+    }
+
+    if (date < birthDate) {
+        console.log("Дата постановки меньше чем дата рождения: \n\t Дата рождения - " + birthDate + "\n\t Дата постановки - " + date + "\n\t Результат расчета возраста равен 0");
+        return 0;
+    }
+
+    var ageDiff = date - birthDate;
+    var ageDate = new Date(ageDiff);
+
+    var years = date.getFullYear() - birthDate.getFullYear();
+    var months = years * 12 + date.getMonth() - birthDate.getMonth();
+    var days = date.getDate() - birthDate.getDate();
+
+    years -= date.getMonth() < birthDate.getMonth();
+    months -= date.getDate() < birthDate.getDate();
+    days += days < 0 ? new Date(date.getFullYear(), date.getMonth() - 1, 0).getDate() + 1 : 0;
+
+    if (months == 0) {
+        return days + ' дн.';
+    }
+
+    if (years == 0) {
+        return months + ' мес.';
+    }
+
+    if (years <= 3) {
+        if ((months - years * 12) == 0) {
+            return years + ' г.';
+        }
+
+        return years + ' г. ' + (months - years * 12) + ' мес.';
+    }
+
+    return years;
+}
+
+
+function minValueValidate(value, element, params) {
+    var val = parseFloat(value, 10000);
+    return params <= val;
+}
+
+function maxValueValidate(value, element, params) {
+    var val = parseFloat(value, 10000);
+    return val <= params;
+}
+
+function selectedDateValidate(value, element, params) {
+    if (!value) { return true; }
+    
+    if (typeof (value) != 'string' || /^\d+$/.test(value) || /^[a-zA-Z]+$/.test(value)) { return false; }
+
+    var isDateTime = false;
+    var date = '';
+    var time = '';
+    if (value.includes(' ')) {
+        isDateTime = true;
+        var dateTime = value.split(' ');
+        date = dateTime[0];
+        time = dateTime[1];
+    } else {
+        date = value;
+    }
+    if (!date) { return false; }
+
+    var dot = '.';
+    var dash = '-';
+    var slash = '/';
+    var separators = [dot, dash, slash];
+    var separator = ''; 
+    var dd = '';
+    var MM = '';
+    var yyyy = '';
+    for (var i = 0; i < separators.length; i++) {
+        if (date.includes(separators[i])) {
+            separator = separators[i];
+            var  ddMMyyyy = date.split(separator);
+            dd = ddMMyyyy[0];
+            MM = ddMMyyyy[1];
+            yyyy = ddMMyyyy[2];
+            break;
+        }
+    }
+    if (!separator || !dd || !MM || !yyyy) { return false }
+
+    var dayInt = parseInt(dd);
+    var monthInt = parseInt(MM);
+    var yearInt = parseInt(yyyy);
+    if (typeof dayInt != 'number' || typeof monthInt != 'number' || typeof yearInt != 'number') { return false; }
+
+    var february = yearInt % 4 == 0 ? 29 : 28;
+    var months = [31, february, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    var isDayInvalid = dd > months[monthInt - 1]; 
+    if (isDayInvalid) { return false; }
+
+    var newDate = new Date(yearInt, monthInt - 1, dayInt);
+    var isNaNDate = isNaN(newDate.getTime());
+    if (isNaNDate) { return false; }
+
+    if (isDateTime) {
+        if (!time) { return false; }
+
+        var isValidTime = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/.test(time);
+        return isValidTime;
+    }
+
+    return true;
+}
+
+function selectedTimeValidate(value, element, params) {
+    var isValid = true;
+    if (typeof (value) != 'string' || /^\d+$/.test(value) || /^[a-zA-Z]+$/.test(value)) { isValid = false; }
+    isValid = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(:[0-5][0-9])?$/.test(value);
+    return isValid;
+}
+
+function rangeDateValidate(value, element, params) {
+    var beginDate = params[0];
+    var endDate = params[1];
+
+    if (!beginDate) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала диапозона не задана');
+        return false;
+    }
+
+    if (isNaN(beginDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала не является датой');
+        return false;
+    }
+
+    if (!endDate) {
+        var now = new Date();
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    }
+
+    if (isNaN(endDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата окончания не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDate();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()));
+        var beginDateInt = parseInt(beginDate.getFullYear() + '' + pad(beginDate.getMonth() + 1) + '' + pad(beginDate.getDate()));
+        var endDateInt = parseInt(endDate.getFullYear() + '' + pad(endDate.getMonth() + 1) + '' + pad(endDate.getDate()));
+
+        if (valueDateInt < beginDateInt || valueDateInt > endDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function rangeDateTimeValidate(value, element, params) {
+    var beginDate = params[0];
+    var endDate = params[1];
+
+    if (!beginDate) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала диапозона не задана');
+        return false;
+    }
+
+    if (isNaN(beginDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала не является датой');
+        return false;
+    }
+
+    if (!endDate) {
+        var now = new Date();
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
+    }
+
+    if (isNaN(endDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата окончания не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDateTime();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()) + '' + pad(valueDate.getHours()) + '' + pad(valueDate.getMinutes()));
+        var beginDateInt = parseInt(beginDate.getFullYear() + '' + pad(beginDate.getMonth() + 1) + '' + pad(beginDate.getDate()) + '' + pad(beginDate.getHours()) + '' + pad(beginDate.getMinutes()));
+        var endDateInt = parseInt(endDate.getFullYear() + '' + pad(endDate.getMonth() + 1) + '' + pad(endDate.getDate()) + '' + pad(endDate.getHours()) + '' + pad(endDate.getMinutes()));
+
+        if (valueDateInt < beginDateInt || valueDateInt > endDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function beginDateValidate(value, element, params) {
+    var beginDate = params[0];
+    if (typeof beginDate == 'boolean' && !beginDate) { return true; }
+
+    if (!beginDate) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала диапозона не задана');
+        return false;
+    }
+
+    if (isNaN(beginDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDate();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()));
+        var beginDateInt = parseInt(beginDate.getFullYear() + '' + pad(beginDate.getMonth() + 1) + '' + pad(beginDate.getDate()));
+
+        if (valueDateInt < beginDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function beginDateTimeValidate(value, element, params) {
+    var beginDate = params[0];
+
+    if (!beginDate) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала диапозона не задана');
+        return false;
+    }
+
+    if (isNaN(beginDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата начала не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDateTime();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()) + '' + pad(valueDate.getHours()) + '' + pad(valueDate.getMinutes()));
+        var beginDateInt = parseInt(beginDate.getFullYear() + '' + pad(beginDate.getMonth() + 1) + '' + pad(beginDate.getDate()) + '' + pad(beginDate.getHours()) + '' + pad(beginDate.getMinutes()));
+
+        if (valueDateInt < beginDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function endDateValidate(value, element, params) {
+    var endDate = params[0];
+
+    if (!endDate) {
+        var now = new Date();
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    }
+
+    if (isNaN(endDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата окончания не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDate();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()));
+        var endDateInt = parseInt(endDate.getFullYear() + '' + pad(endDate.getMonth() + 1) + '' + pad(endDate.getDate()));
+
+        if (valueDateInt > endDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function endDateTimeValidate(value, element, params) {
+    var endDate = params[0];
+
+    if (!endDate) {
+        endDate = new Date();
+    }
+
+    if (isNaN(endDate.getTime())) {
+        console.log('Произошла ошибка в проверке диапозона дат, дата окончания не является датой');
+        return false;
+    }
+
+    if (value && typeof (value) == 'string') {
+        var valueDate = value.parseStringDateTime();
+
+        var valueDateInt = parseInt(valueDate.getFullYear() + '' + pad(valueDate.getMonth() + 1) + '' + pad(valueDate.getDate()) + '' + pad(valueDate.getHours()) + '' + pad(valueDate.getMinutes()));
+        var endDateInt = parseInt(endDate.getFullYear() + '' + pad(endDate.getMonth() + 1) + '' + pad(endDate.getDate()) + '' + pad(endDate.getHours()) + '' + pad(endDate.getMinutes()));
+
+        if (valueDateInt > endDateInt) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function comboBoxValidate(value, element, params) {
+    return $(element).data('kendoComboBox').value() && $(element).data('kendoComboBox').selectedIndex != -1;
+}
+
+function comboBoxNotRequiredValidate(value, element, params) {
+    return !$(element).data('kendoComboBox').value() || $(element).data('kendoComboBox').selectedIndex != -1;
+}
+
+function kendoMaskedTextBoxValidate(value, element, params) {
+    let isValid = true;
+    
+    if (value) {
+        const maskedtextbox = $(element).data("kendoMaskedTextBox");
+        isValid = maskedtextbox.value().indexOf(maskedtextbox.options.promptChar) === -1;
+    }
+
+    return isValid;
+}
+
+function patternValidate(value, element, param) {
+    return this.optional(element) || param.test(value);
+}
+
+function comboBoxItemNotClosedValidate(value, element, params) {
+    const dataItem = $(element).data('kendoComboBox').dataItem();
+    
+    return dataItem == null || dataItem.ClosingDate == null;
+}
+
+function comboBoxRequiredIfNotEmptyValidate(value, element, params) {
+    return $(element).data('kendoComboBox').dataSource.view().length == 0 || $(element).data('kendoComboBox').selectedIndex != -1;
+}
+
+function multiSelectRequiredValidate(value, element, params) {
+    return $(element).data('kendoMultiSelect').value().length > 0;
+}
+
+function cleanHTML(input) {
+    // 1. remove line breaks / Mso classes
+    var stringStripper = /(\n|\r| class=(")?Mso[a-zA-Z]+(")?)/g;
+    var output = input.replace(stringStripper, ' ');
+    // 2. strip Word generated HTML comments
+    var commentSripper = new RegExp('<!--(.*?)-->', 'g');
+    var output = output.replace(commentSripper, '');
+    var tagStripper = new RegExp('<(/)*(meta|link|span|\\?xml:|st1:|o:|font)(.*?)>', 'gi');
+    // 3. remove tags leave content if any
+    output = output.replace(tagStripper, '');
+    // 4. Remove everything in between and including tags '<style(.)style(.)>'
+    var badTags = ['style', 'script', 'applet', 'embed', 'noframes', 'noscript'];
+
+    for (var i = 0; i < badTags.length; i++) {
+        tagStripper = new RegExp('<' + badTags[i] + '.*?' + badTags[i] + '(.*?)>', 'gi');
+        output = output.replace(tagStripper, '');
+    }
+    // 5. remove attributes ' style="..."'
+    var badAttributes = ['style', 'start'];
+    for (var i = 0; i < badAttributes.length; i++) {
+        var attributeStripper = new RegExp(' ' + badAttributes[i] + '="(.*?)"', 'gi');
+        output = output.replace(attributeStripper, '');
+    }
+
+    //6. Replace &ndash; to -
+    output = output.split('&ndash;').join('-');
+
+    //7. Replace IE tags
+    output = output.split('Normal  0  false  false  false  RU  X-NONE  X-NONE  MicrosoftInternetExplorer4').join('');
+    //8. strip the style tag content  
+    output = output.replace(/<!--(.|\s)*?-->/gi, "");
+    //9. ??
+    var tagStripper1 = new RegExp('@(mso|panose)[^:]{1,25}:[^;]+;(\s+)?(\n+)?@i', 'gi');
+    output = output.replace(tagStripper1, '');
+
+    //10. Replace <p> and </p> to <br />
+    output = output.split('<p>').join('<br />');
+    output = output.split('<p >').join('<br />');
+    output = output.split('</p>').join('');
+
+    //11. Replace &nbsp; to space
+    output = output.split('&nbsp;').join(' ');
+
+    return output;
+}
+
+function initDropdownMenu() {
+    $('.dropdown-submenu').click(function (e) {
+        var _el = $(this)[0];
+        $(this).children('.dropdown-menu').css('display', 'block');
+        // hide chilren
+        $($(this).children('.dropdown-menu')[0]).children().each(function (i, el) {
+            $(el).children('.dropdown-menu').css('display', 'none');
+        });
+
+        //hide current level
+        $($(this).parent()).children('.dropdown-submenu').each(function (i, el) {
+            if (_el != el) {
+                $(el).children('.dropdown-menu').css('display', 'none');
+            }
+        });
+
+        return false;
+    });
+}
+
+function upperkey(e) {
+    var selectionEnd = $(e.target).get(0).selectionEnd;
+    var value = $(e.target).val();
+    if (e.which != 13 && e.which != 46 && e.which != 8 && e.which != 17 && (e.which < 96 || e.which > 105) && value) {
+        value = value.toUpperCase();
+        $(e.target).val(value);
+        $(e.target).get(0).setSelectionRange(selectionEnd, selectionEnd);
+    }
+}
+
+function getGreaterDate(firstDate, secondDate) {
+    if (!firstDate) {
+        throw 'Произошла ошибка в определении большей даты, первая дата не задана';
+    }
+
+    if (!secondDate) {
+        throw 'Произошла ошибка в определении большей даты, вторая дата не задана';
+    }
+
+    var firstDateInt = parseInt(firstDate.getFullYear() + '' + pad(firstDate.getMonth() + 1) + '' + pad(firstDate.getDate()) + '' + pad(firstDate.getHours()) + '' + pad(firstDate.getMinutes()));
+    var secondDateInt = parseInt(secondDate.getFullYear() + '' + pad(secondDate.getMonth() + 1) + '' + pad(secondDate.getDate()) + '' + pad(secondDate.getHours()) + '' + pad(secondDate.getMinutes()));
+
+    return firstDateInt < secondDateInt ? secondDate : firstDate;
+}
+
+function isEqualDate(firstDate, secondDate) {
+    if (!firstDate) {
+        throw 'Произошла ошибка в определении большей даты, первая дата не задана';
+    }
+
+    if (!secondDate) {
+        throw 'Произошла ошибка в определении большей даты, вторая дата не задана';
+    }
+
+    var firstDateInt = parseInt(firstDate.getFullYear() + '' + pad(firstDate.getMonth() + 1) + '' + pad(firstDate.getDate()) + '' + pad(firstDate.getHours()) + '' + pad(firstDate.getMinutes()));
+    var secondDateInt = parseInt(secondDate.getFullYear() + '' + pad(secondDate.getMonth() + 1) + '' + pad(secondDate.getDate()) + '' + pad(secondDate.getHours()) + '' + pad(secondDate.getMinutes()));
+
+    return firstDateInt == secondDateInt;
+}
+
+var isTabletDevice = function () {
+    return (window.innerWidth > 425 && window.innerWidth <= 768) ? true : false;
+}
+
+var isLaptopDevice = function () {
+    return (window.innerWidth > 768 && window.innerWidth <= 1024) ? true : false;
+}
+
+var isDesktopDevice = function () {
+    return (window.innerWidth > 1024) ? true : false;
+}
+
+function getBrowserInfo() {
+    var ua = navigator.userAgent,
+        tem,
+        match = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+
+    if (/trident/i.test(match[1])) {
+        tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+        return { name: 'IE', version: tem[1] || '' };
+    }
+
+    if (match[1] === 'Chrome') {
+        tem = ua.match(/\bOPR|Edge\/(\d+)/)
+        if (tem != null) return { name: 'Opera', version: tem[1] || '' };
+    }
+
+    match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
+
+    if ((tem = ua.match(/version\/(\d+)/i)) != null) {
+        match.splice(1, 1, tem[1]);
+    }
+
+    return {
+        name: match[0],
+        version: parseInt(match[1])
+    };
+}
+
+function isBroadCastChannelSupported() {
+    const browserInfo = getBrowserInfo();
+
+    const minimalSupportedVersion = {
+        'Chrome': 54,
+        'Edge': 79,
+        'Firefox': 38,
+        'Opera': 41
+    }
+
+    if (!browserInfo) return false;
+    if (!minimalSupportedVersion[browserInfo.name]) return false;
+
+    return browserInfo.version >= minimalSupportedVersion[browserInfo.name];
+}
+function encodeDateTimeURIComponent(dateTime) {
+    if (!dateTime) return 'null';
+
+    const serializedDate = new Date(dateTime).toISOString();
+
+    return encodeURIComponent(serializedDate);
+}
+
+$.validator.addMethod("kendoComboBoxRequired", function (value, element) {
+    const comboBox = $(element).data("kendoComboBox");
+    
+    if (!comboBox) return true;
+
+    const val = comboBox.value();
+    const valueField = comboBox.options.dataValueField;
+    const data = comboBox.dataSource.data().find(item => item[valueField] == val);
+
+    return !!data;
+});
+
+function base64OpenToPdf(base64) {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length).fill().map((_, i) => byteCharacters.charCodeAt(i));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+};
+/**
+ * объект для работы с капчей от google
+ * капча одна для разных форм
+ * вызывается, если требуется, перед обращением к серверу, передавая функцию обращения как параметр
+ */
+var Captcha = (function () {
+    var widget,
+        dialogId,
+        captchaId,
+        publicKey,
+        captchaResponse,
+        showCallback = function (response) { };
+
+    var captchaSuccessCallback = function (response) {
+        showCallback(response);
+    }
+
+    return {
+        /**
+         * создает капчу в разметке
+         * @param {} reCaptchaPublicKey - публичный ключ для reCAPTCHA
+         * @returns {}
+         */
+        create: function (reCaptchaPublicKey) {
+            publicKey = reCaptchaPublicKey;
+            captchaId = 'recaptcha';
+            dialogId = 'recaptcha-dialog';
+
+            $('#' + dialogId).kendoWindow({
+                width: 335,
+                title: '',
+                visible: false,
+                draggable: false,
+                modal: true,
+            });
+        },
+        /**
+         * показывает капчу в новом окне
+         * @param {} callback - функция вызывается после удачного подтверждения проверки
+         * @returns {}
+         */
+        show: function (resultFunc) {
+            showCallback = resultFunc;
+
+            $('#' + dialogId).data('kendoWindow').center().open();
+
+            if (widget >= 0) {
+                grecaptcha.reset(widget);
+                return;
+            }
+
+            widget = grecaptcha.render(captchaId, {
+                sitekey: publicKey,
+                callback: function (response) {
+                    captchaResponse = response;
+
+                    grecaptcha.reset(widget);
+                    $('#' + dialogId).data('kendoWindow').close();
+
+                    captchaSuccessCallback(response);
+                }
+            });
+        },
+        /**
+         * возвращает результат проверки капчи
+         * @returns {}
+         */
+        getResponse: function () {
+            if (!captchaResponse) return null;
+
+            var response = captchaResponse.slice(0);
+            captchaResponse = null;
+
+            return response;
+        }
+    };
+}());;

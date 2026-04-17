@@ -1,0 +1,68 @@
+/* Minification failed. Returning unminified contents.
+(33,42-43): run-time error JS1003: Expected ':': }
+ */
+var RelatedPersons = {
+    // Получить сопровождающего
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/relatedPerson/getRelatedPerson',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить сопровождающего
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/relatedPerson/saveRelatedPerson',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Получить сопровождающих
+    list: function (searchCriteria) {
+        if (searchCriteria == null) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/relatedPerson/getRelatedPersons',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            },
+        });
+
+        return listModel;
+    },
+};;

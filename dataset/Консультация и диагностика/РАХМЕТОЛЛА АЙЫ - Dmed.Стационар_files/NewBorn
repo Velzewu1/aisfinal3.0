@@ -1,0 +1,184 @@
+/* Minification failed. Returning unminified contents.
+(48,42-43): run-time error JS1003: Expected ':': }
+(69,42-43): run-time error JS1003: Expected ':': }
+(90,42-43): run-time error JS1003: Expected ':': }
+(111,42-43): run-time error JS1003: Expected ':': }
+ */
+var NewBorns = {
+    //Удалить новорожденного
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/newBorn/deleteNewBorn',
+            data: JSON.stringify({ newBornID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить новорожденного
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/saveNewBorn',
+            data: JSON.stringify({ newBorn: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Госпитализировать переведенного новорожденного
+    hospitalNewBorn: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/hospitalNewBorn',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Создать историю для мертворожденного
+    approve: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/approveStillborn',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    //Перевести живорожденного
+    transfer: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/transferLiveborn',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Госпитализировать живорожденного
+    hospital: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/hospitalLiveborn',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Сопоставить новорожденного с РПН
+    collapse: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/births/newBorn/collapse',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    //Сохранить поля Вес, Рост, Окружность груди, Окружность головы
+    saveNewBornParameters: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/newBorn/saveNewBornParameters',
+            data: JSON.stringify({ newBorn: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Подписать рецепт
+    signPrescription: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/prescriptions/prescription/signPrescription',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+};;

@@ -1,0 +1,126 @@
+/* Minification failed. Returning unminified contents.
+(19,41-42): run-time error JS1003: Expected ':': ,
+(19,59-60): run-time error JS1003: Expected ':': ,
+(19,77-78): run-time error JS1003: Expected ':': }
+(39,42-43): run-time error JS1003: Expected ':': }
+(86,39-40): run-time error JS1003: Expected ':': }
+ */
+var PatientDiagnoses = {
+    // Валидировать диагноз
+    validateSick: function (model, patientBirthDate, patientBioSexID) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        if (patientBirthDate == null) {
+            showPopupNotification("PatientBirthDate is empty", NotificationTypes.danger);
+        }
+        if (patientBioSexID == null) {
+            showPopupNotification("PatientBioSexID is empty", NotificationTypes.danger);
+        }
+
+        var validateResult = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDiagnosis/validateSick',
+            data: JSON.stringify({ model, patientBirthDate, patientBioSexID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                validateResult = result;
+            },
+        });
+
+        return validateResult;
+    },
+
+    // Сохранить диагноз
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDiagnosis/saveDiagnosis',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+
+                if (window.MedicalHistory && window.MedicalHistory.methods)
+                    window.MedicalHistory.methods.refreshDefectBadges();
+                if (successComplete) successComplete(model);
+            },
+        });
+
+        return model;
+    },
+
+    // Удалить диагноз
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDiagnosis/deleteDiagnosis',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (window.MedicalHistory && window.MedicalHistory.methods)
+                    window.MedicalHistory.methods.refreshDefectBadges();
+                
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Получить диагноз
+    get: function (id, successComplete) {
+        if (id == null) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDiagnosis/getDiagnosis',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+
+                if (successComplete) successComplete();
+            },
+        });
+
+        return model;
+    },
+
+    // Получить диагнозы
+    list: function (searchCriteria) {
+        if (searchCriteria == null) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDiagnosis/getDiagnoses',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            },
+        });
+
+        return listModel;
+    },
+};

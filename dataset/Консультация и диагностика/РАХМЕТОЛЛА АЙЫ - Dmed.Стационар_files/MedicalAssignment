@@ -1,0 +1,760 @@
+/* Minification failed. Returning unminified contents.
+(75,42-43): run-time error JS1003: Expected ':': }
+(82,58-59): run-time error JS1195: Expected expression: .
+(82,71-72): run-time error JS1004: Expected ';': )
+(84,10-11): run-time error JS1004: Expected ';': )
+(89,36-37): run-time error JS1004: Expected ';': {
+(90,47-48): run-time error JS1195: Expected expression: >
+(100,36-37): run-time error JS1195: Expected expression: .
+(100,49-50): run-time error JS1004: Expected ';': )
+(102,14-15): run-time error JS1195: Expected expression: )
+(107,99-100): run-time error JS1004: Expected ';': {
+(119,54-55): run-time error JS1195: Expected expression: >
+(120,71-72): run-time error JS1195: Expected expression: >
+(120,77-78): run-time error JS1100: Expected ',': )
+(120,80-81): run-time error JS1195: Expected expression: )
+(121,14-15): run-time error JS1195: Expected expression: )
+(125,44-45): run-time error JS1195: Expected expression: .
+(127,48-49): run-time error JS1195: Expected expression: >
+(128,107-108): run-time error JS1195: Expected expression: >
+(128,113-114): run-time error JS1100: Expected ',': )
+(128,116-117): run-time error JS1195: Expected expression: )
+(129,14-15): run-time error JS1195: Expected expression: )
+(129,15-16): run-time error JS1197: Too many errors. The file might not be a JavaScript file: ;
+(114,13-22): run-time error JS1018: 'return' statement outside of function: return []
+(110,13-19): run-time error JS1018: 'return' statement outside of function: return
+(90,9-45): run-time error JS1018: 'return' statement outside of function: return new Promise((resolve, reject)
+ */
+var MedicalAssignments = {
+    // Получить список назначений
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalAssignments',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить назначение
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalAssignment',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить назначение краткое
+    getShort: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalAssignmentShort',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить назначение
+    save: function (model, successComplete, errorFunction) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveMedicalAssignment',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+            error: function (message) {
+                if (errorFunction) errorFunction(message?.responseText);
+            }
+        });
+
+        return model;
+    },
+    
+    saveOnDemand: function (model) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'POST',
+                url: '/medicalAssignments/MedicalAssignmentOnDemand/create',
+                data: JSON.stringify(model),
+                contentType: 'application/json; charset=utf-8',
+                success: function (result) {
+                    resolve(result);
+                },
+                error: function (message) {
+                    reject(message?.responseText);
+                }
+            })
+        });
+    },
+
+    // Получить назначения, где медикаменты или МНН схожи полностью по составу с назначаемыми
+    getMedAssignmentsWithSameDrugsAndSubstances: function (model, successComplete, errorFunction) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+            return;
+        }
+
+        if ((!model.MedAssignmentDrugs || !model.MedAssignmentDrugs.length) && (!model.MedAssignmentSubstances || !model.MedAssignmentSubstances.length))
+            return [];
+
+        var substances = [];
+
+        if (model.MedAssignmentSubstances && model.MedAssignmentSubstances.length > 0) {
+            model.MedAssignmentSubstances.forEach(s => {
+                substances.push({ 'SubstanceIDs': s.Substances.map(x => x.ID) });
+            });
+        }
+
+        if (model.MedAssignmentDrugs && model.MedAssignmentDrugs.length > 0) {
+            var uniqueDrugAssignmentIDs = [...new Set(model.MedAssignmentDrugs.map(x => x.DrugAssignmentID))]
+
+            uniqueDrugAssignmentIDs.forEach(d => {
+                substances.push({ 'SubstanceIDs': Dictionaries.get("DrugAssignment", d).Substances.map(x => x.ID) });
+            });
+        }
+
+        var res;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/GetMedAssignmentsWithSameDrugsAndSubstances',
+            data: JSON.stringify({
+                PatientAdmissionRegisterID: model.PatientAdmissionRegisterID,
+                Substances: substances,
+                BeginAssignmentDate: model.BeginAssignmentDate,
+                EndAssignmentDate: model.EndAssignmentDate
+            }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                res = result;
+                if (successComplete) successComplete(result);
+            },
+            error: function () {
+                if (errorFunction) errorFunction();
+            }
+        });
+
+        return res;
+    },
+
+    // Удалить назначение
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/deleteAssignment',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Отменить назначение
+    cancel: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/cancelMedicalAssignment',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Получить назначения из шаблона
+    convertFromTemplate: function (model, errorFunction) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var assignments = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/convertFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                assignments = result;
+            },
+            error: function (message) {
+                if (errorFunction) errorFunction(message?.responseText);
+                assignments = null;
+            }
+        });
+
+        return assignments;
+    },
+
+    // Получить назначение на время
+    getRecord: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalAssignmentRec',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить назначение на время
+    getRecordShort: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalAssignmentRecShort',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить назначение на время
+    saveRecord: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveMedAssignmentRec',
+            data: JSON.stringify({ record: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Удалить назначение на время
+    deleteRecord: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/deleteMedAssignmentRec',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Отменить выполнение назначения
+    executeCancelMedAssignmentRec: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/executeCancelMedAssignmentRec',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Получить результаты лабораторного исследования
+    getLaboratoryResult: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getLaboratoryResult',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить результаты лабораторных исследований
+    getLaboratoryResults: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getLaboratoryResults',
+            data: JSON.stringify({ queryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить параметры к услуге
+    getResearchParameter: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getResearchParameter',
+            data: JSON.stringify({ parameterID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить результат параметров лабораторного исследования
+    getMedAssignmentLaboratoryParametersResult: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedAssignmentLaboratoryParametersResult',
+            data: JSON.stringify({ queryModel: searchCriteria}),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+       return model;
+    },
+
+    // Сохранить диету
+    saveDiet: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveMedicalAssignmentDiet',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить режим
+    saveRegime: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveMedicalAssignmentRegime',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить схему лечения
+    saveSchemeTreatment: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveSchemeTreatment',
+            data: JSON.stringify({ scheme: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Возобновить схему лечения
+    resumeSchemeTreatment: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/resumeSchemeTreatment',
+            data: JSON.stringify({ resumeScheme: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Остановить схему лечения
+    stopSchemeTreatment: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/stopSchemeTreatment',
+            data: JSON.stringify({ stopScheme: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Удалить схему лечения
+    deleteSchemeTreatment: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/deleteSchemeTreatment',
+            data: JSON.stringify({ schemeID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Сохранить интерпритацию выполненного назначения
+    interpretMedicalAssignmentRec: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/interpretMedicalAssignmentRec',
+            data: JSON.stringify({ recordID: model.RecordID, medicalFinal: model.MedicalFinal }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Продлить назначение
+    prolongAssignment: function(model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/prolongAssignment',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Сохранить реакцию на вакцину
+    saveExecutionImmunization: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveExecutionImmunization',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Сохранить показатели здоровья после трансфузии
+    saveExecutionTransfusion: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/saveExecutionTransfusion',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Получить назначения на время
+    getMedicalRecAssignments: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/getMedicalRecAssignments',
+            data: JSON.stringify({ queryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    //Создать шаблон из назначений
+    createTemplate: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/createTemplate',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Проверка совместимости лекарственных средств
+    compatibilityDrug: function (model) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/compatibilityDrug',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                result = response;
+            },
+        });
+
+        return result;
+    },
+
+    // Проверка превышения максимально-допустимой дозировки лекарственного средства
+    checkDosageDrug: function (model) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/checkDosageDrug',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                result = response;
+            },
+        });
+
+        return result;
+    },
+
+    // Проверка на непереносимости МНН
+    checkDrugIntolerance: function (model) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/checkDrugIntolerance',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                result = response;
+            },
+        });
+
+        return result;
+    },
+
+    // Поиск АТХ выбранного медикамента в лекарственном формуляре
+    medicationFormularyContainAtc: function (id) {
+        if (!id) {
+            showPopupNotification("ID is empty", NotificationTypes.danger);
+        }
+
+        var result = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medicalAssignment/medicationFormularyContainAtc',
+            data: JSON.stringify({ atcID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (response) {
+                result = response;
+            },
+        });
+
+        return result;
+    },
+}
+
+
+// Цвета статусов назначений
+var MedicalAssignmentStatusColors = new Map();
+MedicalAssignmentStatusColors.set(1, "panel-warning");
+MedicalAssignmentStatusColors.set(2, "panel-secondary");
+MedicalAssignmentStatusColors.set(3, "panel-success");
+MedicalAssignmentStatusColors.set(4, "panel-danger");
+
+
+// Цвета статусов назначений
+var MedicalAssignmentTableStatusColors = new Map();
+MedicalAssignmentTableStatusColors.set(1, "warning");
+MedicalAssignmentTableStatusColors.set(2, "secondary");
+MedicalAssignmentTableStatusColors.set(3, "success");
+MedicalAssignmentTableStatusColors.set(4, "danger");;

@@ -1,0 +1,8 @@
+﻿var messagehubResources = new Object();
+
+messagehubResources.NoSupportNotification = "Ваш браузер не поддерживает уведомления";
+messagehubResources.NoTitleNotification = "Не указан заголовок уведомления";
+messagehubResources.NoBodyNotification = "Не указан текст уведомления";
+messagehubResources.NoToken = "Не указан Токен для подключения hub";
+messagehubResources.NoUrl = "Не указан адрес сервиса hub";
+messagehubResources.NoAction = "Не указано действие сервиса hub";

@@ -1,0 +1,584 @@
+/* Minification failed. Returning unminified contents.
+(33,39-40): run-time error JS1003: Expected ':': }
+(90,38-39): run-time error JS1003: Expected ':': ,
+(90,69-70): run-time error JS1003: Expected ':': }
+(109,39-40): run-time error JS1003: Expected ':': }
+(129,39-40): run-time error JS1003: Expected ':': }
+(174,40-41): run-time error JS1003: Expected ':': }
+(214,39-40): run-time error JS1003: Expected ':': }
+(277,40-41): run-time error JS1003: Expected ':': }
+(343,46-47): run-time error JS1003: Expected ':': }
+(364,55-56): run-time error JS1003: Expected ':': }
+(388,43-44): run-time error JS1003: Expected ':': ,
+(388,49-50): run-time error JS1003: Expected ':': }
+(543,47-48): run-time error JS1100: Expected ',': =
+ */
+var Documents = {
+    // Сохранить документ обращения
+    savePatientAdmissionRegisterHealthCertificate: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientAdmissionRegister/saveHealthCertificate',
+            data: JSON.stringify({ certificate: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Удалить документ обращения
+    deletePatientAdmissionRegisterHealthCertificate: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientAdmissionRegister/deleteHealthCertificate',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+
+    // Валидация документа обращения
+    validatePatientAdmissionRegisterHealthCertificate: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientAdmissionRegister/validatePatientAdmissionRegisterHealthCertificate',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+
+    // Сохранить документ
+    save: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/save',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Удалить документ
+    delete: function (id, hospitalizationEpisodeSource, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/delete',
+            data: JSON.stringify({ id, hospitalizationEpisodeSource }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+    
+    // Добавить документ в архив
+    archive: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/archive',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    //Обновить данные о документе
+    updateDocument: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/updateDocument',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete();
+            },
+        });
+
+        return model;
+    },
+
+    //Обновить данные о документе
+    updateDocumentData: function (id, documentData, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        if (!documentData) {
+            showPopupNotification("documentData is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/updateDocumentData',
+            data: JSON.stringify({ id: id, documentData: documentData }),
+            contentType: 'application/json; charset=utf-8',
+            success: function () {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    //Обновить данные о документах
+    updateDocumentList: function (ids, successComplete) {
+        if (!ids) {
+            showPopupNotification("ids is empty", NotificationTypes.danger);
+        }
+
+        var list = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/updateDocumentList',
+            data: JSON.stringify({ ids }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                list = result;
+                if (successComplete) successComplete(list);
+            },
+        });
+
+        return list;
+    },
+
+    approveHealthCertificateRemark: function (model, medicalHistoryDocumentCacheID, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/approveHealthCertificateRemark',
+            data: JSON.stringify({ model: model, medicalHistoryDocumentCacheID: medicalHistoryDocumentCacheID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+
+    //Получить документ
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getDocument',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model
+    },
+
+    //Получить список документов
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getDocuments',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Найти документ
+    find: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/findDocument',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить данные осведетельствования из ЭСМО
+    getEsmo: function (iin) {
+        if (!iin) {
+            showPopupNotification("IIN is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getESMOInfo',
+            data: JSON.stringify({ iin }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // проверить номер в БМГ
+    checkPhoneVerify: function (model) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var checkResult = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/checkPhoneVerify',
+            data: JSON.stringify({ queryModel: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                checkResult = result;
+            },
+        });
+
+        return checkResult;
+    },
+
+    // запросить согласие пациента
+    sendKdpAccess: function (model) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var checkResult = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/sendKdpAccess',
+            data: JSON.stringify({ queryModel: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                checkResult = result;
+            },
+        });
+
+        return checkResult;
+    },
+
+    //Проверить статус согласия пациента
+    checkKdpAccess: function (requestID) {
+        if (!requestID) {
+            showPopupNotification("RequestID is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/checkKdpAccess',
+            data: JSON.stringify({ requestID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить постановки пациента на Д-учёт
+    getDispensaryAccounts: function (personMasterDataID) {
+        if (!personMasterDataID) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+        var list = [];
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getDispensaryAccounts',
+            data: JSON.stringify({ personMasterDataID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                list = result;
+            },
+        });
+
+        return list;
+    },
+
+    // Валидация диагнозов на нозологическую форму
+    nosologicalFormSickValidate: function (sickIds, age) {
+        if (!sickIds) {
+            showPopupNotification("SickIds is empty", NotificationTypes.danger);
+        }
+        if (age === 'undefined') {
+            showPopupNotification("Age is empty", NotificationTypes.danger);
+        }
+        var validateResult = null;
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/nosologicalFormSickValidate',
+            data: JSON.stringify({ sickIds, age }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                validateResult = result;
+            },
+        });
+
+        return validateResult;
+    },
+
+    // Валидация документа
+    validate: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/validate',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            },
+        });
+    },
+
+    //Получить список сообщений
+    messageList: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getHealthCertificateRemarks',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Посмотреть бланк о листе нетрудоспособности
+    getBlankReport: function (blankId) {
+        if (!blankId) {
+            showPopupNotification("blankId is empty", NotificationTypes.danger);
+        }
+
+        window.open('/document/DisabilityInfoReport?blankId=' + blankId, '_blank');
+    },
+
+    // Посмотреть справку
+    getHealthCertificateReport: function (id) {
+        if (!id) {
+            showPopupNotification("id is empty", NotificationTypes.danger);
+        }
+
+        window.open('/document/disabilityInfoHealthCertificateReport?id=' + id, '_blank');
+    },
+
+    // Сохраняем бланк о листе нетрудоспособности и берем UID файла
+    getBlankUids: function (Uids) {
+        if (!Uids) {
+            showPopupNotification("Uids is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/GetBlankUids',
+            data: JSON.stringify({ blankIds: Uids }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Сохраняем справку и берем UID файла
+    getHealthCertificateUids: function (ids) {
+        if (!ids) {
+            showPopupNotification("Uids is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getHealthCertificateUids',
+            data: JSON.stringify({ ids: ids }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Получить справочные значения SmartBridge
+    getSmartBridgeDictionaryValues: function (dictionaryID) {
+        if (!dictionaryID) {
+            showPopupNotification("dictionaryID is empty", NotificationTypes.danger);
+        }
+
+        var list = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/document/getDictionaryValues',
+            data: JSON.stringify({ dictionaryID: dictionaryID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                list = result;
+            }
+        });
+
+        return list;
+    },
+
+    revertSickListToEditing: function (id, hospitalizationEpisodeSource, medicalHistoryID, successComplete) {
+        if (!id) {
+            showPopupNotification("ID is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '../medicalHistoryDocuments/medicalHistoryDocument/revertSickListToEdit',
+            data: JSON.stringify({ 
+                MedicalHistoryDocumentID: id,
+                HospitalizationEpisodeSource: hospitalizationEpisodeSource,
+                MedicalHistoryID: medicalHistoryID
+            }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+    }
+}
+
+// Типы документов
+var documentEnumNames = {
+    get: function (documentType, documentKind = 10) {
+        switch (documentType) {
+            case 10: return 'HealthCertificate027';
+            case 20: return 'HealthCertificate036';
+            case 30: return 'HealthCertificate037';
+            case 40: return documentKind == 10 ? 'HealthCertificate038' : 'HealthCertificate038PatientCare';
+            case 50: return 'HealthCertificate079';
+            case 60: return 'HealthCertificate031';
+            case 70: return 'HealthCertificateNew031';
+            case 80: return 'HealthCertificate033';
+            case 90: return 'HealthCertificate031United';
+            default: return '';
+        }
+    }
+};
+
+// Типы принадлежности документов
+var documentKindEnumNames = new Map();
+documentKindEnumNames.set(10, 'Patient');
+documentKindEnumNames.set(20, 'PatientCare');
+
+// Цвета замечаний к справке
+var HealthCertificateRemarkColors = new Map();
+HealthCertificateRemarkColors.set(0, "panel-success");
+HealthCertificateRemarkColors.set(1, "panel-info");
+HealthCertificateRemarkColors.set(2, "panel-warning");
+HealthCertificateRemarkColors.set(3, "panel-danger");;

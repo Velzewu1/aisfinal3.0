@@ -1,0 +1,103 @@
+/* Minification failed. Returning unminified contents.
+(32,39-40): run-time error JS1003: Expected ':': }
+ */
+var Dictionaries = {
+    // Получить значения справочника
+    list: function (dictionaryName, searchCriteria) {
+        var path = DictionaryUrls.get(dictionaryName);
+        if (!path) return [];
+
+        var listModel = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: path,
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            },
+        });
+
+        return listModel;
+    },
+
+    // Получить значение справочника
+    get: function (dictionaryName, id) {
+        var path = DictionaryItemUrls.get(dictionaryName);
+        if (!path) return [];
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: path,
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Найти значение справочника
+    find: function (dictionaryName, searchCriteria) {
+        var path = DictionaryFindItemUrls.get(dictionaryName);
+        if (!path) return [];
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: path,
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    }
+}
+
+// Адреса сервиса списка
+var DictionaryUrls = new Map();
+DictionaryUrls.set("BedProfile", "/dictionary/getBedProfiles");
+DictionaryUrls.set("DocumentType", "/dictionary/getDocumentTypes");
+DictionaryUrls.set("BioSex", "/dictionary/getBioSexes");
+DictionaryUrls.set("LisMaterialType", "/dictionary/getLisMaterialTypes");
+DictionaryUrls.set("DiagnosisType", "/dictionary/getDiagnosisTypes");
+DictionaryUrls.set("TypSrcFin", "/dictionary/getTypSrcFins");
+DictionaryUrls.set("DocumentKind", "/dictionary/getDocumentKinds");
+DictionaryUrls.set("CalculateAmountMethod", "/dictionary/getCalculateAmountMethods");
+DictionaryUrls.set("MedicalRecordFieldDataType", "/dictionary/getMedicalRecordFieldDataTypes");
+DictionaryUrls.set("MedAssignmentSurgProcGroup", "/dictionary/getMedAssignmentSurgProcGroups");
+DictionaryUrls.set("FileType", "/dictionary/getFileTypes");
+DictionaryUrls.set("InPatientTreatment", "/dictionary/getInPatientTreatments");
+DictionaryUrls.set("DrugAssignments", "/dictionary/getDrugAssignments");
+DictionaryUrls.set("Substances", "/dictionary/getSubstances");
+DictionaryUrls.set("Service", "/dictionary/getServices");
+DictionaryUrls.set("Drugs", "/dictionary/getDrugs");
+
+// Адреса сервиса значения
+var DictionaryItemUrls = new Map();
+DictionaryItemUrls.set("DrugAssignment", "/dictionary/getDrugAssignment");
+DictionaryItemUrls.set("DrugUseMethod", "/dictionary/getDrugUseMethod");
+DictionaryItemUrls.set("LisMaterialType", "/dictionary/getLisMaterialType");
+DictionaryItemUrls.set("MedProduct", "/dictionary/getMedProduct");
+DictionaryItemUrls.set("Drug", "/dictionary/getDrug");
+DictionaryItemUrls.set("Substance", "/dictionary/getSubstance");
+DictionaryItemUrls.set("HealthIndicator", "/dictionary/getHealthIndicator");
+DictionaryItemUrls.set("HospitalizedRefuseType", "/dictionary/getHospitalizedRefuseType");
+DictionaryItemUrls.set("Sick", "/dictionary/getSick");
+DictionaryItemUrls.set("UnitType", "/dictionary/getUnitType");
+DictionaryItemUrls.set("Service", "/dictionary/getService");
+DictionaryItemUrls.set("DosageType", "/dictionary/getDosageType");
+
+// Адреса сервиса значения для поиска
+var DictionaryFindItemUrls = new Map();
+DictionaryFindItemUrls.set("FindMedProduct", "/dictionary/findMedProduct");
+DictionaryFindItemUrls.set("Service", "/dictionary/getService");;

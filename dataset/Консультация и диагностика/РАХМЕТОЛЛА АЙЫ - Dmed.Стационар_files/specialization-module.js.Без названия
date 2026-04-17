@@ -1,0 +1,262 @@
+(function() {
+    'use strict';
+
+   
+    var config = {
+        authUrl: '',
+        currentCulture: '@System.Threading.Thread.CurrentThread.CurrentCulture.Name',
+        resources: {
+            error: '',
+            hPost: '',
+            noData: ''
+        },
+        selectors: {
+            specializationLink: 'a[onclick*="onSpecializationClick"]',
+            submenu: '.specialization-submenu',
+            parentLi: '.specialization-dropdown-submenu'
+        }
+    };
+    
+    var utils = {
+        getToken: function() {
+            var token = null;
+            $.ajax({
+                type: 'POST',
+                async: false,
+                url: '/common/token',
+                contentType: 'application/json; charset=utf-8',
+                success: function(response) {
+                    token = response.token;
+                },
+                error: function(xhr, status, error) {
+                    showPopupNotification(config.resources.error, NotificationTypes.error);
+                    token = null;
+                }
+            });
+            return token;
+        },
+        
+        apiRequest: function(endpoint, data) {
+            var result = null;
+            var token = utils.getToken();
+            
+            if (!token) {
+                showPopupNotification(config.resources.error, NotificationTypes.error);
+                return null;
+            }
+            
+            $.ajax({
+                type: 'POST',
+                async: false,
+                url: config.authUrl + endpoint,
+                data: JSON.stringify(data || {}),
+                contentType: 'application/json; charset=utf-8',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(response) {
+                    result = response;
+                },
+                error: function(xhr, status, error) {
+                    showPopupNotification(config.resources.error, NotificationTypes.error);
+                    result = null;
+                }
+            });
+            
+            return result;
+        },
+        
+        getSpecializationWithPosition: function(spec) {
+            if (!spec.Post || !spec.Post.HPost) {
+                return spec.HPostName || spec.PostName || 'ID: ' + spec.PostStrID;
+            }
+
+            var isKazakh = config.currentCulture === 'kk' || config.currentCulture.startsWith('kk-');
+            var hPost = spec.Post.HPost;
+            var postFunc = spec.Post.PostFunc;
+            
+            var specialization = isKazakh ? (hPost.NameKZ || hPost.Name) : (hPost.NameRU || hPost.Name);
+            var position = '';
+            
+            if (postFunc) {
+                position = isKazakh ? (postFunc.NameKZ || postFunc.NameRU) : (postFunc.NameRU || postFunc.NameKZ);
+            }
+            
+            if (specialization && position) {
+                return specialization + ' (' + position.trim() + ')';
+            } else {
+                return specialization || position || spec.HPostName || spec.PostName || '';
+            }
+        },
+
+        getSpecializationName: function(spec) {
+            if (!spec.Post || !spec.Post.HPost) {
+                return spec.HPostName || spec.PostName || 'ID: ' + spec.PostStrID;
+            }
+
+            var isKazakh = config.currentCulture === 'kk' || config.currentCulture.startsWith('kk-');
+            var hPost = spec.Post.HPost;
+            
+            var name = isKazakh ? (hPost.NameKZ || hPost.Name) : (hPost.NameRU || hPost.Name);
+
+            return name ;
+        },
+        
+        showError: function(message) {
+            showPopupNotification(config.resources.error, NotificationTypes.error);
+        }
+    };
+    
+    var specializations = {
+        data: null,
+        
+        loadCurrent: function() {
+            var response = utils.apiRequest('/Authentication/Authentication/UserPosts');
+            
+            if (response && Array.isArray(response) && response.length > 0) {
+                this.data = response;
+                var currentSpec = response.find(function(spec) { return spec.IsDefault; }) || response[0];
+                var name = utils.getSpecializationName(currentSpec);
+                $(config.selectors.specializationLink).text(name);
+            } else {
+                $(config.selectors.specializationLink).text(config.resources.hPost);
+            }
+        },
+        
+        loadListAndBuildMenu: function(parentLi) {
+            if (this.data) {
+                specializations.buildMenu(this.data, parentLi);
+            } else {
+                utils.showError(config.resources.noData);
+            }
+        },
+
+        
+        buildMenu: function(specs, parentLi) {
+            parentLi.find(config.selectors.submenu).remove();
+            
+            var items = specs.map(function(spec) {
+                if (!spec.PostStrID) {
+                    return '';
+                }
+                
+                var isActive = spec.IsDefault || spec.IsActive;
+                var activeClass = isActive ? ' class="active"' : '';
+                var checkmark = isActive ? '<span class="glyphicon glyphicon-ok"></span>' : '';
+                var name = utils.getSpecializationWithPosition(spec);
+                
+                return '<li' + activeClass + '>' +
+                       '<a href="#" onclick="SpecializationModule.change(\'' + spec.PostStrID + '\'); return false;">' +
+                       name + checkmark + '</a></li>';
+            }).filter(Boolean);
+
+            if (items.length === 0) {
+                items.push('<li><a href="#" style="color: gray;">' + config.resources.noData + '</a></li>');
+            }
+
+            var html = '<ul class="dropdown-menu specialization-submenu">' + items.join('') + '</ul>';
+            
+            parentLi.addClass('specialization-dropdown-submenu');
+            parentLi.append(html);
+            specializations.showSubmenu(parentLi);
+        },
+        
+        showSubmenu: function(parentLi) {
+            parentLi.addClass('open');
+            parentLi.find(config.selectors.submenu).css({
+                'display': 'block',
+                'position': 'absolute',
+                'top': '0px',
+                'right': '100%',
+                'left': 'auto',
+                'min-width': '250px',
+                'z-index': '1000'
+            }).show();
+        },
+        
+        toggleSubmenu: function(parentLi) {
+            var submenu = parentLi.find(config.selectors.submenu);
+            if (submenu.length > 0) {
+                if (submenu.is(':visible')) {
+                    submenu.hide();
+                    parentLi.removeClass('open');
+                } else {
+                    specializations.showSubmenu(parentLi);
+                }
+                return true;
+            }
+            return false;
+        },
+        
+        change: function(postId) {
+            if (!postId) {
+                return;
+            }
+            
+            var url = config.authUrl + '/Authentication/Authentication/ChangeDefaultPost?postId=' + encodeURIComponent(postId);
+            var iframe = document.createElement('iframe');
+            
+            iframe.style.display = 'none';
+            iframe.src = url;
+            
+            iframe.onload = function() {
+                document.body.removeChild(iframe);
+                window.location.reload();
+            };
+            
+            iframe.onerror = function() {
+                document.body.removeChild(iframe);
+                showPopupNotification(config.resources.error, NotificationTypes.error);
+            };
+            
+            document.body.appendChild(iframe);
+        }
+    };
+    
+    function initEventHandlers() {
+        window.onSpecializationClick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var parentLi = $(e.target).closest('li');
+            
+            if (!specializations.toggleSubmenu(parentLi)) {
+                specializations.loadListAndBuildMenu(parentLi);
+            }
+        };
+        
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest(config.selectors.parentLi).length) {
+                $(config.selectors.parentLi).removeClass('open');
+                $(config.selectors.submenu).hide();
+            }
+        });
+    }
+    
+    function init(serverConfig) {
+        if (serverConfig) {
+            config.authUrl = serverConfig.authUrl;
+            config.currentCulture = serverConfig.currentCulture;
+            
+            if (serverConfig.resources) {
+                config.resources.error = serverConfig.resources.error;
+                config.resources.hPost = serverConfig.resources.hPost;
+                config.resources.noData = serverConfig.resources.noData;
+            }
+        }
+        
+        initEventHandlers();
+        specializations.loadCurrent();
+    }
+    
+    window.SpecializationModule = {
+        init: init,
+        change: specializations.change,
+        reload: specializations.loadCurrent,
+        getSpecializationData: function() {
+            return specializations.data;
+        },
+        getSpecializationWithPosition: utils.getSpecializationWithPosition
+    };
+
+})();

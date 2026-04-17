@@ -1,0 +1,7924 @@
+﻿@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), url(/Content/Fonts/OpenSans-Light.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(/Content/Fonts/OpenSans.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(/Content/Fonts/OpenSans-Semibold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'), url(/Content/Fonts/OpenSans-Bold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 800;
+  src: local('Open Sans Extrabold'), local('OpenSans-Extrabold'), url(/Content/Fonts/OpenSans-Extrabold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 300;
+  src: local('Open Sans Light Italic'), local('OpenSansLight-Italic'), url(/Content/Fonts/OpenSansLight-Italic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 400;
+  src: local('Open Sans Italic'), local('OpenSans-Italic'), url(/Content/Fonts/OpenSans-Italic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 600;
+  src: local('Open Sans Semibold Italic'), local('OpenSans-SemiboldItalic'), url(/Content/Fonts/OpenSans-SemiboldItalic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 700;
+  src: local('Open Sans Bold Italic'), local('OpenSans-BoldItalic'), url(/Content/Fonts/OpenSans-BoldItalic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 800;
+  src: local('Open Sans Extrabold Italic'), local('OpenSans-ExtraboldItalic'), url(/Content/Fonts/OpenSans-ExtraboldItalic.woff) format('woff');
+}
+
+body.loading .loading-modal { display: block; }
+
+.loading-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    min-height: 100%;
+    width: 100%;
+    background: #c9d3e2 url('/Content/Images/Loader.gif') 50% 50% no-repeat;
+    background: rgba( 255, 255, 255, .3 ) url('/Content/Images/285.GIF') 50% 50% no-repeat;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Open Sans', sans-serif;
+}
+
+body {
+    min-height: 100%;
+    background-color: white;
+    margin: 0px;
+}
+
+input {
+    -ms-border-radius: 5px;
+    border-radius: 5px;
+}
+
+.header {
+    position: fixed;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    top:0;
+    left:0;
+    right: 0;
+    width: 100%;
+    height: 40px;
+    background-image: url(/Content/Images/header.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: table;
+    z-index: 1030;
+}
+
+.content {
+    position:absolute;
+    box-sizing:border-box;
+    width: 100%;
+    height: 100%;
+    top:0;
+    left:0px;
+    padding-top: 70px;
+    padding-bottom: 80px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.contentTouch {
+    position:absolute;
+    box-sizing:border-box;
+    width: 100%;
+    height: 100%;
+    top:0;
+    left:0px;
+    padding-right: 25px;
+    padding-left: 25px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.text-grey {
+    color: #464646;
+}
+
+.text-blue {
+    color: #3F8295;
+}
+
+.text-align-center {
+    text-align: center;
+}
+
+/*#region Telerik Kendo UI*/
+
+.k-grid tbody tr:hover {
+    background: #E1EAD9;
+    cursor: pointer;
+}
+
+.k-tabstrip:focus {
+    box-shadow: none !important;
+}
+
+.form-control, /* if this class is applied to a Kendo UI widget, its layout may change */
+.container,
+.container-fluid,
+.row,
+.col-xs-1, .col-sm-1, .col-md-1, .col-lg-1,
+.col-xs-2, .col-sm-2, .col-md-2, .col-lg-2,
+.col-xs-3, .col-sm-3, .col-md-3, .col-lg-3,
+.col-xs-4, .col-sm-4, .col-md-4, .col-lg-4,
+.col-xs-5, .col-sm-5, .col-md-5, .col-lg-5,
+.col-xs-6, .col-sm-6, .col-md-6, .col-lg-6,
+.col-xs-7, .col-sm-7, .col-md-7, .col-lg-7,
+.col-xs-8, .col-sm-8, .col-md-8, .col-lg-8,
+.col-xs-9, .col-sm-9, .col-md-9, .col-lg-9,
+.col-xs-10, .col-sm-10, .col-md-10, .col-lg-10,
+.col-xs-11, .col-sm-11, .col-md-11, .col-lg-11,
+.col-xs-12, .col-sm-12, .col-md-12, .col-lg-12 {
+    -webkit-box-sizing: border-box !important;
+    -moz-box-sizing: border-box !important;
+    box-sizing: border-box !important;
+}
+
+/*#endregion */
+
+/*#region Styles for Validation Helpers */
+
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+.element-validation-error {
+    border: 1px solid #b94a48 !important;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+.validation-frame-error {
+    padding-right: 2px;
+    border: 1px solid #b94a48 !important;
+}
+
+.tooltip-inner {
+    max-width: 1000px;
+    background-color: #b94a48;
+}
+
+.tooltip.top .tooltip-arrow {
+    border-top-color: #b94a48;
+}
+
+.tooltip.top-left .tooltip-arrow {
+    border-top-color: #b94a48;
+}
+
+.tooltip.top-right .tooltip-arrow {
+    border-top-color: #b94a48;
+}
+
+.tooltip.right .tooltip-arrow {
+    border-right-color: #b94a48;
+}
+
+.tooltip.left .tooltip-arrow {
+    border-left-color: #b94a48;
+}
+
+.tooltip.bottom .tooltip-arrow {
+    border-bottom-color: #b94a48;
+}
+
+.tooltip.bottom-left .tooltip-arrow {
+    border-bottom-color: #b94a48;
+}
+
+.tooltip.bottom-right .tooltip-arrow {
+    border-bottom-color: #b94a48;
+}
+
+/*#endregion styles for validation helpers */
+
+.k-window div.k-window-content {
+    overflow-x: hidden;
+}
+
+/* Change Virtual Keyboard Button Size */
+.ui-keyboard div {
+    font-size: 2.1em;
+}
+
+/*#region Attention */
+
+.attention-title-border {
+    background-color: #fcebdd;
+    margin: -6px;
+}
+
+.success-title-border {
+    background-color: #2CE663;
+    margin: -6px;
+}
+
+.attention-title-text {
+    margin-left: 15px;
+    font-size: 16px;
+    color: #ea700d;
+    padding: 7px 15px;
+}
+
+.attention-message {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    color: #000;
+    text-align: center !important;
+    font-weight: 200;
+}
+
+.attention-confirm {
+    background: #fcfcfc;
+    color: #3a78cc;
+    -moz-min-width: 40px !important;
+    -ms-min-width: 40px !important;
+    -o-min-width: 40px !important;
+    -webkit-min-width: 40px !important;
+    min-width: 40px !important;
+    height: 25px !important;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ddd;
+}
+
+.attention-cancel {
+    background: #fcfcfc;
+    color: #a81010;
+    -moz-min-width: 40px !important;
+    -ms-min-width: 40px !important;
+    -o-min-width: 40px !important;
+    -webkit-min-width: 40px !important;
+    min-width: 40px !important;
+    height: 25px !important;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ddd;
+    margin-left: 10px;
+}
+/*#endregion */
+
+.main-background {
+    overflow-y: auto;
+	overflow-x: hidden;
+	background: #57b7bf; /* Old browsers */
+	background: -moz-linear-gradient(left,  #57b7bf 0%, #58b8c0 0%, #57a782 48%, #4e8c49 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(left,  #57b7bf 0%,#58b8c0 0%,#57a782 48%,#4e8c49 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to right,  #57b7bf 0%,#58b8c0 0%,#57a782 48%,#4e8c49 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#57b7bf', endColorstr='#4e8c49',GradientType=1 ); /* IE6-9 */
+}
+
+#background-container{
+	overflow:hidden;
+    background-image: url(/Content/Images/main_background.jpg);
+	background-size: cover;
+    background-repeat: no-repeat;
+	position: fixed;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	z-index:0;
+}
+
+
+
+.main-top-menu {
+    position:absolute;
+    box-sizing:border-box;
+    width: 100%;
+    height: 150px;
+    top:0;
+    left:0;
+}
+
+.main-middle-menu {
+    position:absolute;
+    box-sizing:border-box;
+    width: 100%;
+    height: 100%;
+    top:0;
+    left:0;
+    padding-top: 150px;
+    padding-bottom: 80px;
+    display: table;
+}
+
+.main-footer-menu {
+    margin-left: auto;
+    margin-right: auto;
+    position: fixed;
+    box-sizing:border-box;
+    width: 100%;
+    height: 40px;
+    bottom:0;
+    left:0;
+    right: 0;
+    background-color: #ffffff;
+    display: table;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 12px;
+}
+
+.main-footer-menu-company {
+    color: #869a9e;
+}
+
+.main-footer-menu-website {
+    color: #45af81;
+}
+
+.main-logo-text {
+    font-size: 24pt;
+    font-family: 'Open Sans', sans-serif;
+    font-style: normal;
+    font-weight: 300;
+    color: #a1efd6;
+}
+
+.main-btn {
+    background-image: url(/Content/Images/main_btn_background.png);
+    height: 220px;
+    cursor: pointer;
+    font-size: 14pt;
+    font-family: 'Open Sans', sans-serif;
+    font-style: normal;
+    font-weight: 300;
+    color: #ffffff;
+}
+
+.main-btn-container {
+    overflow:hidden;
+    padding:15px;
+}
+
+.vertical-aligner {
+    width: 100%;
+    height: 100%;
+    display: table-cell;
+    vertical-align: middle;
+    margin: 0 auto;
+}
+
+.account-item > li > a {
+    color: white!important;
+    background-color: transparent!important;
+    margin-top: 5px!important;
+    margin-right: 3px;
+}
+
+.account-item > li > a:hover {
+    color: white!important;
+    background-color: transparent!important;
+    border: 1px solid white!important;
+    margin: 4px 2px -1px -1px !important;
+}
+
+.k-tooltip {
+    background-color: #55BBB0 !important;
+    color: #ffffff;
+}
+
+.k-callout-s {
+    border-top-color: #55BBB0 !important;
+}
+
+.k-window-titlebar.k-header {
+    background-color: #3098a1;
+    color: white;
+    height: 25px;
+}
+
+.dropdown-menu { border-radius: 0; }
+
+.dropdown-menu > .dropdown-header { padding: 3px 20px !important; }
+
+.dropdown-submenu { border-radius: 0; }
+
+.dropdown-menu > li { width: 100%; }
+
+.dropdown-menu > li > a { font-size: 12px; }
+
+.dropdown-submenu { position: relative; }
+
+.dropdown-submenu > .dropdown-menu {
+    left: 100%;
+    margin-left: -1px;
+    margin-top: -6px;
+    top: 0;
+}
+
+.dropdown-submenu:hover > .dropdown-menu { display: block; }
+
+.dropdown-submenu > a:after {
+    border-color: transparent;
+    border-left-color: #bbb;
+    border-style: solid;
+    border-width: 4px 0 4px 4px;
+    content: " ";
+    display: block;
+    float: right;
+    height: 0;
+    margin-right: -10px;
+    margin-top: 5px;
+    width: 0;
+}
+
+.dropdown-submenu:hover > a:after { border-left-color: #777; }
+
+.dropdown-submenu.pull-left { float: none; }
+
+.dropdown-submenu.pull-left > .dropdown-menu {
+    -moz-border-radius: 6px 0 6px 6px;
+    -webkit-border-radius: 6px 0 6px 6px;
+    border-radius: 6px 0 6px 6px;
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: -1px;
+}
+
+.dropdown-menu .divider {
+    margin: 2px 0;
+    padding: 0 !important;
+}
+
+.dropdown-menu > li > a:focus, .dropdown-menu > li > a:hover {
+    background: #5cbb7a;
+    color: #fff;
+}
+
+/*.dropdown-submenu:hover > .dropdown-menu {
+    display: none;
+}*/
+
+.print-container {
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+    width: 800px;
+    min-height: 1150px;
+    border: solid 1px black;
+}
+
+.k-editor li.dropdown-submenu {
+    padding: 0!important;
+}
+
+.manual {
+    position: fixed;
+    right: auto;
+    left: 10px;
+    top: auto;
+    bottom: 0;
+    z-index: 10050;
+    font-family: 'Open Sans';
+}
+
+.info-medical-record {
+    border: 1px solid #d4d4d4;
+    padding: 19px;
+    margin: 9px 0;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.info-medical-record input,
+.info-medical-record select,
+.info-medical-record textarea {
+    border-color: #cccccc;
+    outline: 0;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    box-sizing: content-box;
+    border-radius: 2px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    border: 1px solid #d4d4d4;
+    padding: 4px 10px;
+    pointer-events: none;
+}
+
+.d-none {
+    display: none;
+}
+
+.d-block {
+    display: block;
+}
+
+.d-inline {
+    display: inline;
+}
+
+.d-inline-block {
+    display: inline-block;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.d-list-item {
+    display: list-item;
+}
+
+.justify-content-center {
+    justify-content: center;
+}
+
+.justify-content-around {
+    justify-content: space-around;
+}
+
+.justify-content-betweeen {
+    justify-content: space-between;
+}
+
+.justify-content-evenly {
+    justify-content: space-evenly;
+}
+
+.justify-content-stretch {
+    justify-content: stretch;
+}
+
+.justify-content-flex-start {
+    justify-content: flex-start;
+}
+
+.justify-content-flex-end {
+    justify-content: flex-end;
+}
+
+.justify-content-start {
+    justify-content: start;
+}
+
+.justify-content-end {
+    justify-content: end;
+}
+
+.justify-content-inherit {
+    justify-content: inherit;
+}
+
+.justify-content-initial {
+    justify-content: initial;
+}
+
+.justify-content-left {
+    justify-content: left;
+}
+
+.justify-content-right {
+    justify-content: right;
+}
+
+.justify-content-normal {
+    justify-content: normal;
+}
+
+.justify-content-safe-center {
+    justify-content: safe center;
+}
+
+.justify-content-unsafe-center {
+    justify-content: unsafe center;
+}
+
+.justify-content-unset {
+    justify-content: unset;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.align-items-baseline {
+    align-items: baseline;
+}
+
+.align-items-start {
+    align-items: start;
+}
+
+.align-items-end {
+    align-items: end;
+}
+
+.align-items-flex-start {
+    align-items: flex-start;
+}
+
+.align-items-flex-end {
+    align-items: flex-end;
+}
+
+.align-items-normal {
+    align-items: normal;
+}
+
+.w-0 {
+    width: 0;
+}
+
+.w-10 {
+    width: 10%;
+}
+
+.w-13 {
+    width: 13%;
+}
+
+.w-15 {
+    width: 15%;
+}
+
+.w-25 {
+    width: 25%;
+}
+
+.w-30 {
+    width: 30%;
+}
+
+.w-35 {
+    width: 35%;
+}
+
+.w-45 {
+    width: 45% !important;
+}
+
+.w-50 {
+    width: 50%;
+}
+
+.w-75 {
+    width: 75%;
+}
+
+.w-80 {
+    width: 80%;
+}
+
+.w-85 {
+    width: 85%;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.w-30px {
+    width: 30px;
+}
+
+.w-45px {
+    width: 45px;
+}
+
+.w-50px {
+    width: 50px;
+}
+
+.w-70px {
+    width: 70px;
+}
+
+.h-50px {
+    height: 50px;
+}
+
+.h-70px {
+    height: 70px;
+}
+
+/*Paddings start*/
+
+.p-inherit {
+    padding: inherit;
+}
+
+.p-initial {
+    padding: initial;
+}
+
+.p-0 {
+    padding: 0;
+}
+
+.p-1 {
+    padding: 1rem;
+}
+
+.p-2 {
+    padding: 2rem;
+}
+
+.p-3 {
+    padding: 3rem;
+}
+
+.p-4 {
+    padding: 4rem;
+}
+
+.p-5 {
+    padding: 5rem;
+}
+
+.py-0 {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.py-1 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.py-2 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.py-3 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+.py-4 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+.py-5 {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+.px-0 {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.px-1 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.px-2 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.px-3 {
+    padding-left: 3rem;
+    padding-right: 3rem;
+}
+
+.px-4 {
+    padding-left: 4rem;
+    padding-right: 4rem;
+}
+
+.px-5 {
+    padding-left: 5rem;
+    padding-right: 5rem;
+}
+
+.pt-0 {
+    padding-top: 0;
+}
+
+.pt-1 {
+    padding-top: 1rem;
+}
+
+.pt-2 {
+    padding-top: 2rem;
+}
+
+.pt-3 {
+    padding-top: 3rem;
+}
+
+.pt-4 {
+    padding-top: 4rem;
+}
+
+.pt-5 {
+    padding-top: 5rem;
+}
+
+.pb-0 {
+    padding-bottom: 0;
+}
+
+.pb-1 {
+    padding-bottom: 1rem;
+}
+
+.pb-2 {
+    padding-bottom: 2rem;
+}
+
+.pb-3 {
+    padding-bottom: 3rem;
+}
+
+.pb-4 {
+    padding-bottom: 4rem;
+}
+
+.pb-5 {
+    padding-bottom: 5rem;
+}
+
+.pl-0 {
+    padding-left: 0;
+}
+
+.pl-1 {
+    padding-left: 1rem;
+}
+
+.pl-2 {
+    padding-left: 2rem;
+}
+
+.pl-3 {
+    padding-left: 3rem;
+}
+
+.pl-4 {
+    padding-left: 4rem;
+}
+
+.pl-5 {
+    padding-left: 5rem;
+}
+
+.pr-0 {
+    padding-right: 0;
+}
+
+.pr-1 {
+    padding-right: 1rem;
+}
+
+.pr-2 {
+    padding-right: 2rem;
+}
+
+.pr-3 {
+    padding-right: 3rem;
+}
+
+.pr-4 {
+    padding-right: 4rem;
+}
+
+.pr-5 {
+    padding-right: 5rem;
+}
+
+.pb-15px {
+    padding-bottom: 15px;
+}
+
+.p-11px {
+    padding: 11px;
+}
+
+/*Paddings end*/
+
+
+
+/*Margins start*/
+
+.m-inherit {
+    margin: inherit;
+}
+
+.m-initial {
+    margin: initial;
+}
+
+.m-0 {
+    margin: 0;
+}
+
+.m-1 {
+    margin: 1rem;
+}
+
+.m-2 {
+    margin: 2rem;
+}
+
+.m-3 {
+    margin: 3rem;
+}
+
+.m-4 {
+    margin: 4rem;
+}
+
+.m-5 {
+    margin: 5rem;
+}
+
+.my-0 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.my-1 {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.my-2 {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.my-3 {
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+}
+
+.my-4 {
+    margin-top: 4rem;
+    margin-bottom: 4rem;
+}
+
+.my-5 {
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+}
+
+.mx-0 {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.mx-1 {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.mx-2 {
+    margin-left: 2rem;
+    margin-right: 2rem;
+}
+
+.mx-3 {
+    margin-left: 3rem;
+    margin-right: 3rem;
+}
+
+.mx-4 {
+    margin-left: 4rem;
+    margin-right: 4rem;
+}
+
+.mx-5 {
+    margin-left: 5rem;
+    margin-right: 5rem;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mt-1 {
+    margin-top: 1rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.mt-3 {
+    margin-top: 3rem;
+}
+
+.mt-4 {
+    margin-top: 4rem;
+}
+
+.mt-5 {
+    margin-top: 5rem;
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mb-1 {
+    margin-bottom: 1rem;
+}
+
+.mb-2 {
+    margin-bottom: 2rem;
+}
+
+.mb-3 {
+    margin-bottom: 3rem;
+}
+
+.mb-4 {
+    margin-bottom: 4rem;
+}
+
+.mb-5 {
+    margin-bottom: 5rem;
+}
+
+.ml-0 {
+    margin-left: 0;
+}
+
+.ml-1 {
+    margin-left: 1rem;
+}
+
+.ml-2 {
+    margin-left: 2rem;
+}
+
+.ml-3 {
+    margin-left: 3rem;
+}
+
+.ml-4 {
+    margin-left: 4rem;
+}
+
+.ml-5 {
+    margin-left: 5rem;
+}
+
+.mr-0 {
+    margin-right: 0;
+}
+
+.mr-1 {
+    margin-right: 1rem;
+}
+
+.mr-2 {
+    margin-right: 2rem;
+}
+
+.mr-3 {
+    margin-right: 3rem;
+}
+
+.mr-4 {
+    margin-right: 4rem;
+}
+
+.mr-5 {
+    margin-right: 5rem;
+}
+
+/*Margins end*/
+
+.border-0 {
+    border: none;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.overflow-scroll {
+    overflow: scroll;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
+
+.vertical-align-middle {
+    vertical-align: middle;
+}
+
+.w-250 {
+    width: 250px;
+}
+
+.h-100-px {
+    height: 100px;
+}
+
+.w-50-px {
+    width: 50px;
+}
+
+.w-70-px {
+    width: 70px;
+}
+
+.w-120-px {
+    width: 120px;
+}
+
+.t-100-px {
+    top: 100px;
+}
+
+#tableEastingPortionsTemplateDiv > .row > div > table > tbody > tr > th, 
+#tableEastingPortionsTemplateDiv > .row > div > table > tbody > tr > td {
+    overflow: auto;
+}
+
+#tmplAssignmentListHeader > #tmplDivAssignmentListHeader > table {
+    width: 100%;
+    table-layout:fixed;
+    border: 1px solid grey;
+    font-size:small;
+}
+
+.position-relative {
+    position: relative;
+}
+
+.z-index-1 {
+    z-index: 1;
+}
+
+#tblAssignmentListEdit {
+    width: 100%;
+    table-layout:fixed;
+    font-size:small;
+}
+
+.h-100 {
+    height: 100% !important;
+}
+
+.right-0 {
+    right: 0;
+}
+
+.left-auto {
+    left: auto;
+}
+
+.break-word {
+    word-break: break-word;
+}
+
+.dropdown-menu-adapted-position {
+    top:-19px;
+    right:90px;
+    left:auto;
+}
+
+.dropdown-menu-supplies-grid-adapted-position {
+    top: -45px;
+    right: 90px;
+    left: auto;
+}
+
+.dropdown-menu-requirements-grid-adapted-position {
+    top: -5px;
+    right: 90px;
+    left: auto;
+}
+
+#divMainGrid {
+    max-width: 100vw;
+    overflow-x: scroll;
+}
+
+#tmplDivBriefPatientInfo {
+    position: fixed;
+    background: #FCF8E3;
+    z-index: 2;
+    padding: 3px 5px;
+}
+
+#expand-collapse-patient-info-btn {
+    display: flex;
+    position:fixed;
+    z-index:7; 
+    right:6vw;
+    background: #57a782;
+    cursor:pointer;
+    color:white; 
+    padding-bottom: 7px; 
+}
+
+#reanimation-assignment-list {
+    background: white;
+}
+
+.first-cell-border {
+    border-top: 3px dashed rgba(240,148,148, 1) !important;
+    border-bottom: 3px dashed rgba(240,148,148, 1) !important;
+    border-left: 3px dashed rgba(240,148,148, 1) !important;
+}
+
+.middle-cell-border {
+    border-top: 3px dashed rgba(240,148,148, 1) !important;
+    border-bottom: 3px dashed rgba(240,148,148, 1) !important;
+}
+
+.last-cell-border {
+    border-top: 3px dashed rgba(240,148,148, 1) !important;
+    border-right: 3px dashed rgba(240,148,148, 1) !important;
+    border-bottom: 3px dashed rgba(240,148,148, 1) !important;
+}
+
+@media (max-width: 576px) {
+
+    #pnlRejectHistory, 
+    #pnlArchive, 
+    #pnlDoctorDefects, 
+    #pnlNurseDefects, 
+    #pnlPortions, 
+    #pnlBalances, 
+    #pnlTask,
+    #pnlPatients,
+    #pnlInPatients,
+    #pnlHistories,
+    #pnlRejectedHistories,
+    #pnlHospitalEvents, 
+    #pnlReports {
+        height: 450px !important;
+    }
+    
+    #pnlRejectHistory > .panel-body, 
+    #pnlArchive > .panel-body, 
+    #pnlDoctorDefects > .panel-body, 
+    #pnlNurseDefects > .panel-body, 
+    #pnlPortions > .panel-body, 
+    #pnlBalances > .panel-body, 
+    #pnlTask > .panel-body,
+    #pnlPatients > .panel-body,
+    #pnlInPatients > .panel-body,
+    #pnlHistories > .panel-body,
+    #pnlRejectedHistories > .panel-body,
+    #pnlHospitalEvents > .panel-body, 
+    #pnlReports > .panel-body {
+        height: 415px !important;
+    }   
+
+    #schedulerSurgProces > .k-scheduler-layout.k-scheduler-timelineview > tbody > tr > td > .k-scheduler-times > .k-scheduler-table > tbody > tr > .k-slot-cell {
+        width: 100px;
+        overflow: scroll;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    #pnlArchive > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlTask > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlInPatients > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlRejectedHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalEvents > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlReports > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalResults > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    .tablet-w-33 {
+        width: 33% !important;
+    }
+    
+    .tablet-w-24 {
+        width: 24% !important;
+    }
+
+    .tablet-w-23 {
+        width: 23% !important;
+    }
+
+    .tablet-w-100 {
+        width: 100% !important;
+    }
+
+    .tablet-break-spaces {
+        white-space: break-spaces;
+    }
+
+    .tablet-bg-info.active {
+        background: #d9edf7 !important;
+    }
+
+    .tablet-bg-success.active {
+        background: #dff0d8 !important;
+    }
+
+    .tablet-bg-warning.active {
+        background: #fcf8e3 !important;
+    }
+
+    .tablet-bg-danger.active {
+        background: #f2dede !important;
+    }
+
+    .fx-grid.k-grid.k-widget {
+        min-height: 200px;
+    }
+
+    .fx-grid.k-grid.k-widget.k-grid-backface {
+        min-height: 200px;
+    }
+
+    .tablet-dishs-d-none {
+        display: none !important;
+    }
+
+    .tablet-dishs-d-block {
+        display: block !important;
+    }
+
+    .tablet-t-n30 {
+        top: -30px;
+    }
+
+    .tablet-l-100 {
+        left: 100% !important;
+    }
+
+    .dropdown-menu-adapted-position {
+        top:-10px;
+        right:90px;
+        left:auto;
+    }
+
+    table > tbody > tr > td {
+        overflow: auto;
+    }
+
+    .tablet-h-100 {
+        height: 100% !important;
+    }
+
+    #reanimation-shift-date {
+        position: fixed;
+        top: 194px;
+        background: #fff;
+        width: 100%;
+        z-index: 2;
+    }
+
+    #divMainGrid > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 3;
+        position: fixed;
+        top: 224px;
+    }
+    
+    .assignmentHeader, .assingnment-value {
+        width: 50px;
+        height: 50px;
+    }
+
+    .assingnment-value {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .health-indicator-time {
+        width: 50px;
+        height: 50px;
+        position: relative;
+    }
+
+     .health-indicator-value, .assingnmentHeader {
+         width: 50px;
+         height: 50px;
+         position: relative; 
+         cursor: pointer;
+         text-overflow: ellipsis;
+         white-space: nowrap;
+         overflow: auto;
+     }
+
+    .tablet-w-200px {
+        width: 200px;
+    }
+
+    #divAssignmentDates > #tmplDivAssignmentDates > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 5;
+        position: fixed;
+        top: 174px;
+    }
+    
+    .tablet-fixed-row {
+        position: fixed;
+        top: 60px;
+        background: #fff;
+        width: 100%;
+        z-index: 6;
+    }
+
+    .desktop-fixed-row {
+        background-color: #fff;
+        height: 100%;
+        margin-top: -10px;
+        padding-top: 10px;
+    }
+
+    .health-indicator-btn {
+        width: 37px;
+        height: 37px;
+        padding: 0;
+    }
+
+    #sPartogramDiv {
+        width: 100% !important;
+    }
+    
+    label {
+        /* 
+            Необходим в случаях если форма верстается без использования bootstrap класса .control-label
+            в случае использования класса .control-label, следует обнулять это свойство 
+            label.control-label { margin-top: 0; }
+        */
+        font-weight: normal;
+    }
+
+    #divCalendar {
+        width: 100%;
+    }
+
+    .fixed-row {
+        position: fixed;
+        width: 100%;
+        height: 45px;
+        top: 60px;
+        background-color: #efeeee;
+        padding-right: 30px;
+        padding-top: 7px;
+        z-index: 1002;
+    }
+
+    .menu-height div {
+        height: 60px;
+    }
+
+    .reanim-fixed-row {
+        position: static;
+        background-color: #fff;
+        z-index: 1;
+    }
+    
+    #divMainGrid {
+        max-width: 100vw;
+        overflow-x: scroll;
+    }
+
+    .tablet-label-position {
+        padding: 11px 27px;
+        top: 0 !important;
+    }
+
+    .btn-default.active > .bg-primary.tablet-label-position {
+        background: linear-gradient(0deg, rgba(51,122,183,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-info.tablet-label-position {
+        background: linear-gradient(0deg, rgba(217,237,247,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-warning.tablet-label-position {
+        background: linear-gradient(0deg, rgba(252,248,227,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-success.tablet-label-position {
+        background: linear-gradient(0deg, rgba(223,240,216,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-danger.tablet-label-position {
+        background: linear-gradient(0deg, rgba(242,222,222,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .content {
+        padding-top: 110px;
+        max-height: 100vh;
+        overflow-y: scroll;
+    }
+    
+    .patient-info {
+        position: fixed;
+        top: 0;
+        right: 170px;
+        z-index: 10;
+        width: 30%;
+        color: white;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        overflow: auto;
+        overflow-wrap: break-word;
+    }
+
+    .patient-info > h5 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    
+    .k-window {
+        max-width: 99vw;
+        max-height: 94vh;
+        overflow: auto;
+    }
+
+    .k-resize-handle.k-resize-n,
+    .k-resize-handle.k-resize-e,
+    .k-resize-handle.k-resize-s,
+    .k-resize-handle.k-resize-w,
+    .k-resize-handle.k-resize-se,
+    .k-resize-handle.k-resize-sw,
+    .k-resize-handle.k-resize-ne,
+    .k-resize-handle.k-resize-nw {
+        display: none;
+    }
+    
+    #assignmentTable {
+        table-layout: fixed;
+    }
+
+    #assignmentTableBody {
+        overflow-wrap: break-word;
+    }
+
+    .panel-default {
+        height: 100%;
+    }
+
+    .notification {
+        width: 100%;
+    }
+
+    .tablet-content-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tablet-align-items-center {
+        display: flex;
+        align-items: center;
+    }
+
+    .tablet-justify-content-center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .tablet-justify-content-flex-end {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tablet-justify-content-between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    #grdAmbulanceCards > table {
+        table-layout: fixed;
+    }
+
+    #divAssignmentListHeader {
+        background: white;
+    }
+
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table {
+        table-layout: inherit;
+        height: 100%;
+        margin-top: 210px;
+    }
+
+    #grdAmbulanceCards > table > thead > tr > th,
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > thead > tr > th {
+        vertical-align: top;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+     
+    #grdAmbulanceCards > table > tbody > tr > td, 
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > tbody > tr > td {
+        vertical-align: bottom;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .bg-info-xs {
+        background-color: #d9edf7;
+    }
+
+    .bg-danger-xs {
+        background-color: #f2dede;
+    }
+
+    .bg-warning-xs {
+        background-color: #fcf8e3;
+    }
+
+    .d-xs-none {
+        display: none;
+    }
+
+    .d-xs-block {
+        display: block;
+    }
+
+    .d-xs-inline {
+        display: inline;
+    }
+    
+    .d-xs-inline-block {
+        display: inline-block;
+    }
+
+    .d-xs-flex {
+        display: flex;
+    }
+
+    .d-xs-list-item {
+        display: list-item;
+    }
+    
+    .justify-content-xs-center {
+        justify-content: center;
+    }
+
+    .justify-content-xs-around {
+        justify-content: space-around;
+    }
+
+    .justify-content-xs-betweeen {
+        justify-content: space-between;
+    }
+
+    .justify-content-xs-evenly {
+        justify-content: space-evenly;
+    }
+
+    .justify-content-xs-stretch {
+        justify-content: stretch;
+    }
+
+    .justify-content-xs-flex-start {
+        justify-content: flex-start;
+    }
+
+    .justify-content-xs-flex-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-xs-start {
+        justify-content: start;
+    }
+
+    .justify-content-xs-end {
+        justify-content: end;
+    }
+
+    .justify-content-xs-inherit {
+        justify-content: inherit;
+    }
+
+    .justify-content-xs-initial {
+        justify-content: initial;
+    }
+
+    .justify-content-xs-left {
+        justify-content: left;
+    }
+
+    .justify-content-xs-right {
+        justify-content: right;
+    }
+
+    .justify-content-xs-normal {
+        justify-content: normal;
+    }
+
+    .justify-content-xs-safe-center {
+        justify-content: safe center;
+    }
+
+    .justify-content-xs-unsafe-center {
+        justify-content: unsafe center;
+    }
+
+    .justify-content-xs-unset {
+        justify-content: unset;
+    }
+
+    .align-items-xs-center {
+        align-items: center;
+    }
+
+    .align-items-xs-baseline {
+        align-items: baseline;
+    }
+
+    .align-items-xs-start {
+        align-items: start;
+    }
+
+    .align-items-xs-end {
+        align-items: end;
+    }
+
+    .align-items-xs-flex-start {
+        align-items: flex-start;
+    }
+
+    .align-items-xs-flex-end {
+        align-items: flex-end;
+    }
+
+    .align-items-xs-normal {
+        align-items: normal;
+    }
+
+    .w-xs-inherit {
+        width: inherit;
+    }
+
+    .w-xs-0 {
+        width: 0;
+    }
+
+    .w-xs-25 {
+        width: 25%;
+    }
+
+    .w-xs-50 {
+        width: 50%;
+    }
+
+    .w-xs-75 {
+        width: 75%;
+    }
+
+    .w-xs-80 {
+        width: 80%;
+    }
+
+    .w-xs-100 {
+        width: 100%;
+    }
+
+    .tablet-w-10 {
+        width: 10%;
+    }
+
+    .tablet-d-none {
+        display: none;
+    }
+
+    .tablet-d-block {
+        display: block;
+    }
+
+    .tablet-d-flex {
+        display: flex;
+    }
+
+    .tablet-d-list-item {
+        display: list-item;
+    }
+
+    /*Paddings start*/
+
+    .p-xs-inherit {
+        padding: inherit;
+    }
+
+    .p-xs-initial {
+        padding: initial;
+    }
+
+    .p-xs-0 {
+        padding: 0;
+    }
+
+    .p-xs-1 {
+        padding: 1rem;
+    }
+
+    .p-xs-2 {
+        padding: 2rem;
+    }
+
+    .p-xs-3 {
+        padding: 3rem;
+    }
+
+    .p-xs-4 {
+        padding: 4rem;
+    }
+
+    .p-xs-5 {
+        padding: 5rem;
+    }
+
+    .py-xs-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-xs-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-xs-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .py-xs-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .py-xs-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .py-xs-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .px-xs-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .px-xs-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .px-xs-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .px-xs-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .px-xs-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .px-xs-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .pt-xs-0 {
+        padding-top: 0;
+    }
+
+    .pt-xs-1 {
+        padding-top: 1rem;
+    }
+
+    .pt-xs-2 {
+        padding-top: 2rem;
+    }
+
+    .pt-xs-3 {
+        padding-top: 3rem;
+    }
+
+    .pt-xs-4 {
+        padding-top: 4rem;
+    }
+
+    .pt-xs-5 {
+        padding-top: 5rem;
+    }
+
+    .pb-xs-0 {
+        padding-bottom: 0;
+    }
+
+    .pb-xs-1 {
+        padding-bottom: 1rem;
+    }
+
+    .pb-xs-2 {
+        padding-bottom: 2rem;
+    }
+
+    .pb-xs-3 {
+        padding-bottom: 3rem;
+    }
+
+    .pb-xs-4 {
+        padding-bottom: 4rem;
+    }
+
+    .pb-xs-5 {
+        padding-bottom: 5rem;
+    }
+
+    .pl-xs-0 {
+        padding-left: 0;
+    }
+
+    .pl-xs-1 {
+        padding-left: 1rem;
+    }
+
+    .pl-xs-2 {
+        padding-left: 2rem;
+    }
+
+    .pl-xs-3 {
+        padding-left: 3rem;
+    }
+
+    .pl-xs-4 {
+        padding-left: 4rem;
+    }
+
+    .pl-xs-5 {
+        padding-left: 5rem;
+    }
+
+    .pr-xs-0 {
+        padding-right: 0;
+    }
+
+    .pr-xs-1 {
+        padding-right: 1rem;
+    }
+
+    .pr-xs-2 {
+        padding-right: 2rem;
+    }
+
+    .pr-xs-3 {
+        padding-right: 3rem;
+    }
+
+    .pr-xs-4 {
+        padding-right: 4rem;
+    }
+
+    .pr-xs-5 {
+        padding-right: 5rem;
+    }
+
+    .p-xs-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .m-xs-inherit {
+        margin: inherit;
+    }
+
+    .m-xs-initial {
+        margin: initial;
+    }
+
+    .m-xs-0 {
+        margin: 0;
+    }
+
+    .m-xs-1 {
+        margin: 1rem;
+    }
+
+    .m-xs-2 {
+        margin: 2rem;
+    }
+
+    .m-xs-3 {
+        margin: 3rem;
+    }
+
+    .m-xs-4 {
+        margin: 4rem;
+    }
+
+    .m-xs-5 {
+        margin: 5rem;
+    }
+
+    .my-xs-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .my-xs-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-xs-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .my-xs-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .my-xs-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .my-xs-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .mx-xs-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mx-xs-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .mx-xs-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .mx-xs-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .mx-xs-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .mx-xs-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .mt-xs-0 {
+        margin-top: 0;
+    }
+
+    .mt-xs-1 {
+        margin-top: 1rem;
+    }
+
+    .mt-xs-2 {
+        margin-top: 2rem;
+    }
+
+    .mt-xs-3 {
+        margin-top: 3rem;
+    }
+
+    .mt-xs-4 {
+        margin-top: 4rem;
+    }
+
+    .mt-xs-5 {
+        margin-top: 5rem;
+    }
+
+    .mb-xs-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-xs-1 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-xs-2 {
+        margin-bottom: 2rem;
+    }
+
+    .mb-xs-3 {
+        margin-bottom: 3rem;
+    }
+
+    .mb-xs-4 {
+        margin-bottom: 4rem;
+    }
+
+    .mb-xs-5 {
+        margin-bottom: 5rem;
+    }
+
+    .ml-xs-0 {
+        margin-left: 0;
+    }
+
+    .ml-xs-1 {
+        margin-left: 1rem;
+    }
+
+    .ml-xs-2 {
+        margin-left: 2rem;
+    }
+
+    .ml-xs-3 {
+        margin-left: 3rem;
+    }
+
+    .ml-xs-4 {
+        margin-left: 4rem;
+    }
+
+    .ml-xs-5 {
+        margin-left: 5rem;
+    }
+
+    .mr-xs-0 {
+        margin-right: 0;
+    }
+
+    .mr-xs-1 {
+        margin-right: 1rem;
+    }
+
+    .mr-xs-2 {
+        margin-right: 2rem;
+    }
+
+    .mr-xs-3 {
+        margin-right: 3rem;
+    }
+
+    .mr-xs-4 {
+        margin-right: 4rem;
+    }
+
+    .mr-xs-5 {
+        margin-right: 5rem;
+    }
+
+    /*Margins end*/
+
+    /* Tablet Paddings start*/
+
+    .tablet-p-inherit {
+        padding: inherit;
+    }
+
+    .tablet-p-initial {
+        padding: initial;
+    }
+
+    .tablet-p-0 {
+        padding: 0;
+    }
+
+    .tablet-p-1 {
+        padding: 1rem;
+    }
+
+    .tablet-p-2 {
+        padding: 2rem;
+    }
+
+    .tablet-p-3 {
+        padding: 3rem;
+    }
+
+    .tablet-p-4 {
+        padding: 4rem;
+    }
+
+    .tablet-p-5 {
+        padding: 5rem;
+    }
+
+    .tablet-py-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .tablet-py-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .tablet-py-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .tablet-py-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .tablet-py-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .tablet-py-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .tablet-px-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tablet-px-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .tablet-px-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .tablet-px-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .tablet-px-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .tablet-px-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .tablet-pt-0 {
+        padding-top: 0;
+    }
+
+    .tablet-pt-1 {
+        padding-top: 1rem;
+    }
+
+    .tablet-pt-2 {
+        padding-top: 2rem;
+    }
+
+    .tablet-pt-3 {
+        padding-top: 3rem;
+    }
+
+    .tablet-pt-4 {
+        padding-top: 4rem;
+    }
+
+    .tablet-pt-5 {
+        padding-top: 5rem;
+    }
+
+    .tablet-pt-170px {
+        padding-top: 170px;
+    }
+
+    .tablet-pb-0 {
+        padding-bottom: 0;
+    }
+
+    .tablet-pb-1 {
+        padding-bottom: 1rem;
+    }
+
+    .tablet-pb-2 {
+        padding-bottom: 2rem;
+    }
+
+    .tablet-pb-3 {
+        padding-bottom: 3rem;
+    }
+
+    .tablet-pb-4 {
+        padding-bottom: 4rem;
+    }
+
+    .tablet-pb-5 {
+        padding-bottom: 5rem;
+    }
+
+    .tablet-pl-0 {
+        padding-left: 0;
+    }
+
+    .tablet-pl-1 {
+        padding-left: 1rem;
+    }
+
+    .tablet-pl-2 {
+        padding-left: 2rem;
+    }
+
+    .tablet-pl-3 {
+        padding-left: 3rem;
+    }
+
+    .tablet-pl-4 {
+        padding-left: 4rem;
+    }
+
+    .tablet-pl-5 {
+        padding-left: 5rem;
+    }
+
+    .tablet-pr-0 {
+        padding-right: 0;
+    }
+
+    .tablet-pr-1 {
+        padding-right: 1rem;
+    }
+
+    .tablet-pr-2 {
+        padding-right: 2rem;
+    }
+
+    .tablet-pr-3 {
+        padding-right: 3rem;
+    }
+
+    .tablet-pr-4 {
+        padding-right: 4rem;
+    }
+
+    .tablet-pr-5 {
+        padding-right: 5rem;
+    }
+
+    .tablet-pb-15px {
+        padding-bottom: 15px;
+    }
+
+    .tablet-p-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .tablet-m-inherit {
+        margin: inherit;
+    }
+
+    .tablet-m-initial {
+        margin: initial;
+    }
+
+    .tablet-m-0 {
+        margin: 0;
+    }
+
+    .tablet-m-1 {
+        margin: 1rem;
+    }
+
+    .tablet-m-2 {
+        margin: 2rem;
+    }
+
+    .tablet-m-3 {
+        margin: 3rem;
+    }
+
+    .tablet-m-4 {
+        margin: 4rem;
+    }
+
+    .tablet-m-5 {
+        margin: 5rem;
+    }
+
+    .tablet-my-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .tablet-my-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .tablet-my-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .tablet-my-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .tablet-my-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .tablet-my-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mx-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tablet-mx-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .tablet-mx-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .tablet-mx-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .tablet-mx-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .tablet-mx-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .tablet-mt-0 {
+        margin-top: 0;
+    }
+
+    .tablet-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .tablet-mt-2 {
+        margin-top: 2rem;
+    }
+
+    .tablet-mt-3 {
+        margin-top: 3rem;
+    }
+
+    .tablet-mt-4 {
+        margin-top: 4rem;
+    }
+
+    .tablet-mt-5 {
+        margin-top: 5rem;
+    }
+
+    .tablet-mt-65px {
+        margin-top: 65px;
+    }
+
+    .tablet-mt-170px {
+        margin-top: 170px;
+    }
+
+    .tablet-mb-0 {
+        margin-bottom: 0;
+    }
+
+    .tablet-mb-1 {
+        margin-bottom: 1rem;
+    }
+
+    .tablet-mb-2 {
+        margin-bottom: 2rem;
+    }
+
+    .tablet-mb-3 {
+        margin-bottom: 3rem;
+    }
+
+    .tablet-mb-4 {
+        margin-bottom: 4rem;
+    }
+
+    .tablet-mb-5 {
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mb-65px {
+        margin-bottom: 65px;
+    }
+
+    .tablet-ml-0 {
+        margin-left: 0;
+    }
+
+    .tablet-ml-1 {
+        margin-left: 1rem;
+    }
+
+    .tablet-ml-2 {
+        margin-left: 2rem;
+    }
+
+    .tablet-ml-3 {
+        margin-left: 3rem;
+    }
+
+    .tablet-ml-4 {
+        margin-left: 4rem;
+    }
+
+    .tablet-ml-5 {
+        margin-left: 5rem;
+    }
+
+    .tablet-mr-0 {
+        margin-right: 0;
+    }
+
+    .tablet-mr-1 {
+        margin-right: 1rem;
+    }
+
+    .tablet-mr-2 {
+        margin-right: 2rem;
+    }
+
+    .tablet-mr-3 {
+        margin-right: 3rem;
+    }
+
+    .tablet-mr-4 {
+        margin-right: 4rem;
+    }
+
+    .tablet-mr-5 {
+        margin-right: 5rem;
+    }
+
+    /* Tablet Margins end*/
+}
+
+@media (min-width: 576px) and (max-width: 768px) {
+
+    #pnlRejectHistory, 
+    #pnlArchive, 
+    #pnlDoctorDefects, 
+    #pnlNurseDefects, 
+    #pnlPortions, 
+    #pnlBalances, 
+    #pnlTask,
+    #pnlPatients,
+    #pnlInPatients,
+    #pnlHistories,
+    #pnlRejectedHistories,
+    #pnlHospitalEvents, 
+    #pnlReports {
+        height: 450px !important;
+    }
+    
+    #pnlRejectHistory > .panel-body, 
+    #pnlArchive > .panel-body, 
+    #pnlDoctorDefects > .panel-body, 
+    #pnlNurseDefects > .panel-body, 
+    #pnlPortions > .panel-body, 
+    #pnlBalances > .panel-body, 
+    #pnlTask > .panel-body,
+    #pnlPatients > .panel-body,
+    #pnlInPatients > .panel-body,
+    #pnlHistories > .panel-body,
+    #pnlRejectedHistories > .panel-body,
+    #pnlHospitalEvents > .panel-body, 
+    #pnlReports > .panel-body {
+        height: 415px !important;
+    }
+
+    #schedulerSurgProces > .k-scheduler-layout.k-scheduler-timelineview > tbody > tr > td > .k-scheduler-times > .k-scheduler-table > tbody > tr > .k-slot-cell {
+        width: 100px;
+        overflow: scroll;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    #pnlArchive > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlTask > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlInPatients > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlRejectedHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalEvents > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlReports > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalResults > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    .tablet-w-33 {
+        width: 33% !important;
+    }
+    
+    .tablet-w-24 {
+        width: 24% !important;
+    }
+
+    .tablet-w-23 {
+        width: 23% !important;
+    }
+
+    .tablet-w-100 {
+        width: 100% !important;
+    }
+
+    .tablet-break-spaces {
+        white-space: break-spaces;
+    }
+
+    .tablet-bg-info.active {
+        background: #d9edf7 !important;
+    }
+
+    .tablet-bg-success.active {
+        background: #dff0d8 !important;
+    }
+
+    .tablet-bg-warning.active {
+        background: #fcf8e3 !important;
+    }
+
+    .tablet-bg-danger.active {
+        background: #f2dede !important;
+    }
+
+    .fx-grid.k-grid.k-widget {
+        min-height: 200px;
+    }
+
+    .fx-grid.k-grid.k-widget.k-grid-backface {
+        min-height: 200px;
+    }
+
+    .tablet-dishs-d-none {
+        display: none !important;
+    }
+
+    .tablet-dishs-d-block {
+        display: block !important;
+    }
+
+    .tablet-t-n30 {
+        top: -30px;
+    }
+
+    .tablet-l-100 {
+        left: 100% !important;
+    }
+
+    .dropdown-menu-adapted-position {
+        top:-10px;
+        right:90px;
+        left:auto;
+    }
+    
+    table > tbody > tr > td {
+        overflow: auto;
+    }
+
+    .tablet-h-100 {
+        height: 100% !important;
+    }
+
+    #reanimation-shift-date {
+        position: fixed;
+        top: 194px;
+        background: #fff;
+        width: 100%;
+        z-index: 2;
+    }
+
+    #divMainGrid > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 3;
+        position: fixed;
+        top: 224px;
+    }
+
+    .assignmentHeader, .assingnment-value {
+        width: 50px;
+        height: 50px;
+    }
+
+    .assingnment-value {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .health-indicator-time {
+        width: 50px;
+        height: 50px;
+        position: relative;
+    }
+
+    .health-indicator-value, .assingnmentHeader {
+        width: 50px;
+        height: 50px;
+        position: relative; 
+        cursor: pointer;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: auto;
+    }
+
+    .tablet-w-200px {
+        width: 200px;
+    }
+
+    #divAssignmentDates > #tmplDivAssignmentDates > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 5;
+        position: fixed;
+        top: 174px;
+    }
+
+    .tablet-fixed-row {
+        position: fixed;
+        top: 60px;
+        background: #fff;
+        width: 100%;
+        z-index: 6;
+    }
+
+    .desktop-fixed-row {
+        background-color: #fff;
+        height: 100%;
+        margin-top: -10px;
+        padding-top: 10px;
+    }
+
+    .health-indicator-btn {
+        width: 37px;
+        height: 37px;
+        padding: 0;
+    }
+
+    #sPartogramDiv {
+        width: 100% !important;
+    }
+
+    label {
+        /* 
+            Необходим в случаях если форма верстается без использования bootstrap класса .control-label
+            в случае использования класса .control-label, следует обнулять это свойство 
+            label.control-label { margin-top: 0; }
+        */
+        font-weight: normal;
+    }
+
+    #divCalendar {
+        width: 100%;
+    }
+
+    .fixed-row {
+        position: fixed;
+        width: 100%;
+        height: 45px;
+        top: 60px;
+        background-color: #efeeee;
+        padding-right: 30px;
+        padding-top: 7px;
+        z-index: 1002;
+    }
+    
+    .menu-height div {
+        height: 60px;
+    }
+
+    .reanim-fixed-row {
+        position: static;
+        background-color: #fff;
+        z-index: 1;
+    }
+
+    #divMainGrid {
+        max-width: 100vw;
+        overflow-x: scroll;
+    }
+
+    .tablet-label-position {
+        padding: 11px 27px;
+        top: 0 !important;
+    }
+
+    .btn-default.active > .bg-primary.tablet-label-position {
+        background: linear-gradient(0deg, rgba(51,122,183,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-info.tablet-label-position {
+        background: linear-gradient(0deg, rgba(217,237,247,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-warning.tablet-label-position {
+        background: linear-gradient(0deg, rgba(252,248,227,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-success.tablet-label-position {
+        background: linear-gradient(0deg, rgba(223,240,216,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-danger.tablet-label-position {
+        background: linear-gradient(0deg, rgba(242,222,222,1) 0%, rgba(0,0,0,0) 100%);
+    }
+    
+    .content {
+        padding-top: 75px;
+        max-height: 100vh;
+        overflow-y: scroll;
+    }
+    
+    .patient-info {
+        position: fixed;
+        top: 0;
+        right: 170px;
+        z-index: 10;
+        width: 30%;
+        color: white;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        overflow: auto;
+        overflow-wrap: break-word;
+    }
+
+    .patient-info > h5 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    
+    .k-window {
+        max-width: 99vw;
+        max-height: 94vh;
+        overflow: auto;
+    }
+
+    .k-resize-handle.k-resize-n,
+    .k-resize-handle.k-resize-e,
+    .k-resize-handle.k-resize-s,
+    .k-resize-handle.k-resize-w,
+    .k-resize-handle.k-resize-se,
+    .k-resize-handle.k-resize-sw,
+    .k-resize-handle.k-resize-ne,
+    .k-resize-handle.k-resize-nw {
+        display: none;
+    }
+
+    #assignmentTable {
+        table-layout: fixed;
+    }
+
+    #assignmentTableBody {
+        overflow-wrap: break-word;
+    }
+
+    .panel-default {
+        height: 100%;
+    }
+
+    .notification {
+        width: 100%;
+    }
+
+    #grdAmbulanceCards > table {
+        table-layout: fixed;
+    }
+
+    #divAssignmentListHeader {
+        background: white;
+    }
+
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table {
+        table-layout: inherit;
+        height: 100%;
+        margin-top: 210px;
+    }
+
+    #grdAmbulanceCards > table > thead > tr > th,
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > thead > tr > th {
+        vertical-align: top;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+     
+    #grdAmbulanceCards > table > tbody > tr > td, 
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > tbody > tr > td {
+        vertical-align: bottom;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .tablet-content-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .tablet-align-items-center {
+        display: flex;
+        align-items: center;
+    }
+
+    .tablet-justify-content-center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .tablet-justify-content-flex-end {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tablet-justify-content-between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .d-sm-none {
+        display: none;
+    }
+
+    .d-sm-block {
+        display: block;
+    }
+
+    .d-sm-inline {
+        display: inline;
+    }
+
+    .d-sm-inline-block {
+        display: inline-block;
+    }
+
+    .d-sm-flex {
+        display: flex;
+    }
+
+    .d-sm-list-item {
+        display: list-item;
+    }
+
+    .justify-content-sm-center {
+        justify-content: center;
+    }
+
+    .justify-content-sm-around {
+        justify-content: space-around;
+    }
+
+    .justify-content-sm-betweeen {
+        justify-content: space-between;
+    }
+
+    .justify-content-sm-evenly {
+        justify-content: space-evenly;
+    }
+
+    .justify-content-sm-stretch {
+        justify-content: stretch;
+    }
+
+    .justify-content-sm-flex-start {
+        justify-content: flex-start;
+    }
+
+    .justify-content-sm-flex-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-sm-start {
+        justify-content: start;
+    }
+
+    .justify-content-sm-end {
+        justify-content: end;
+    }
+
+    .justify-content-sm-inherit {
+        justify-content: inherit;
+    }
+
+    .justify-content-sm-initial {
+        justify-content: initial;
+    }
+
+    .justify-content-sm-left {
+        justify-content: left;
+    }
+
+    .justify-content-sm-right {
+        justify-content: right;
+    }
+
+    .justify-content-sm-normal {
+        justify-content: normal;
+    }
+
+    .justify-content-sm-safe-center {
+        justify-content: safe center;
+    }
+
+    .justify-content-sm-unsafe-center {
+        justify-content: unsafe center;
+    }
+
+    .justify-content-sm-unset {
+        justify-content: unset;
+    }
+
+    .align-items-sm-center {
+        align-items: center;
+    }
+
+    .align-items-sm-baseline {
+        align-items: baseline;
+    }
+
+    .align-items-sm-start {
+        align-items: start;
+    }
+
+    .align-items-sm-end {
+        align-items: end;
+    }
+
+    .align-items-sm-flex-start {
+        align-items: flex-start;
+    }
+
+    .align-items-sm-flex-end {
+        align-items: flex-end;
+    }
+
+    .align-items-sm-normal {
+        align-items: normal;
+    }
+
+    .w-sm-inherit {
+        width: inherit;
+    }
+
+    .w-sm-0 {
+        width: 0;
+    }
+
+    .w-sm-25 {
+        width: 25%;
+    }
+
+    .w-sm-50 {
+        width: 50%;
+    }
+
+    .w-sm-75 {
+        width: 75%;
+    }
+
+    .w-sm-100 {
+        width: 100%;
+    }
+
+    .w-sm-100px {
+        width: 100px;
+    }
+
+    .tablet-w-10 {
+        width: 10%;
+    }
+
+    .tablet-d-none {
+        display: none;
+    }
+
+    .tablet-d-block {
+        display: block;
+    }
+
+    .tablet-d-flex {
+        display: flex;
+    }
+
+    .tablet-d-list-item {
+        display: list-item;
+    }
+
+    /*Paddings start*/
+
+    .p-sm-inherit {
+        padding: inherit;
+    }
+
+    .p-sm-initial {
+        padding: initial;
+    }
+
+    .p-sm-0 {
+        padding: 0;
+    }
+
+    .p-sm-1 {
+        padding: 1rem;
+    }
+
+    .p-sm-2 {
+        padding: 2rem;
+    }
+
+    .p-sm-3 {
+        padding: 3rem;
+    }
+
+    .p-sm-4 {
+        padding: 4rem;
+    }
+
+    .p-sm-5 {
+        padding: 5rem;
+    }
+
+    .py-sm-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-sm-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-sm-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .py-sm-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .py-sm-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .py-sm-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .px-sm-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .px-sm-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .px-sm-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .px-sm-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .px-sm-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .px-sm-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .pt-sm-0 {
+        padding-top: 0;
+    }
+
+    .pt-sm-1 {
+        padding-top: 1rem;
+    }
+
+    .pt-sm-2 {
+        padding-top: 2rem;
+    }
+
+    .pt-sm-3 {
+        padding-top: 3rem;
+    }
+
+    .pt-sm-4 {
+        padding-top: 4rem;
+    }
+
+    .pt-sm-5 {
+        padding-top: 5rem;
+    }
+
+    .pb-sm-0 {
+        padding-bottom: 0;
+    }
+
+    .pb-sm-1 {
+        padding-bottom: 1rem;
+    }
+
+    .pb-sm-2 {
+        padding-bottom: 2rem;
+    }
+
+    .pb-sm-3 {
+        padding-bottom: 3rem;
+    }
+
+    .pb-sm-4 {
+        padding-bottom: 4rem;
+    }
+
+    .pb-sm-5 {
+        padding-bottom: 5rem;
+    }
+
+    .pl-sm-0 {
+        padding-left: 0;
+    }
+
+    .pl-sm-1 {
+        padding-left: 1rem;
+    }
+
+    .pl-sm-2 {
+        padding-left: 2rem;
+    }
+
+    .pl-sm-3 {
+        padding-left: 3rem;
+    }
+
+    .pl-sm-4 {
+        padding-left: 4rem;
+    }
+
+    .pl-sm-5 {
+        padding-left: 5rem;
+    }
+
+    .pr-sm-0 {
+        padding-right: 0;
+    }
+
+    .pr-sm-1 {
+        padding-right: 1rem;
+    }
+
+    .pr-sm-2 {
+        padding-right: 2rem;
+    }
+
+    .pr-sm-3 {
+        padding-right: 3rem;
+    }
+
+    .pr-sm-4 {
+        padding-right: 4rem;
+    }
+
+    .pr-sm-5 {
+        padding-right: 5rem;
+    }
+
+    .p-sm-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .m-sm-inherit {
+        margin: inherit;
+    }
+
+    .m-sm-initial {
+        margin: initial;
+    }
+
+    .m-sm-0 {
+        margin: 0;
+    }
+
+    .m-sm-1 {
+        margin: 1rem;
+    }
+
+    .m-sm-2 {
+        margin: 2rem;
+    }
+
+    .m-sm-3 {
+        margin: 3rem;
+    }
+
+    .m-sm-4 {
+        margin: 4rem;
+    }
+
+    .m-sm-5 {
+        margin: 5rem;
+    }
+
+    .my-sm-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .my-sm-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-sm-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .my-sm-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .my-sm-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .my-sm-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .mx-sm-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mx-sm-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .mx-sm-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .mx-sm-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .mx-sm-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .mx-sm-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .mt-sm-0 {
+        margin-top: 0;
+    }
+
+    .mt-sm-1 {
+        margin-top: 1rem;
+    }
+
+    .mt-sm-2 {
+        margin-top: 2rem;
+    }
+
+    .mt-sm-3 {
+        margin-top: 3rem;
+    }
+
+    .mt-sm-4 {
+        margin-top: 4rem;
+    }
+
+    .mt-sm-5 {
+        margin-top: 5rem;
+    }
+
+    .mb-sm-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-sm-1 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-sm-2 {
+        margin-bottom: 2rem;
+    }
+
+    .mb-sm-3 {
+        margin-bottom: 3rem;
+    }
+
+    .mb-sm-4 {
+        margin-bottom: 4rem;
+    }
+
+    .mb-sm-5 {
+        margin-bottom: 5rem;
+    }
+
+    .ml-sm-0 {
+        margin-left: 0;
+    }
+
+    .ml-sm-1 {
+        margin-left: 1rem;
+    }
+
+    .ml-sm-2 {
+        margin-left: 2rem;
+    }
+
+    .ml-sm-3 {
+        margin-left: 3rem;
+    }
+
+    .ml-sm-4 {
+        margin-left: 4rem;
+    }
+
+    .ml-sm-5 {
+        margin-left: 5rem;
+    }
+
+    .mr-sm-0 {
+        margin-right: 0;
+    }
+
+    .mr-sm-1 {
+        margin-right: 1rem;
+    }
+
+    .mr-sm-2 {
+        margin-right: 2rem;
+    }
+
+    .mr-sm-3 {
+        margin-right: 3rem;
+    }
+
+    .mr-sm-4 {
+        margin-right: 4rem;
+    }
+
+    .mr-sm-5 {
+        margin-right: 5rem;
+    }
+
+    /*Margins end*/
+
+    /* Tablet Paddings start*/
+
+    .tablet-p-inherit {
+        padding: inherit;
+    }
+
+    .tablet-p-initial {
+        padding: initial;
+    }
+
+    .tablet-p-0 {
+        padding: 0;
+    }
+
+    .tablet-p-1 {
+        padding: 1rem;
+    }
+
+    .tablet-p-2 {
+        padding: 2rem;
+    }
+
+    .tablet-p-3 {
+        padding: 3rem;
+    }
+
+    .tablet-p-4 {
+        padding: 4rem;
+    }
+
+    .tablet-p-5 {
+        padding: 5rem;
+    }
+
+    .tablet-py-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .tablet-py-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .tablet-py-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .tablet-py-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .tablet-py-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .tablet-py-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .tablet-px-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tablet-px-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .tablet-px-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .tablet-px-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .tablet-px-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .tablet-px-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .tablet-pt-0 {
+        padding-top: 0;
+    }
+
+    .tablet-pt-1 {
+        padding-top: 1rem;
+    }
+
+    .tablet-pt-2 {
+        padding-top: 2rem;
+    }
+
+    .tablet-pt-3 {
+        padding-top: 3rem;
+    }
+
+    .tablet-pt-4 {
+        padding-top: 4rem;
+    }
+
+    .tablet-pt-5 {
+        padding-top: 5rem;
+    }
+
+    .tablet-pt-170px {
+        padding-top: 170px;
+    }
+
+    .tablet-pb-0 {
+        padding-bottom: 0;
+    }
+
+    .tablet-pb-1 {
+        padding-bottom: 1rem;
+    }
+
+    .tablet-pb-2 {
+        padding-bottom: 2rem;
+    }
+
+    .tablet-pb-3 {
+        padding-bottom: 3rem;
+    }
+
+    .tablet-pb-4 {
+        padding-bottom: 4rem;
+    }
+
+    .tablet-pb-5 {
+        padding-bottom: 5rem;
+    }
+
+    .tablet-pl-0 {
+        padding-left: 0;
+    }
+
+    .tablet-pl-1 {
+        padding-left: 1rem;
+    }
+
+    .tablet-pl-2 {
+        padding-left: 2rem;
+    }
+
+    .tablet-pl-3 {
+        padding-left: 3rem;
+    }
+
+    .tablet-pl-4 {
+        padding-left: 4rem;
+    }
+
+    .tablet-pl-5 {
+        padding-left: 5rem;
+    }
+
+    .tablet-pr-0 {
+        padding-right: 0;
+    }
+
+    .tablet-pr-1 {
+        padding-right: 1rem;
+    }
+
+    .tablet-pr-2 {
+        padding-right: 2rem;
+    }
+
+    .tablet-pr-3 {
+        padding-right: 3rem;
+    }
+
+    .tablet-pr-4 {
+        padding-right: 4rem;
+    }
+
+    .tablet-pr-5 {
+        padding-right: 5rem;
+    }
+
+    .tablet-pb-15px {
+        padding-bottom: 15px;
+    }
+
+    .tablet-p-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .tablet-m-inherit {
+        margin: inherit;
+    }
+
+    .tablet-m-initial {
+        margin: initial;
+    }
+
+    .tablet-m-0 {
+        margin: 0;
+    }
+
+    .tablet-m-1 {
+        margin: 1rem;
+    }
+
+    .tablet-m-2 {
+        margin: 2rem;
+    }
+
+    .tablet-m-3 {
+        margin: 3rem;
+    }
+
+    .tablet-m-4 {
+        margin: 4rem;
+    }
+
+    .tablet-m-5 {
+        margin: 5rem;
+    }
+
+    .tablet-my-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .tablet-my-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .tablet-my-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .tablet-my-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .tablet-my-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .tablet-my-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mx-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tablet-mx-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .tablet-mx-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .tablet-mx-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .tablet-mx-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .tablet-mx-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .tablet-mt-0 {
+        margin-top: 0;
+    }
+
+    .tablet-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .tablet-mt-2 {
+        margin-top: 2rem;
+    }
+
+    .tablet-mt-3 {
+        margin-top: 3rem;
+    }
+
+    .tablet-mt-4 {
+        margin-top: 4rem;
+    }
+
+    .tablet-mt-5 {
+        margin-top: 5rem;
+    }
+
+    .tablet-mt-65px {
+        margin-top: 65px;
+    }
+
+    .tablet-mt-170px {
+        margin-top: 170px;
+    }
+
+    .tablet-mb-0 {
+        margin-bottom: 0;
+    }
+
+    .tablet-mb-1 {
+        margin-bottom: 1rem;
+    }
+
+    .tablet-mb-2 {
+        margin-bottom: 2rem;
+    }
+
+    .tablet-mb-3 {
+        margin-bottom: 3rem;
+    }
+
+    .tablet-mb-4 {
+        margin-bottom: 4rem;
+    }
+
+    .tablet-mb-5 {
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mb-65px {
+        margin-bottom: 65px;
+    }
+
+    .tablet-ml-0 {
+        margin-left: 0;
+    }
+
+    .tablet-ml-1 {
+        margin-left: 1rem;
+    }
+
+    .tablet-ml-2 {
+        margin-left: 2rem;
+    }
+
+    .tablet-ml-3 {
+        margin-left: 3rem;
+    }
+
+    .tablet-ml-4 {
+        margin-left: 4rem;
+    }
+
+    .tablet-ml-5 {
+        margin-left: 5rem;
+    }
+
+    .tablet-mr-0 {
+        margin-right: 0;
+    }
+
+    .tablet-mr-1 {
+        margin-right: 1rem;
+    }
+
+    .tablet-mr-2 {
+        margin-right: 2rem;
+    }
+
+    .tablet-mr-3 {
+        margin-right: 3rem;
+    }
+
+    .tablet-mr-4 {
+        margin-right: 4rem;
+    }
+
+    .tablet-mr-5 {
+        margin-right: 5rem;
+    }
+
+    /* Tablet Margins end*/
+}
+
+@media (min-width: 768px) and (max-width: 992px) {
+
+    #pnlRejectHistory, 
+    #pnlArchive, 
+    #pnlDoctorDefects, 
+    #pnlNurseDefects, 
+    #pnlPortions, 
+    #pnlBalances, 
+    #pnlTask,
+    #pnlPatients,
+    #pnlInPatients,
+    #pnlHistories,
+    #pnlRejectedHistories,
+    #pnlHospitalEvents, 
+    #pnlReports {
+        height: 450px !important;
+    }
+    
+    #pnlRejectHistory > .panel-body, 
+    #pnlArchive > .panel-body, 
+    #pnlDoctorDefects > .panel-body, 
+    #pnlNurseDefects > .panel-body, 
+    #pnlPortions > .panel-body, 
+    #pnlBalances > .panel-body, 
+    #pnlTask > .panel-body,
+    #pnlPatients > .panel-body,
+    #pnlInPatients > .panel-body,
+    #pnlHistories > .panel-body,
+    #pnlRejectedHistories > .panel-body,
+    #pnlHospitalEvents > .panel-body, 
+    #pnlReports > .panel-body {
+        height: 415px !important;
+    }
+
+    #schedulerSurgProces > .k-scheduler-layout.k-scheduler-timelineview > tbody > tr > td > .k-scheduler-times > .k-scheduler-table > tbody > tr > .k-slot-cell {
+        width: 100px;
+        overflow: scroll;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    #pnlArchive > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlTask > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlInPatients > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlRejectedHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalEvents > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlReports > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalResults > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    .tablet-w-33 {
+        width: 33% !important;
+    }
+    
+    .tablet-w-24 {
+        width: 24% !important;
+    }
+
+    .tablet-w-23 {
+        width: 23% !important;
+    }
+
+    .tablet-w-100 {
+        width: 100% !important;
+    }
+
+    .tablet-break-spaces {
+        white-space: break-spaces;
+    }
+
+    .tablet-bg-info.active {
+        background: #d9edf7 !important;
+    }
+
+    .tablet-bg-success.active {
+        background: #dff0d8 !important;
+    }
+
+    .tablet-bg-warning.active {
+        background: #fcf8e3 !important;
+    }
+
+    .tablet-bg-danger.active {
+        background: #f2dede !important;
+    }
+
+    .fx-grid.k-grid.k-widget {
+        min-height: 200px;
+    }
+
+    .tablet-dishs-d-none {
+        display: none !important;
+    }
+
+    .tablet-dishs-d-block {
+        display: block !important;
+    }
+
+    .tablet-t-n30 {
+        top: -30px;
+    }
+
+    .tablet-l-100 {
+        left: 100% !important;
+    }
+
+    .dropdown-menu-adapted-position {
+        top:-10px;
+        right:90px;
+        left:auto;
+    }
+    
+    table > tbody > tr > td {
+        overflow: auto;
+    }
+
+    .tablet-h-100 {
+        height: 100% !important;
+    }
+
+    #reanimation-shift-date {
+        position: fixed;
+        top: 194px;
+        background: #fff;
+        width: 100%;
+        z-index: 2;
+    }
+
+    #divMainGrid > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 3;
+        position: fixed;
+        top: 224px;
+    }
+
+    .assignmentHeader, .assingnment-value {
+        width: 50px;
+        height: 50px;
+    }
+
+    .assingnment-value {
+        position: relative; 
+        cursor: pointer;
+    }
+
+    .health-indicator-time {
+        width: 50px;
+        height: 50px;
+        position: relative;
+    }
+
+    .health-indicator-value, .assingnmentHeader {
+        width: 50px;
+        height: 50px;
+        position: relative; 
+        cursor: pointer;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: auto;
+    }
+
+    .tablet-w-200px {
+        width: 200px;
+    }
+
+    #divAssignmentDates > #tmplDivAssignmentDates > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 5;
+        position: fixed; 
+        top: 174px;
+    }
+
+    .tablet-fixed-row {
+        position: fixed;
+        top: 60px;
+        background: #fff;
+        width: 100%;
+        z-index: 6;
+    }
+
+    .desktop-fixed-row {
+        background-color: #fff;
+        height: 100%;
+        padding: 0;
+    }
+
+    .health-indicator-btn {
+        width: 37px;
+        height: 37px;
+        padding: 0;
+    }
+
+    .panel-default {
+        height: 100%;
+    }
+
+    #sPartogramDiv {
+        width: 100% !important;
+    }
+
+    label {
+        /* 
+            Необходим в случаях если форма верстается без использования bootstrap класса .control-label
+            в случае использования класса .control-label, следует обнулять это свойство 
+            label.control-label { margin-top: 0; }
+        */
+        font-weight: normal;
+    }
+
+    #divCalendar {
+        width: 100%;
+    }
+
+    .fixed-row {
+        position: fixed;
+        width: 100%;
+        height: 45px;
+        top: 60px;
+        background-color: #efeeee;
+        padding-right: 30px;
+        padding-top: 7px;
+        z-index: 1002;
+    }
+
+    .menu-height div {
+        height: 60px;
+    }
+
+    .reanim-fixed-row {
+        position: static;
+        background-color: #fff;
+        z-index: 1;
+    }
+
+    #divMainGrid {
+        max-width: 100vw;
+        overflow-x: scroll;
+    }
+
+    .tablet-label-position {
+        padding: 11px 27px;
+        top: 0 !important;
+    }
+
+    .btn-default.active > .bg-primary.tablet-label-position {
+        background: linear-gradient(0deg, rgba(51,122,183,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-info.tablet-label-position {
+        background: linear-gradient(0deg, rgba(217,237,247,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-warning.tablet-label-position {
+        background: linear-gradient(0deg, rgba(252,248,227,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-success.tablet-label-position {
+        background: linear-gradient(0deg, rgba(223,240,216,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-danger.tablet-label-position {
+        background: linear-gradient(0deg, rgba(242,222,222,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .content {
+        padding-top: 75px;
+    }
+
+    .patient-info {
+        position: fixed;
+        top: 0;
+        right: 170px;
+        z-index: 10;
+        width: 30%;
+        color: white;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        overflow: auto;
+        overflow-wrap: break-word;
+    }
+
+    .patient-info > h5 {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 13px;
+    }
+
+    .k-window {
+        max-width: 99vw;
+        max-height: 94vh;
+        overflow: auto;
+    }
+
+    .k-resize-handle.k-resize-n,
+    .k-resize-handle.k-resize-e,
+    .k-resize-handle.k-resize-s,
+    .k-resize-handle.k-resize-w,
+    .k-resize-handle.k-resize-se,
+    .k-resize-handle.k-resize-sw,
+    .k-resize-handle.k-resize-ne,
+    .k-resize-handle.k-resize-nw {
+        display: none;
+    }
+
+    #assignmentTable {
+        table-layout: fixed;
+    }
+
+    #assignmentTableBody {
+        overflow-wrap: break-word;
+    }
+
+    .notification {
+        width: 100%;
+    }
+
+    #grdAmbulanceCards > table {
+        table-layout: fixed;
+    }
+
+    #divAssignmentListHeader {
+        background: white;
+    }
+
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table {
+        table-layout: inherit;
+        height: 100%;
+        margin-top: 210px;
+    }
+
+    #grdAmbulanceCards > table > thead > tr > th,
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > thead > tr > th {
+        vertical-align: top;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+     
+    #grdAmbulanceCards > table > tbody > tr > td, 
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > tbody > tr > td {
+        vertical-align: top;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .nurse-office-func-structure {
+        position: fixed;
+        top: 68px;
+        z-index: 8;
+        height: 56px;
+        width: 96%;
+    }
+
+    #pnlPatients {
+        height: 100% !important;
+    }
+
+    #grdPatients {
+        height: 300px !important;
+    }
+
+    #grdPatients > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }
+
+    #pnlPortions {
+        height: 100% !important;
+    }
+
+    #grdPortions {
+        height: 300px !important;
+    }
+
+    #pnlTask {
+        height: 100% !important;
+    }
+
+    #grdTasks {
+        height: 300px !important;
+    }
+
+    #grdTasks > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }
+
+    #pnlBalances {
+        height: 100% !important;
+    }
+
+    #grdDrugBalances {
+        height: 300px !important;
+    }
+
+    #grdBalances > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }
+
+    #pnlDefects {
+        height: 100% !important;
+    }
+
+    .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 200px;
+    }
+
+    .fx-grid.k-grid.k-widget.k-grid-backface {
+        min-height: 200px;
+        height: 100% !important;
+    }
+
+    #pnlDefects > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100%;
+    }
+
+    .tablet-content-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tablet-align-items-center {
+        display: flex;
+        align-items: center;
+    }
+    
+    .tablet-justify-content-center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .tablet-justify-content-flex-end {
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .tablet-justify-content-between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .d-md-none {
+        display: none;
+    }
+
+    .d-md-block {
+        display: block;
+    }
+
+    .d-md-inline {
+        display: inline;
+    }
+    
+    .d-md-inline-block {
+        display: inline-block;
+    }
+
+    .d-md-flex {
+        display: flex;
+    }
+
+    .d-md-list-item {
+        display: list-item;
+    }
+
+    .justify-content-md-center {
+        justify-content: center;
+    }
+
+    .justify-content-md-around {
+        justify-content: space-around;
+    }
+
+    .justify-content-md-betweeen {
+        justify-content: space-between;
+    }
+
+    .justify-content-md-evenly {
+        justify-content: space-evenly;
+    }
+
+    .justify-content-md-stretch {
+        justify-content: stretch;
+    }
+
+    .justify-content-md-flex-start {
+        justify-content: flex-start;
+    }
+
+    .justify-content-md-flex-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-md-start {
+        justify-content: start;
+    }
+
+    .justify-content-md-end {
+        justify-content: end;
+    }
+
+    .justify-content-md-inherit {
+        justify-content: inherit;
+    }
+
+    .justify-content-md-initial {
+        justify-content: initial;
+    }
+
+    .justify-content-md-left {
+        justify-content: left;
+    }
+
+    .justify-content-md-right {
+        justify-content: right;
+    }
+
+    .justify-content-md-normal {
+        justify-content: normal;
+    }
+
+    .justify-content-md-safe-center {
+        justify-content: safe center;
+    }
+
+    .justify-content-md-unsafe-center {
+        justify-content: unsafe center;
+    }
+
+    .justify-content-md-unset {
+        justify-content: unset;
+    }
+
+    .align-items-md-center {
+        align-items: center;
+    }
+
+    .align-items-md-baseline {
+        align-items: baseline;
+    }
+
+    .align-items-md-start {
+        align-items: start;
+    }
+
+    .align-items-md-end {
+        align-items: end;
+    }
+
+    .align-items-md-flex-start {
+        align-items: flex-start;
+    }
+
+    .align-items-md-flex-end {
+        align-items: flex-end;
+    }
+
+    .align-items-md-normal {
+        align-items: normal;
+    }
+
+    .w-md-inherit {
+        width: inherit;
+    }
+
+    .w-md-inherit {
+        width: inherit;
+    }
+
+    .w-md-0 {
+        width: 0;
+    }
+
+    .w-md-25 {
+        width: 25%;
+    }
+
+    .w-md-50 {
+        width: 50%;
+    }
+
+    .w-md-75 {
+        width: 75%;
+    }
+
+    .w-md-100 {
+        width: 100%;
+    }
+
+    .tablet-w-10 {
+        width: 10%;
+    }
+
+    .tablet-d-none {
+        display: none;
+    }
+
+    .tablet-d-block {
+        display: block;
+    }
+
+    .tablet-d-flex {
+        display: flex;
+    }
+
+    .tablet-d-list-item {
+        display: list-item;
+    }
+
+    /*Paddings start*/
+
+    .p-md-inherit {
+        padding: inherit;
+    }
+
+    .p-md-initial {
+        padding: initial;
+    }
+
+    .p-md-0 {
+        padding: 0;
+    }
+
+    .p-md-1 {
+        padding: 1rem;
+    }
+
+    .p-md-2 {
+        padding: 2rem;
+    }
+
+    .p-md-3 {
+        padding: 3rem;
+    }
+
+    .p-md-4 {
+        padding: 4rem;
+    }
+
+    .p-md-5 {
+        padding: 5rem;
+    }
+
+    .py-md-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-md-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-md-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .py-md-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .py-md-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .py-md-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .px-md-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .px-md-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .px-md-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .px-md-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .px-md-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .px-md-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .pt-md-0 {
+        padding-top: 0;
+    }
+
+    .pt-md-1 {
+        padding-top: 1rem;
+    }
+
+    .pt-md-2 {
+        padding-top: 2rem;
+    }
+
+    .pt-md-3 {
+        padding-top: 3rem;
+    }
+
+    .pt-md-4 {
+        padding-top: 4rem;
+    }
+
+    .pt-md-5 {
+        padding-top: 5rem;
+    }
+
+    .pb-md-0 {
+        padding-bottom: 0;
+    }
+
+    .pb-md-1 {
+        padding-bottom: 1rem;
+    }
+
+    .pb-md-2 {
+        padding-bottom: 2rem;
+    }
+
+    .pb-md-3 {
+        padding-bottom: 3rem;
+    }
+
+    .pb-md-4 {
+        padding-bottom: 4rem;
+    }
+
+    .pb-md-5 {
+        padding-bottom: 5rem;
+    }
+
+    .pl-md-0 {
+        padding-left: 0;
+    }
+
+    .pl-md-1 {
+        padding-left: 1rem;
+    }
+
+    .pl-md-2 {
+        padding-left: 2rem;
+    }
+
+    .pl-md-3 {
+        padding-left: 3rem;
+    }
+
+    .pl-md-4 {
+        padding-left: 4rem;
+    }
+
+    .pl-md-5 {
+        padding-left: 5rem;
+    }
+
+    .pr-md-0 {
+        padding-right: 0;
+    }
+
+    .pr-md-1 {
+        padding-right: 1rem;
+    }
+
+    .pr-md-2 {
+        padding-right: 2rem;
+    }
+
+    .pr-md-3 {
+        padding-right: 3rem;
+    }
+
+    .pr-md-4 {
+        padding-right: 4rem;
+    }
+
+    .pr-md-5 {
+        padding-right: 5rem;
+    }
+
+    .p-md-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .m-md-inherit {
+        margin: inherit;
+    }
+
+    .m-md-initial {
+        margin: initial;
+    }
+
+    .m-md-0 {
+        margin: 0;
+    }
+
+    .m-md-1 {
+        margin: 1rem;
+    }
+
+    .m-md-2 {
+        margin: 2rem;
+    }
+
+    .m-md-3 {
+        margin: 3rem;
+    }
+
+    .m-md-4 {
+        margin: 4rem;
+    }
+
+    .m-md-5 {
+        margin: 5rem;
+    }
+
+    .my-md-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .my-md-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-md-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .my-md-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .my-md-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .my-md-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .mx-md-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mx-md-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .mx-md-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .mx-md-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .mx-md-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .mx-md-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .mt-md-0 {
+        margin-top: 0;
+    }
+
+    .mt-md-1 {
+        margin-top: 1rem;
+    }
+
+    .mt-md-2 {
+        margin-top: 2rem;
+    }
+
+    .mt-md-3 {
+        margin-top: 3rem;
+    }
+
+    .mt-md-4 {
+        margin-top: 4rem;
+    }
+
+    .mt-md-5 {
+        margin-top: 5rem;
+    }
+
+    .mb-md-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-md-1 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-md-2 {
+        margin-bottom: 2rem;
+    }
+
+    .mb-md-3 {
+        margin-bottom: 3rem;
+    }
+
+    .mb-md-4 {
+        margin-bottom: 4rem;
+    }
+
+    .mb-md-5 {
+        margin-bottom: 5rem;
+    }
+
+    .ml-md-0 {
+        margin-left: 0;
+    }
+
+    .ml-md-1 {
+        margin-left: 1rem;
+    }
+
+    .ml-md-2 {
+        margin-left: 2rem;
+    }
+
+    .ml-md-3 {
+        margin-left: 3rem;
+    }
+
+    .ml-md-4 {
+        margin-left: 4rem;
+    }
+
+    .ml-md-5 {
+        margin-left: 5rem;
+    }
+
+    .mr-md-0 {
+        margin-right: 0;
+    }
+
+    .mr-md-1 {
+        margin-right: 1rem;
+    }
+
+    .mr-md-2 {
+        margin-right: 2rem;
+    }
+
+    .mr-md-3 {
+        margin-right: 3rem;
+    }
+
+    .mr-md-4 {
+        margin-right: 4rem;
+    }
+
+    .mr-md-5 {
+        margin-right: 5rem;
+    }
+
+    /*Margins end*/
+
+    /* Tablet Paddings start*/
+
+    .tablet-p-inherit {
+        padding: inherit;
+    }
+
+    .tablet-p-initial {
+        padding: initial;
+    }
+
+    .tablet-p-0 {
+        padding: 0;
+    }
+
+    .tablet-p-1 {
+        padding: 1rem;
+    }
+
+    .tablet-p-2 {
+        padding: 2rem;
+    }
+
+    .tablet-p-3 {
+        padding: 3rem;
+    }
+
+    .tablet-p-4 {
+        padding: 4rem;
+    }
+
+    .tablet-p-5 {
+        padding: 5rem;
+    }
+
+    .tablet-py-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .tablet-py-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .tablet-py-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .tablet-py-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .tablet-py-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .tablet-py-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .tablet-px-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tablet-px-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .tablet-px-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .tablet-px-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .tablet-px-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .tablet-px-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .tablet-pt-0 {
+        padding-top: 0;
+    }
+
+    .tablet-pt-1 {
+        padding-top: 1rem;
+    }
+
+    .tablet-pt-2 {
+        padding-top: 2rem;
+    }
+
+    .tablet-pt-3 {
+        padding-top: 3rem;
+    }
+
+    .tablet-pt-4 {
+        padding-top: 4rem;
+    }
+
+    .tablet-pt-5 {
+        padding-top: 5rem;
+    }
+
+    .tablet-pt-170px {
+        padding-top: 170px;
+    }
+
+    .tablet-pb-0 {
+        padding-bottom: 0;
+    }
+
+    .tablet-pb-1 {
+        padding-bottom: 1rem;
+    }
+
+    .tablet-pb-2 {
+        padding-bottom: 2rem;
+    }
+
+    .tablet-pb-3 {
+        padding-bottom: 3rem;
+    }
+
+    .tablet-pb-4 {
+        padding-bottom: 4rem;
+    }
+
+    .tablet-pb-5 {
+        padding-bottom: 5rem;
+    }
+
+    .tablet-pl-0 {
+        padding-left: 0;
+    }
+
+    .tablet-pl-1 {
+        padding-left: 1rem;
+    }
+
+    .tablet-pl-2 {
+        padding-left: 2rem;
+    }
+
+    .tablet-pl-3 {
+        padding-left: 3rem;
+    }
+
+    .tablet-pl-4 {
+        padding-left: 4rem;
+    }
+
+    .tablet-pl-5 {
+        padding-left: 5rem;
+    }
+
+    .tablet-pr-0 {
+        padding-right: 0;
+    }
+
+    .tablet-pr-1 {
+        padding-right: 1rem;
+    }
+
+    .tablet-pr-2 {
+        padding-right: 2rem;
+    }
+
+    .tablet-pr-3 {
+        padding-right: 3rem;
+    }
+
+    .tablet-pr-4 {
+        padding-right: 4rem;
+    }
+
+    .tablet-pr-5 {
+        padding-right: 5rem;
+    }
+
+    .tablet-pb-15px {
+        padding-bottom: 15px;
+    }
+
+    .tablet-p-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+
+
+    /*Margins start*/
+
+    .tablet-m-inherit {
+        margin: inherit;
+    }
+
+    .tablet-m-initial {
+        margin: initial;
+    }
+
+    .tablet-m-0 {
+        margin: 0;
+    }
+
+    .tablet-m-1 {
+        margin: 1rem;
+    }
+
+    .tablet-m-2 {
+        margin: 2rem;
+    }
+
+    .tablet-m-3 {
+        margin: 3rem;
+    }
+
+    .tablet-m-4 {
+        margin: 4rem;
+    }
+
+    .tablet-m-5 {
+        margin: 5rem;
+    }
+
+    .tablet-my-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .tablet-my-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .tablet-my-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .tablet-my-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .tablet-my-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .tablet-my-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mx-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tablet-mx-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .tablet-mx-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .tablet-mx-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .tablet-mx-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .tablet-mx-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .tablet-mt-0 {
+        margin-top: 0;
+    }
+
+    .tablet-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .tablet-mt-2 {
+        margin-top: 2rem;
+    }
+
+    .tablet-mt-3 {
+        margin-top: 3rem;
+    }
+
+    .tablet-mt-4 {
+        margin-top: 4rem;
+    }
+
+    .tablet-mt-5 {
+        margin-top: 5rem;
+    }
+
+    .tablet-mt-65px {
+        margin-top: 65px;
+    }
+
+    .tablet-mt-170px {
+        margin-top: 170px;
+    }
+
+    .tablet-mb-0 {
+        margin-bottom: 0;
+    }
+
+    .tablet-mb-1 {
+        margin-bottom: 1rem;
+    }
+
+    .tablet-mb-2 {
+        margin-bottom: 2rem;
+    }
+
+    .tablet-mb-3 {
+        margin-bottom: 3rem;
+    }
+
+    .tablet-mb-4 {
+        margin-bottom: 4rem;
+    }
+
+    .tablet-mb-5 {
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mb-65px {
+        margin-bottom: 65px;
+    }
+
+    .tablet-ml-0 {
+        margin-left: 0;
+    }
+
+    .tablet-ml-1 {
+        margin-left: 1rem;
+    }
+
+    .tablet-ml-2 {
+        margin-left: 2rem;
+    }
+
+    .tablet-ml-3 {
+        margin-left: 3rem;
+    }
+
+    .tablet-ml-4 {
+        margin-left: 4rem;
+    }
+
+    .tablet-ml-5 {
+        margin-left: 5rem;
+    }
+
+    .tablet-mr-0 {
+        margin-right: 0;
+    }
+
+    .tablet-mr-1 {
+        margin-right: 1rem;
+    }
+
+    .tablet-mr-2 {
+        margin-right: 2rem;
+    }
+
+    .tablet-mr-3 {
+        margin-right: 3rem;
+    }
+
+    .tablet-mr-4 {
+        margin-right: 4rem;
+    }
+
+    .tablet-mr-5 {
+        margin-right: 5rem;
+    }
+
+    /* Tablet Margins end*/
+}
+
+@media (min-width: 992px) and (max-width: 1200px) {
+
+    #pnlRejectHistory, 
+    #pnlArchive, 
+    #pnlPortions, 
+    #pnlBalances, 
+    #pnlTask,
+    #pnlPatients,
+    #pnlInPatients,
+    #pnlHistories,
+    #pnlRejectedHistories,
+    #pnlHospitalEvents, 
+    #pnlReports {
+        height: 450px !important;
+    }
+    
+    #pnlRejectHistory > .panel-body, 
+    #pnlArchive > .panel-body, 
+    #pnlDoctorDefects > .panel-body, 
+    #pnlNurseDefects > .panel-body, 
+    #pnlPortions > .panel-body, 
+    #pnlBalances > .panel-body, 
+    #pnlTask > .panel-body,
+    #pnlPatients > .panel-body,
+    #pnlInPatients > .panel-body,
+    #pnlHistories > .panel-body,
+    #pnlRejectedHistories > .panel-body,
+    #pnlHospitalEvents > .panel-body, 
+    #pnlReports > .panel-body {
+        height: 415px !important;
+    }    
+
+    #schedulerSurgProces > .k-scheduler-layout.k-scheduler-timelineview > tbody > tr > td > .k-scheduler-times > .k-scheduler-table > tbody > tr > .k-slot-cell {
+        width: 100px;
+        overflow: scroll;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    #pnlArchive > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlTask > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlInPatients > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlRejectedHistories > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalEvents > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlReports > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    #pnlHospitalResults > .panel-heading {
+        height: 41.25px !important;
+    }
+
+    .tablet-w-33 {
+        width: 33% !important;
+    }
+    
+    .tablet-w-24 {
+        width: 24% !important;
+    }
+
+    .tablet-w-23 {
+        width: 23% !important;
+    }
+
+    .tablet-w-100 {
+        width: 100% !important;
+    }
+
+    .tablet-break-spaces {
+        white-space: break-spaces;
+    }
+
+    .tablet-bg-info.active {
+        background: #d9edf7 !important;
+    }
+
+    .tablet-bg-success.active {
+        background: #dff0d8 !important;
+    }
+
+    .tablet-bg-warning.active {
+        background: #fcf8e3 !important;
+    }
+
+    .tablet-bg-danger.active {
+        background: #f2dede !important;
+    }
+
+    .fx-grid.k-grid.k-widget {
+        min-height: 200px;
+    }
+
+    .tablet-dishs-d-none {
+        display: none !important;
+    }
+
+    .tablet-dishs-d-block {
+        display: block !important;
+    }
+
+    .tablet-t-n30 {
+        top: -30px;
+    }
+
+    .tablet-l-100 {
+        left: 100% !important;
+    }
+
+    .dropdown-menu-adapted-position {
+        top:-10px;
+        right:90px;
+        left:auto;
+    }
+    
+    table > tbody > tr > td {
+        overflow: auto;
+    }
+
+    #reanimation-shift-date {
+        position: fixed;
+        top: 194px;
+        background: #fff;
+        width: 100%;
+        z-index: 2;
+    }
+
+    #divMainGrid > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 2;
+        position: fixed;
+        top: 224px;
+    }
+
+    .assignmentHeader, .assingnment-value {
+        width: 50px;
+        height: 50px;
+    }
+
+    .assingnment-value {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .health-indicator-time {
+        width: 50px;
+        height: 50px;
+        position: relative;
+    }
+
+    .health-indicator-value, .assingnmentHeader {
+        width: 50px;
+        height: 50px;
+        position: relative; 
+        cursor: pointer;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: auto;
+    }
+
+    .desktop-w-380px {
+        width: 380px;
+    }
+
+    .desktop-index-5 {
+        z-index: initial;
+    }
+
+    #divAssignmentDates > #tmplDivAssignmentDates > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 1;
+        position: fixed;
+        top: 194px;
+    }
+
+    .tablet-fixed-row {
+        position: fixed;
+        top: 40px;
+        background: #fff;
+        width: 100%;
+        z-index: 3;
+        padding-top: 20px;
+        height: 145px;
+    }
+
+    .desktop-fixed-row {
+        background-color: #fff;
+        height: 100%;
+        margin-top: -10px;
+        padding-top: 10px;
+    }
+
+    .health-indicator-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    #sPartogramDiv {
+        width: 100% !important;
+    }
+
+    label {
+        /* 
+            Необходим в случаях если форма верстается без использования bootstrap класса .control-label
+            в случае использования класса .control-label, следует обнулять это свойство 
+            label.control-label { margin-top: 0; }
+        */
+        font-weight: normal;
+    }
+
+    #divCalendar {
+        width: 100%;
+    }
+
+    .fixed-row {
+        position: fixed;
+        width: 100%;
+        height: 45px;
+        top: 60px;
+        background-color: #efeeee;
+        padding-right: 30px;
+        padding-top: 7px;
+        z-index: 1002;
+    }
+
+    .menu-height div {
+        height: 60px;
+    }
+
+    .reanim-fixed-row {
+        position: static;
+        background-color: #fff;
+        z-index: 1;
+    }
+
+    #divMainGrid {
+        max-width: 100vw;
+        overflow-x: scroll;
+    }
+
+    .tablet-label-position {
+        padding: 11px 27px;
+        top: 0 !important;
+    }
+
+    .btn-default.active > .bg-primary.tablet-label-position {
+        background: linear-gradient(0deg, rgba(51,122,183,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-info.tablet-label-position {
+        background: linear-gradient(0deg, rgba(217,237,247,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-warning.tablet-label-position {
+        background: linear-gradient(0deg, rgba(252,248,227,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-success.tablet-label-position {
+        background: linear-gradient(0deg, rgba(223,240,216,1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .btn-default.active > .bg-danger.tablet-label-position {
+        background: linear-gradient(0deg, rgba(242,222,222,1) 0%, rgba(0,0,0,0) 100%);
+    }
+    
+    .content {
+        padding-top: 75px;
+    }
+
+    .patient-info {
+        position: fixed;
+        top: 0;
+        right: 170px;
+        z-index: 10;
+        width: 30%;
+        color: white;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        overflow: auto;
+        overflow-wrap: break-word;
+    }
+
+    .patient-info > h5 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .k-window {
+        max-width: 99vw;
+        max-height: 94vh;
+        overflow: auto;
+    }
+
+    .k-resize-handle.k-resize-n,
+    .k-resize-handle.k-resize-e,
+    .k-resize-handle.k-resize-s,
+    .k-resize-handle.k-resize-w,
+    .k-resize-handle.k-resize-se,
+    .k-resize-handle.k-resize-sw,
+    .k-resize-handle.k-resize-ne,
+    .k-resize-handle.k-resize-nw {
+        display: none;
+    }
+
+    #assignmentTable {
+        table-layout: fixed;
+    }
+
+    #assignmentTableBody {
+        overflow-wrap: break-word;
+    }
+
+    .notification {        
+        width: 100%; 
+    }
+    
+    #grdAmbulanceCards > table {
+        table-layout: fixed;
+    }
+
+    #divAssignmentListHeader {
+        background: white;
+    }
+
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table {
+        table-layout: inherit;
+        height: 100%;
+        margin-top: 210px;
+    }
+
+    #grdAmbulanceCards > table > thead > tr > th,
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > thead > tr > th {
+        vertical-align: top;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+     
+    #grdAmbulanceCards > table > tbody > tr > td, 
+    #divAssignmentListHeader > #tmplDivAssignmentListHeader > table > tbody > tr > td {
+        vertical-align: bottom;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .tablet-content-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tablet-align-items-center {
+        display: flex;
+        align-items: center;
+    }
+
+    .tablet-justify-content-center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .tablet-justify-content-flex-end {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tablet-justify-content-between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    #grdPatients {
+        height: 300px !important;
+    }
+
+    #grdPatients > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }
+    
+    #grdPortions {
+        height: 300px !important;
+    }
+
+    #grdTasks {
+        height: 300px !important;
+    }
+
+    #grdTasks > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }
+
+    #grdDrugBalances {
+        height: 300px !important;
+    }
+
+    #grdBalances > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100% !important;
+    }    
+
+    .k-grid-content.km-widget.km-scroll-wrapper {
+        min-height: 200px !important;
+        height: 400px;
+    }
+
+    .fx-grid.k-grid.k-widget.k-grid-backface {
+        min-height: 200px;
+        height: 100% !important;
+    }
+
+    #pnlDefects > .k-grid-content.km-widget.km-scroll-wrapper {
+        height: 100%;
+    }    
+
+    .d-lg-none {
+        display: none;
+    }
+
+    .d-lg-block {
+        display: block;
+    }
+
+    .d-lg-inline {
+        display: inline;
+    }
+    
+    .d-lg-inline-block {
+        display: inline-block;
+    }
+
+    .d-lg-flex {
+        display: flex;
+    }
+
+    .d-lg-list-item {
+        display: list-item;
+    }
+
+    .justify-content-lg-center {
+        justify-content: center;
+    }
+
+    .justify-content-lg-around {
+        justify-content: space-around;
+    }
+
+    .justify-content-lg-betweeen {
+        justify-content: space-between;
+    }
+
+    .justify-content-lg-evenly {
+        justify-content: space-evenly;
+    }
+
+    .justify-content-lg-stretch {
+        justify-content: stretch;
+    }
+
+    .justify-content-lg-flex-start {
+        justify-content: flex-start;
+    }
+
+    .justify-content-lg-flex-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-lg-start {
+        justify-content: start;
+    }
+
+    .justify-content-lg-end {
+        justify-content: end;
+    }
+
+    .justify-content-lg-inherit {
+        justify-content: inherit;
+    }
+
+    .justify-content-lg-initial {
+        justify-content: initial;
+    }
+
+    .justify-content-lg-left {
+        justify-content: left;
+    }
+
+    .justify-content-lg-right {
+        justify-content: right;
+    }
+
+    .justify-content-lg-normal {
+        justify-content: normal;
+    }
+
+    .justify-content-lg-safe-center {
+        justify-content: safe center;
+    }
+
+    .justify-content-lg-unsafe-center {
+        justify-content: unsafe center;
+    }
+
+    .justify-content-lg-unset {
+        justify-content: unset;
+    }
+
+    .align-items-lg-center {
+        align-items: center;
+    }
+
+    .align-items-lg-baseline {
+        align-items: baseline;
+    }
+
+    .align-items-lg-start {
+        align-items: start;
+    }
+
+    .align-items-lg-end {
+        align-items: end;
+    }
+
+    .align-items-lg-flex-start {
+        align-items: flex-start;
+    }
+
+    .align-items-lg-flex-end {
+        align-items: flex-end;
+    }
+
+    .align-items-lg-normal {
+        align-items: normal;
+    }
+
+    .w-lg-inherit {
+        width: inherit;
+    }
+
+    .w-lg-0 {
+        width: 0;
+    }
+
+    .w-lg-25 {
+        width: 25%;
+    }
+
+    .w-lg-50 {
+        width: 50%;
+    }
+
+    .w-lg-75 {
+        width: 75%;
+    }
+
+    .w-lg-100 {
+        width: 100%;
+    }
+
+    .w-lg-200 {
+        width: 300px;
+    }
+
+    .tablet-w-10 {
+        width: 10%;
+    }
+
+    .tablet-d-none {
+        display: block;
+    }
+
+    .tablet-d-block {
+        display: none;
+    }
+
+    .tablet-d-flex {
+        display: initial;
+    }
+
+    .tablet-d-list-item {
+        display: list-item;
+    }
+
+    /*Paddings start*/
+
+    .p-lg-inherit {
+        padding: inherit;
+    }
+
+    .p-lg-initial {
+        padding: initial;
+    }
+
+    .p-lg-0 {
+        padding: 0;
+    }
+
+    .p-lg-1 {
+        padding: 1rem;
+    }
+
+    .p-lg-2 {
+        padding: 2rem;
+    }
+
+    .p-lg-3 {
+        padding: 3rem;
+    }
+
+    .p-lg-4 {
+        padding: 4rem;
+    }
+
+    .p-lg-5 {
+        padding: 5rem;
+    }
+
+    .py-lg-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-lg-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-lg-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .py-lg-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .py-lg-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .py-lg-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .px-lg-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .px-lg-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .px-lg-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .px-lg-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .px-lg-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .px-lg-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .pt-lg-0 {
+        padding-top: 0;
+    }
+
+    .pt-lg-1 {
+        padding-top: 1rem;
+    }
+
+    .pt-lg-2 {
+        padding-top: 2rem;
+    }
+
+    .pt-lg-3 {
+        padding-top: 3rem;
+    }
+
+    .pt-lg-4 {
+        padding-top: 4rem;
+    }
+
+    .pt-lg-5 {
+        padding-top: 5rem;
+    }
+
+    .pb-lg-0 {
+        padding-bottom: 0;
+    }
+
+    .pb-lg-1 {
+        padding-bottom: 1rem;
+    }
+
+    .pb-lg-2 {
+        padding-bottom: 2rem;
+    }
+
+    .pb-lg-3 {
+        padding-bottom: 3rem;
+    }
+
+    .pb-lg-4 {
+        padding-bottom: 4rem;
+    }
+
+    .pb-lg-5 {
+        padding-bottom: 5rem;
+    }
+
+    .pl-lg-0 {
+        padding-left: 0;
+    }
+
+    .pl-lg-1 {
+        padding-left: 1rem;
+    }
+
+    .pl-lg-2 {
+        padding-left: 2rem;
+    }
+
+    .pl-lg-3 {
+        padding-left: 3rem;
+    }
+
+    .pl-lg-4 {
+        padding-left: 4rem;
+    }
+
+    .pl-lg-5 {
+        padding-left: 5rem;
+    }
+
+    .pr-lg-0 {
+        padding-right: 0;
+    }
+
+    .pr-lg-1 {
+        padding-right: 1rem;
+    }
+
+    .pr-lg-2 {
+        padding-right: 2rem;
+    }
+
+    .pr-lg-3 {
+        padding-right: 3rem;
+    }
+
+    .pr-lg-4 {
+        padding-right: 4rem;
+    }
+
+    .pr-lg-5 {
+        padding-right: 5rem;
+    }
+
+    .p-lg-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+
+
+    /*Margins start*/
+
+    .m-lg-inherit {
+        margin: inherit;
+    }
+
+    .m-lg-initial {
+        margin: initial;
+    }
+
+    .m-lg-0 {
+        margin: 0;
+    }
+
+    .m-lg-1 {
+        margin: 1rem;
+    }
+
+    .m-lg-2 {
+        margin: 2rem;
+    }
+
+    .m-lg-3 {
+        margin: 3rem;
+    }
+
+    .m-lg-4 {
+        margin: 4rem;
+    }
+
+    .m-lg-5 {
+        margin: 5rem;
+    }
+
+    .my-lg-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .my-lg-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-lg-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .my-lg-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .my-lg-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .my-lg-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .mx-lg-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mx-lg-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .mx-lg-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .mx-lg-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .mx-lg-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .mx-lg-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .mt-lg-0 {
+        margin-top: 0;
+    }
+
+    .mt-lg-1 {
+        margin-top: 1rem;
+    }
+
+    .mt-lg-2 {
+        margin-top: 2rem;
+    }
+
+    .mt-lg-3 {
+        margin-top: 3rem;
+    }
+
+    .mt-lg-4 {
+        margin-top: 4rem;
+    }
+
+    .mt-lg-5 {
+        margin-top: 5rem;
+    }
+
+    .mt-lg-150px {
+        margin-top: 150px;
+    }
+
+    .mb-lg-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-lg-1 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-lg-2 {
+        margin-bottom: 2rem;
+    }
+
+    .mb-lg-3 {
+        margin-bottom: 3rem;
+    }
+
+    .mb-lg-4 {
+        margin-bottom: 4rem;
+    }
+
+    .mb-lg-5 {
+        margin-bottom: 5rem;
+    }
+
+    .ml-lg-0 {
+        margin-left: 0;
+    }
+
+    .ml-lg-1 {
+        margin-left: 1rem;
+    }
+
+    .ml-lg-2 {
+        margin-left: 2rem;
+    }
+
+    .ml-lg-3 {
+        margin-left: 3rem;
+    }
+
+    .ml-lg-4 {
+        margin-left: 4rem;
+    }
+
+    .ml-lg-5 {
+        margin-left: 5rem;
+    }
+
+    .mr-lg-0 {
+        margin-right: 0;
+    }
+
+    .mr-lg-1 {
+        margin-right: 1rem;
+    }
+
+    .mr-lg-2 {
+        margin-right: 2rem;
+    }
+
+    .mr-lg-3 {
+        margin-right: 3rem;
+    }
+
+    .mr-lg-4 {
+        margin-right: 4rem;
+    }
+
+    .mr-lg-5 {
+        margin-right: 5rem;
+    }
+
+    /*Margins end*/
+
+    /* Tablet Paddings start*/
+
+    .tablet-p-inherit {
+        padding: inherit;
+    }
+
+    .tablet-p-initial {
+        padding: initial;
+    }
+
+    .tablet-p-0 {
+        padding: 0;
+    }
+
+    .tablet-p-1 {
+        padding: 1rem;
+    }
+
+    .tablet-p-2 {
+        padding: 2rem;
+    }
+
+    .tablet-p-3 {
+        padding: 3rem;
+    }
+
+    .tablet-p-4 {
+        padding: 4rem;
+    }
+
+    .tablet-p-5 {
+        padding: 5rem;
+    }
+
+    .tablet-py-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .tablet-py-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .tablet-py-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .tablet-py-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .tablet-py-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .tablet-py-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .tablet-px-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .tablet-px-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .tablet-px-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .tablet-px-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .tablet-px-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .tablet-px-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .tablet-pt-0 {
+        padding-top: 0;
+    }
+
+    .tablet-pt-1 {
+        padding-top: 1rem;
+    }
+
+    .tablet-pt-2 {
+        padding-top: 2rem;
+    }
+
+    .tablet-pt-3 {
+        padding-top: 3rem;
+    }
+
+    .tablet-pt-4 {
+        padding-top: 4rem;
+    }
+
+    .tablet-pt-5 {
+        padding-top: 5rem;
+    }
+
+    .tablet-pt-170px {
+        padding-top: 170px;
+    }
+
+    .tablet-pb-0 {
+        padding-bottom: 0;
+    }
+
+    .tablet-pb-1 {
+        padding-bottom: 1rem;
+    }
+
+    .tablet-pb-2 {
+        padding-bottom: 2rem;
+    }
+
+    .tablet-pb-3 {
+        padding-bottom: 3rem;
+    }
+
+    .tablet-pb-4 {
+        padding-bottom: 4rem;
+    }
+
+    .tablet-pb-5 {
+        padding-bottom: 5rem;
+    }
+
+    .tablet-pl-0 {
+        padding-left: 0;
+    }
+
+    .tablet-pl-1 {
+        padding-left: 1rem;
+    }
+
+    .tablet-pl-2 {
+        padding-left: 2rem;
+    }
+
+    .tablet-pl-3 {
+        padding-left: 3rem;
+    }
+
+    .tablet-pl-4 {
+        padding-left: 4rem;
+    }
+
+    .tablet-pl-5 {
+        padding-left: 5rem;
+    }
+
+    .tablet-pr-0 {
+        padding-right: 0;
+    }
+
+    .tablet-pr-1 {
+        padding-right: 1rem;
+    }
+
+    .tablet-pr-2 {
+        padding-right: 2rem;
+    }
+
+    .tablet-pr-3 {
+        padding-right: 3rem;
+    }
+
+    .tablet-pr-4 {
+        padding-right: 4rem;
+    }
+
+    .tablet-pr-5 {
+        padding-right: 5rem;
+    }
+
+    .tablet-pb-15px {
+        padding-bottom: 15px;
+    }
+
+    .tablet-p-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+
+
+    /*Margins start*/
+
+    .tablet-m-inherit {
+        margin: inherit;
+    }
+
+    .tablet-m-initial {
+        margin: initial;
+    }
+
+    .tablet-m-0 {
+        margin: 0;
+    }
+
+    .tablet-m-1 {
+        margin: 1rem;
+    }
+
+    .tablet-m-2 {
+        margin: 2rem;
+    }
+
+    .tablet-m-3 {
+        margin: 3rem;
+    }
+
+    .tablet-m-4 {
+        margin: 4rem;
+    }
+
+    .tablet-m-5 {
+        margin: 5rem;
+    }
+
+    .tablet-my-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .tablet-my-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .tablet-my-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .tablet-my-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .tablet-my-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .tablet-my-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mx-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .tablet-mx-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .tablet-mx-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .tablet-mx-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .tablet-mx-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .tablet-mx-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .tablet-mt-0 {
+        margin-top: 0;
+    }
+
+    .tablet-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .tablet-mt-2 {
+        margin-top: 2rem;
+    }
+
+    .tablet-mt-3 {
+        margin-top: 3rem;
+    }
+
+    .tablet-mt-4 {
+        margin-top: 4rem;
+    }
+
+    .tablet-mt-5 {
+        margin-top: 5rem;
+    }
+
+    .tablet-mt-65px {
+        margin-top: 65px;
+    }
+
+    .tablet-mt-170px {
+        margin-top: 170px;
+    }
+
+    .tablet-mb-0 {
+        margin-bottom: 0;
+    }
+
+    .tablet-mb-1 {
+        margin-bottom: 1rem;
+    }
+
+    .tablet-mb-2 {
+        margin-bottom: 2rem;
+    }
+
+    .tablet-mb-3 {
+        margin-bottom: 3rem;
+    }
+
+    .tablet-mb-4 {
+        margin-bottom: 4rem;
+    }
+
+    .tablet-mb-5 {
+        margin-bottom: 5rem;
+    }
+
+    .tablet-mb-65px {
+        margin-bottom: 65px;
+    }
+
+    .tablet-ml-0 {
+        margin-left: 0;
+    }
+
+    .tablet-ml-1 {
+        margin-left: 1rem;
+    }
+
+    .tablet-ml-2 {
+        margin-left: 2rem;
+    }
+
+    .tablet-ml-3 {
+        margin-left: 3rem;
+    }
+
+    .tablet-ml-4 {
+        margin-left: 4rem;
+    }
+
+    .tablet-ml-5 {
+        margin-left: 5rem;
+    }
+
+    .tablet-mr-0 {
+        margin-right: 0;
+    }
+
+    .tablet-mr-1 {
+        margin-right: 1rem;
+    }
+
+    .tablet-mr-2 {
+        margin-right: 2rem;
+    }
+
+    .tablet-mr-3 {
+        margin-right: 3rem;
+    }
+
+    .tablet-mr-4 {
+        margin-right: 4rem;
+    }
+
+    .tablet-mr-5 {
+        margin-right: 5rem;
+    }
+
+    /* Tablet Margins end*/
+
+    /*Desktop margins start*/
+
+    .desktop-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .desktop-mt-80px {
+        margin-top: 80px;
+    }
+
+    .desktop-mt-150px {
+        margin-top: 150px;
+    }
+
+    .desktop-mt-200px {
+        margin-top: 200px;
+    }
+
+    /*Desktop margins end*/
+
+    .desktop-d-none {
+        display: none;
+    }
+
+    .desktop-d-block {
+        display: block;
+    }
+
+}
+
+@media (min-width: 1200px) {
+
+    #pnlReports,
+    #pnlHospitalEvents,
+    #pnlReports > .panel-body {
+        height: 100%;
+    }
+
+    .desktop-t-n20 {
+        top: -20px !important;
+    }
+
+    .desktop-r-0 {
+        right: 0;
+    }
+
+    #mh-body {
+        min-height: 750px !important;
+    }
+
+    .w-xl-442px {
+        width: 442px !important;
+    }
+    
+    #divMainGrid > #tblAssignmentListHeader {
+        width: 100%; 
+        table-layout: fixed; 
+        font-size: small; 
+        top: 290px; 
+        margin-bottom: 0; 
+        z-index: 3; 
+        position: relative;
+    }
+
+    .assingnment-value {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .health-indicator-time {
+        position: relative;
+    }
+
+    .health-indicator-value, .assingnmentHeader {
+        position: relative; 
+        cursor: pointer;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .desktop-w-380px {
+        width: 380px;
+    }
+
+    .desktop-index-5 {
+        z-index: 5;
+    }
+
+    #divAssignmentDates > #tmplDivAssignmentDates > #tblAssignmentListHeader {
+        width: 100%;
+        table-layout: fixed;
+        font-size: small;
+        margin-bottom: 0;
+        z-index: 2;
+        position: relative; 
+    }
+
+    .desktop-fixed-row {
+        position: fixed;
+        background-color: #fff;
+        height: 190px;
+        margin-top: -10px;
+        padding-top: 10px;
+    }
+
+    .health-indicator-btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .tablet-d-block {
+        display: none;
+    }
+
+    .tablet-d-flex {
+        display: initial;
+    }
+
+    #sPartogramDiv {
+        width: 830px !important;
+    }
+
+    #pbPartogramPatientRow {
+        min-width: 630px;
+        margin: 5px 0 0 0;
+        padding: 7px 0px;
+    }
+
+    #pbPartogramPatientRegistrationNumber {
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;
+    }
+
+    label {
+        /* 
+            Необходим в случаях если форма верстается без использования bootstrap класса .control-label
+            в случае использования класса .control-label, следует обнулять это свойство 
+            label.control-label { margin-top: 0; }
+        */
+        margin-top: 4px;
+        font-weight: normal;
+    }
+    
+    #divCalendar {
+        width: 100%;
+    }
+
+    .fixed-row {
+        position: fixed;
+        width: 100%;
+        height: 45px;
+        top: 60px;
+        background-color: #efeeee;
+        padding-right: 30px;
+        padding-top: 7px;
+        z-index: 1002;
+    }
+
+    .menu-height div {
+        height: 60px;
+    }
+
+    .top-xl-220px {
+        top: 220px;
+    }
+
+    .top-xl-290px {
+        top: 290px;
+    }
+    
+    .reanim-fixed-row {
+        position: fixed;
+        background-color: #fff;
+        z-index: 1;
+        height: 302px;
+        margin-top: -10px;
+        padding-top: 10px;
+    }
+
+    .tablet-label-position {
+        padding: .2em .6em .3em;
+    }
+
+    .patient-info {
+        position:fixed;
+        top:10px;
+        right:500px;
+        z-index:1040;
+        width:600px;
+        color: white;
+    }
+
+    .notification {
+        width: 470px !important; 
+        margin-left: 17px !important;
+    }
+
+    .nurse-office-func-structure {
+        position:fixed;
+        top:5px;
+        right:450px;
+        z-index:1040;
+        width:550px;
+    }
+
+    #pnlPatients {
+        height: 605px;
+    }
+
+    #pnlTask {
+        height: 874px;
+    }
+
+    .d-xl-none {
+        display: none;
+    }
+
+    .d-xl-block {
+        display: block;
+    }
+
+    .d-xl-inline-block {
+        display: inline-block;
+    }
+
+    .d-xl-inline {
+        display: inline;
+    }
+
+    .d-xl-flex {
+        display: flex;
+    }
+
+    .d-xl-list-item {
+        display: list-item;
+    }
+
+    .justify-content-xl-center {
+        justify-content: center;
+    }
+
+    .justify-content-xl-around {
+        justify-content: space-around;
+    }
+
+    .justify-content-xl-betweeen {
+        justify-content: space-between;
+    }
+
+    .justify-content-xl-evenly {
+        justify-content: space-evenly;
+    }
+
+    .justify-content-xl-stretch {
+        justify-content: stretch;
+    }
+
+    .justify-content-xl-flex-start {
+        justify-content: flex-start;
+    }
+
+    .justify-content-xl-flex-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-xl-start {
+        justify-content: start;
+    }
+
+    .justify-content-xl-end {
+        justify-content: end;
+    }
+
+    .justify-content-xl-inherit {
+        justify-content: inherit;
+    }
+
+    .justify-content-xl-initial {
+        justify-content: initial;
+    }
+
+    .justify-content-xl-left {
+        justify-content: left;
+    }
+
+    .justify-content-xl-right {
+        justify-content: right;
+    }
+
+    .justify-content-xl-normal {
+        justify-content: normal;
+    }
+
+    .justify-content-xl-safe-center {
+        justify-content: safe center;
+    }
+
+    .justify-content-xl-unsafe-center {
+        justify-content: unsafe center;
+    }
+
+    .justify-content-xl-unset {
+        justify-content: unset;
+    }
+
+    .align-items-xl-center {
+        align-items: center;
+    }
+
+    .align-items-xl-baseline {
+        align-items: baseline;
+    }
+
+    .align-items-xl-start {
+        align-items: start;
+    }
+
+    .align-items-xl-end {
+        align-items: end;
+    }
+
+    .align-items-xl-flex-start {
+        align-items: flex-start;
+    }
+
+    .align-items-xl-flex-end {
+        align-items: flex-end;
+    }
+
+    .align-items-xl-normal {
+        align-items: normal;
+    }
+
+    .w-xl-inherit {
+        width: inherit;
+    }
+
+    .w-xl-0 {
+        width: 0;
+    }
+
+    .w-xl-15 {
+        width: 15%;
+    }
+
+    .w-xl-25 {
+        width: 25%;
+    }
+
+    .w-xl-29 {
+        width: 29%;
+    }
+
+    .w-xl-30 {
+        width: 30%;
+    }
+
+    .w-xl-35 {
+        width: 35%;
+    }
+
+    .w-xl-50 {
+        width: 50%;
+    }
+
+    .w-xl-75 {
+        width: 75%;
+    }
+
+    .w-xl-80 {
+        width: 80%;
+    }
+
+    .w-xl-85 {
+        width: 80%;
+    }
+
+    .w-xl-100 {
+        width: 100%;
+    }
+
+    .w-xl-30px {
+         width: 30px;
+    }
+
+    .w-xl-70px {
+        width: 70px;
+    }
+
+    .w-xl-100px {
+        width: 100px;
+    }
+
+    .w-xl-150px {
+        width: 150px;
+    }
+
+    .w-xl-190px {
+        width: 190px;
+    }
+
+    .w-xl-200px {
+        width: 200px;
+    }
+
+    .w-xl-212px {
+        width: 212px;
+    }
+
+    .w-xl-300px {
+        width: 300px;
+    }
+
+    .w-xl-240px {
+        width: 240px;
+    }
+
+    .w-xl-387px {
+        width: 387px;
+    }
+    
+    .w-xl-800px {
+        width: 800px;
+    }
+
+    .min-w-xl-50px {
+        min-width: 50px;
+    }
+
+    .min-w-xl-120px {
+        min-width:120px; 
+    }
+
+    .min-w-xl-210px {
+        min-width: 210px;
+    }
+
+    .min-w-xl-800px {
+        min-width: 800px;
+    }
+
+    /*Paddings start*/
+
+    .p-xl-inherit {
+        padding: inherit;
+    }
+
+    .p-xl-initial {
+        padding: initial;
+    }
+
+    .p-xl-0 {
+        padding: 0;
+    }
+
+    .p-xl-1 {
+        padding: 1rem;
+    }
+
+    .p-xl-2 {
+        padding: 2rem;
+    }
+
+    .p-xl-3 {
+        padding: 3rem;
+    }
+
+    .p-xl-4 {
+        padding: 4rem;
+    }
+
+    .p-xl-5 {
+        padding: 5rem;
+    }
+
+    .py-xl-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-xl-1 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-xl-2 {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .py-xl-3 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+
+    .py-xl-4 {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .py-xl-5 {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+
+    .px-xl-0 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .px-xl-1 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .px-xl-2 {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .px-xl-3 {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .px-xl-4 {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+
+    .px-xl-5 {
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+
+    .pt-xl-0 {
+        padding-top: 0;
+    }
+
+    .pt-xl-1 {
+        padding-top: 1rem;
+    }
+
+    .pt-xl-2 {
+        padding-top: 2rem;
+    }
+
+    .pt-xl-3 {
+        padding-top: 3rem;
+    }
+
+    .pt-xl-4 {
+        padding-top: 4rem;
+    }
+
+    .pt-xl-5 {
+        padding-top: 5rem;
+    }
+
+    .pb-xl-0 {
+        padding-bottom: 0;
+    }
+
+    .pb-xl-1 {
+        padding-bottom: 1rem;
+    }
+
+    .pb-xl-2 {
+        padding-bottom: 2rem;
+    }
+
+    .pb-xl-3 {
+        padding-bottom: 3rem;
+    }
+
+    .pb-xl-4 {
+        padding-bottom: 4rem;
+    }
+
+    .pb-xl-5 {
+        padding-bottom: 5rem;
+    }
+
+    .pl-xl-0 {
+        padding-left: 0;
+    }
+
+    .pl-xl-1 {
+        padding-left: 1rem;
+    }
+
+    .pl-xl-2 {
+        padding-left: 2rem;
+    }
+
+    .pl-xl-3 {
+        padding-left: 3rem;
+    }
+
+    .pl-xl-4 {
+        padding-left: 4rem;
+    }
+
+    .pl-xl-5 {
+        padding-left: 5rem;
+    }
+
+    .pr-xl-0 {
+        padding-right: 0;
+    }
+
+    .pr-xl-1 {
+        padding-right: 1rem;
+    }
+
+    .pr-xl-2 {
+        padding-right: 2rem;
+    }
+
+    .pr-xl-3 {
+        padding-right: 3rem;
+    }
+
+    .pr-xl-4 {
+        padding-right: 4rem;
+    }
+
+    .pr-xl-5 {
+        padding-right: 5rem;
+    }
+
+    .p-xl-11px {
+        padding: 11px;
+    }
+
+    /*Paddings end*/
+
+    /*Margins start*/
+
+    .m-xl-inherit {
+        margin: inherit;
+    }
+
+    .m-xl-initial {
+        margin: initial;
+    }
+
+    .m-xl-0 {
+        margin: 0;
+    }
+
+    .m-xl-1 {
+        margin: 1rem;
+    }
+
+    .m-xl-2 {
+        margin: 2rem;
+    }
+
+    .m-xl-3 {
+        margin: 3rem;
+    }
+
+    .m-xl-4 {
+        margin: 4rem;
+    }
+
+    .m-xl-5 {
+        margin: 5rem;
+    }
+
+    .my-xl-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .my-xl-1 {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .my-xl-2 {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .my-xl-3 {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .my-xl-4 {
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .my-xl-5 {
+        margin-top: 5rem;
+        margin-bottom: 5rem;
+    }
+
+    .mx-xl-0 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mx-xl-1 {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .mx-xl-2 {
+        margin-left: 2rem;
+        margin-right: 2rem;
+    }
+
+    .mx-xl-3 {
+        margin-left: 3rem;
+        margin-right: 3rem;
+    }
+
+    .mx-xl-4 {
+        margin-left: 4rem;
+        margin-right: 4rem;
+    }
+
+    .mx-xl-5 {
+        margin-left: 5rem;
+        margin-right: 5rem;
+    }
+
+    .mt-xl-0 {
+        margin-top: 0;
+    }
+
+    .mt-xl-1 {
+        margin-top: 1rem;
+    }
+
+    .mt-xl-2 {
+        margin-top: 2rem;
+    }
+
+    .mt-xl-3 {
+        margin-top: 3rem;
+    }
+
+    .mt-xl-4 {
+        margin-top: 4rem;
+    }
+
+    .mt-xl-5 {
+        margin-top: 5rem;
+    }
+
+    .mt-xl-n3px {
+        margin-top: -3px;
+    }
+
+    .mt-xl-3px {
+        margin-top: 3px;
+    }
+
+    .mt-xl-4px {
+        margin-top: 4px;
+    }
+
+    .mt-xl-7px {
+        margin-top: 7px;
+    }
+
+    .mt-xl-80px {
+        margin-top: 80px;
+    }
+
+    .mt-xl-150px {
+        margin-top: 150px;
+    }
+
+    .mt-xl-200px {
+        margin-top: 200px;
+    }
+
+    .mb-xl-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-xl-1 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-xl-2 {
+        margin-bottom: 2rem;
+    }
+
+    .mb-xl-3 {
+        margin-bottom: 3rem;
+    }
+
+    .mb-xl-4 {
+        margin-bottom: 4rem;
+    }
+
+    .mb-xl-5 {
+        margin-bottom: 5rem;
+    }
+
+    .ml-xl-0 {
+        margin-left: 0;
+    }
+
+    .ml-xl-1 {
+        margin-left: 1rem;
+    }
+
+    .ml-xl-2 {
+        margin-left: 2rem;
+    }
+
+    .ml-xl-3 {
+        margin-left: 3rem;
+    }
+
+    .ml-xl-4 {
+        margin-left: 4rem;
+    }
+
+    .ml-xl-5 {
+        margin-left: 5rem;
+    }
+
+    .mr-xl-0 {
+        margin-right: 0;
+    }
+
+    .mr-xl-1 {
+        margin-right: 1rem;
+    }
+
+    .mr-xl-2 {
+        margin-right: 2rem;
+    }
+
+    .mr-xl-3 {
+        margin-right: 3rem;
+    }
+
+    .mr-xl-4 {
+        margin-right: 4rem;
+    }
+
+    .mr-xl-5 {
+        margin-right: 5rem;
+    }
+
+    .mt-xl-240px {
+        margin-top: 240px;
+    }
+
+    .mt-xl-300px {
+        margin-top: 300px;
+    }
+
+    /*Margins end*/    
+
+    /*Desktop margins start*/
+
+    .desktop-mt-1 {
+        margin-top: 1rem;
+    }
+
+    .desktop-mt-80px {
+        margin-top: 80px;
+    }
+
+    .desktop-mt-150px {
+        margin-top: 150px;
+    }
+
+    .desktop-mt-200px {
+        margin-top: 200px;
+    }
+
+    /*Desktop margins end*/
+
+    .desktop-d-none {
+        display: none;
+    }
+
+    .desktop-d-block {
+        display: block;
+    }
+
+    .disabled-label {
+        opacity: 0.9;
+        cursor: not-allowed;
+        color: gray;
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1336px) {
+    .w-tablet-xl-30px {
+        width: 30px;
+    }
+}
+
+/*@media (pointer: coarse), (hover: none) {
+  [title] {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+  }
+  [title]:focus::after {
+    content: attr(title);
+    position: absolute;
+    top: 90%;
+    color: #000;
+    background-color: #fff;
+    border: 1px solid;
+    width: auto;
+    padding: 3px;
+    font-size: 10px;
+  }
+}*/
+
+#message-counter {
+    width: 20px;
+    height: 20px;
+    background-color: #FF6347;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.notification-container {
+    width: 300px;
+    word-wrap: normal;
+}
+
+.notification-container > .notification-buttons {
+    float: right
+}
+
+.notification-container > .notification-buttons a {
+    cursor: pointer;
+}
+
+.message-body:hover {
+    background-color: #beeaf7;
+    cursor: pointer;
+}
+
+
+.watermark {
+    font-size: 20px; 
+    opacity: 0.3; 
+    top: -500px; 
+    z-index: 10;
+}
+
+.watermark-diagonal {
+    position: fixed;
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    user-select: none;
+    z-index: 19999;
+    transform: translate(-50%, -50%) rotate(-30deg);
+}
+
+.yellowColor {
+    color: rgba(255,255,0, 0.8);
+}
+
+.redColor {
+    color: rgba(250,10,10, 0.8);
+}
+
+.purpleColor {
+    color: rgba(150,30,250, 0.8);
+}
+
+.indigoColor {
+    color: rgba(66, 69, 202, 1);
+}
+
+.success-signed {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.form-group.has-error .k-widget.k-multiselect {
+    border-color: #b94a48 !important;
+    box-shadow: 0 0 6px #b94a48;}
+
+#appVersion {
+    padding: 5px;
+    background-color: color-mix(in oklab, #fff 10%, transparent);
+    border-color: color-mix(in oklab, #fff 20%, transparent);
+    border-width: 1px;
+    border-radius: calc(0.625rem - 2px);
+    border-style: solid;
+    color: white;
+}

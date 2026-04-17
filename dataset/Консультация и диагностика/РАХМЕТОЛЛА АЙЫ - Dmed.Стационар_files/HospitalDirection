@@ -1,0 +1,488 @@
+/* Minification failed. Returning unminified contents.
+(134,39-40): run-time error JS1003: Expected ':': }
+(155,39-40): run-time error JS1003: Expected ':': }
+(175,39-40): run-time error JS1003: Expected ':': }
+(346,39-40): run-time error JS1003: Expected ':': }
+ */
+var DayHospitalSchedules = {
+    //Удалить график
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/deleteDayHospitalSchedule',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    //Сохранить график
+    save: function (model, saveSuccess) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/saveDayHospitalSchedule',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                model = result;
+                if (saveSuccess) saveSuccess();
+            }
+        });
+
+        return model;
+    }
+};;
+var HospitalDirections = {
+    // Найти направления
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getHospitalDirections',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+
+    // Получить направление
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getHospitalDirection',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    //Получить плановую дату госпитализации
+    getHospitalDate: function (bookingModel) {
+        if (!bookingModel) {
+            showPopupNotification("BookingModel is empty", NotificationTypes.danger);
+        }
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getHospitalDate',
+            data: JSON.stringify(bookingModel),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    //Получить остаток направлений
+    getDirectionBalance: function (directionBalanceModel) {
+        if (!directionBalanceModel) {
+            showPopupNotification("DirectionBalanceModel is empty", NotificationTypes.danger);
+        }
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getDirectionBalance',
+            data: JSON.stringify(directionBalanceModel),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Печатать талон направления
+    getTalonOfHospitalization: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getTalonOfHospitalization',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Печатать направление на госпитализацию
+    getReferrralOfHospitalization: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/getReferrralOfHospitalization',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            }
+        });
+
+        return model;
+    },
+
+    // Отправить планируемую дату госпитализации
+    sendHospitalPlanDate: function (id, sendSuccess) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/sendHospitalPlanDate',
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (sendSuccess) sendSuccess();
+            }
+        });
+    },
+
+    // Установить дату планируемой госпитализации
+    setHospitalDirectionPlanDate: function (model, saveSuccess) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/setHospitalDirectionPlanDate',
+            data: JSON.stringify({ planDateModel: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (saveSuccess) saveSuccess();
+            }
+        });
+    },
+
+    // Сохранить отказ в госпитализации
+    saveRefuse: function (model, saveSuccess) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/saveRefuse',
+            data: JSON.stringify({ refuse: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (saveSuccess) saveSuccess();
+            }
+        });
+    },
+
+    //Валидация направления
+    validateHospitalDirection: function (model, success) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var validateResult = null;
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/validateHospitalDirection',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                validateResult = result;
+                if (success) success(result);
+            }
+        });
+
+        return validateResult;
+    },
+
+    //Сохранить направление
+    save: function (model, saveSuccess) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var resultAjax = $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/saveHospitalDirection',
+            data: JSON.stringify(model),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                model = result;
+                if (saveSuccess) saveSuccess(result);
+            }
+        });
+
+        resultAjax.fail(function (e) {
+            throw new Error(e.responseText);
+        });
+
+        return model;
+    },
+
+    //Отправить направление
+    send: function (id, saveSuccess) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/sendHospitalDirection',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+                if (saveSuccess) saveSuccess(result); 
+            }
+        });
+    },
+
+    //Обновить направление
+    update: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/updateHospitalDirection',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    //Удалить направление
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/deleteHospitalDirection',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(); 
+            }
+        });
+    },
+
+    //Прикрепить выписной эпикриз к направлению
+    attachEpicrisisFile: function (id, medicalRecordID) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+        if (!medicalRecordID) {
+            showPopupNotification("MedicalRecordID is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/hospitalDirection/attachEpicrisisFile',
+            data: JSON.stringify({ id: id, medicalRecordID: medicalRecordID}),
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            success: function (result) {
+            }
+        });
+    },
+
+    // Отмена в отказе госпитализации
+    cancellationRefuse: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("hospitalResult is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            url: '/hospitalDirection/cancellationRefuse',
+            type: 'POST',
+            async: false,
+            data: JSON.stringify({ id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    //Загрузить файл выписки
+    uploadFile: function (data, successComplete) {
+        if (!data) {
+            showPopupNotification("Data is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: "POST",
+            url: '/hospitalDirection/uploadFile',
+            contentType: false,
+            processData: false,
+            async: false,
+            data: data,
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    //Удалить файл выписки
+    deleteFile: function (criteria, successComplete) {
+        if (!criteria) {
+            showPopupNotification("Criteria is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/deleteFile',
+            data: JSON.stringify(criteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    // Получить условия для отображения поля "Причины госпитализации"
+    specifyHospitalizationReasons: function () {
+        return [
+            {
+                sickIDs: [3017, 3044, 3046, 3048, 5539, 5593],
+                hospitalizationReasonIDs: [1]
+            },
+            {
+                sickIDs: [1987, 1989],
+                hospitalizationReasonIDs: [2, 3]
+            },
+            {
+                sickIDs: [2014, 2015, 2025],
+                hospitalizationReasonIDs: [4]
+            },
+            {
+                sickIDs: [3731],
+                hospitalizationReasonIDs: [5, 6]
+            },
+            {
+                sickIDs: [3713],
+                hospitalizationReasonIDs: [7, 8]
+            },
+            {
+                sickIDs: [3976],
+                hospitalizationReasonIDs: [9, 10, 11, 12]
+            },
+            {
+                sickIDs: [4545, 4555],
+                hospitalizationReasonIDs: [13, 14, 15, 16]
+            },
+            {
+                sickIDs: [4784, 4785],
+                hospitalizationReasonIDs: [17, 18]
+            },
+            {
+                sickIDs: [5306],
+                hospitalizationReasonIDs: [19, 20, 21, 22]
+            },
+            {
+                sickIDs: [4189, 4192],
+                hospitalizationReasonIDs: [23]
+            },
+            {
+                sickIDs: [4281],
+                hospitalizationReasonIDs: [24]
+            },
+            {
+                sickIDs: [4284],
+                hospitalizationReasonIDs: [25]
+            },
+            {
+                sickIDs: [4286],
+                hospitalizationReasonIDs: [25, 28]
+            },
+            {
+                sickIDs: [5993, 5996, 5997, 6201],
+                hospitalizationReasonIDs: [26]
+            },
+            {
+                sickIDs: [8373],
+                hospitalizationReasonIDs: [27]
+            },
+            {
+                sickIDs: [4215, 4284, 1864, 5043, 9608],
+                hospitalizationReasonIDs: [28]
+            }
+        ];
+    },
+
+    //Обновить существующее направление
+    tryActualizeHospitalDirection: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        let isActualized = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalDirection/tryActualizeHospitalDirection',
+            data: JSON.stringify({ id: id }),
+            contentType: "application/json; charset=utf-8",
+            success: function (result) {
+                isActualized = result;
+                if (successComplete) successComplete(result);
+            }
+        });
+        
+        return isActualized;
+    }
+};;

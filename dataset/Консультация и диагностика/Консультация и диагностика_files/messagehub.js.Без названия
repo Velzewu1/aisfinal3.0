@@ -1,0 +1,107 @@
+﻿(function ($) {
+    $.fn.messagehub = function (options) {
+
+        // Создаём настройки по-умолчанию, расширяя их с помощью параметров, которые были переданы
+        var config = $.extend(true,{
+            action: '', // действие, которое необходимо выполнить
+            url: '',    //адрес signalR сервиса
+            token: '',  //токен авторизации
+
+            notification: {
+                title: messagehubResources.NoTitleNotification, // заголовок уведомления            
+                body: messagehubResources.NoBodyNotification,   // текст уведомления
+                badge: '',          // значок
+                visibleTime: 5,     // время отображения уведомлений (секунды)
+                isVisible: true,    //показывать уведомления
+                callback: null,     //функция обработчик данных от сервера,
+                setBody: function (msg) {                    
+                    this.body = msg;
+                }
+            }
+        }, options)
+
+        var notifications = {};
+
+        notifications.message = function () {
+            return {
+                show: function () {
+                    // Проверка поддержки браузером уведомлений
+                    if (!("Notification" in window)) {
+                        console.log(messagehubResources.NoSupportNotification);
+                    }
+
+                    // Проверка разрешения на отправку уведомлений
+                    else if (Notification.permission === "granted") {
+                        // Если разрешено, то создаём уведомление
+                        notifications.message.set();
+                    }
+
+                    // В противном случае, запрашиваем разрешение
+                    else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission(function (permission) {
+                            // Если пользователь разрешил, то создаём уведомление
+                            if (permission === "granted") {
+                                notifications.message.set();
+                            }
+                        });
+                    }
+                },
+                set: function () {
+                    var notification = new Notification(config.notification.title, {
+                        body: config.notification.body,
+                        badge: config.notification.badge
+                    });
+
+                    setTimeout(function () { notification.close() }, config.notification.visibleTime * 1000);
+                }
+            }
+        }();
+        
+        var init = function () {
+            //console.dir(config);
+
+            if (!config.url) {
+                showNotification(messagehubResources.NoUrl, NotificationTypes.warning);
+                return;
+            }
+
+            if (!config.token) {
+                showNotification(messagehubResources.NoToken, NotificationTypes.warning);
+                return;
+            }
+
+            if (!config.action) {
+                showNotification(messagehubResources.NoAction, NotificationTypes.warning);
+                return;
+            }
+
+            //переменная, с помощью которой устанавливается подключение
+            var hubConnection = new signalR.HubConnectionBuilder()
+                .withUrl(config.url,
+                    {
+                        accessTokenFactory: () => config.token,
+                        skipNegotiation: true,
+                        transport: signalR.HttpTransportType.WebSockets
+                    })
+                .configureLogging(signalR.LogLevel.Error)
+                .build();
+
+            //запускаем соединение с сервером
+            hubConnection.start({ jsonp: true }).then(() => { }).catch(err => console.log(err));
+
+            //метод который будет получать данные от сервера
+            hubConnection.on(config.action, function () {
+                if (arguments && arguments[0]) config.notification.setBody(arguments[0]);
+
+                if (config.notification.isVisible)
+                    notifications.message.show();
+
+                if (config.notification.callback)
+                    config.notification.callback.apply(this, arguments);
+            });
+        }
+
+        this.each(function () { init(); });
+        return this;        
+    }
+}(jQuery));

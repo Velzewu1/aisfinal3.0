@@ -1,0 +1,1 @@
+var BedDaysCalculates={calculate:function(n,t){n||showPopupNotification("MedicalHistoryID is empty",NotificationTypes.danger);var i=0;return $.ajax({type:"POST",url:"/bedDaysCalculate/calculate",async:!1,data:JSON.stringify({medicalHistoryID:n,outDateTime:t}),contentType:"application/json; charset=utf-8",success:function(n){i=n}}),i}}

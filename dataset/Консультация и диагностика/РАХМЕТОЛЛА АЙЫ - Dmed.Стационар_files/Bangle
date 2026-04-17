@@ -1,0 +1,101 @@
+/* Minification failed. Returning unminified contents.
+(71,64-65): run-time error JS1003: Expected ':': }
+ */
+var BraceletSettings = {
+    // Удаление настройки браслета
+    delete: function (id, successComplete) {
+        if (id < 1) {
+            showPopupNotification("Model is empty", Notification.danger);
+        }
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: 'braceletSetting/delete',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+
+    },
+    // Сохранить настройки браслета
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/braceletSetting/save',
+            data: JSON.stringify({ braceletSetting: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete();
+            }
+        });
+        return model;
+    },
+
+    // Получить готовые данные браслета пациента
+    getData: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/braceletSetting/prepareBracelet',
+            data: JSON.stringify({ queryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить готовые данные браслета пациента по умолчанию
+    getDataByDefaultSetting: function (patientAddmissionRegisterID) {
+        if (!patientAddmissionRegisterID) {
+            showPopupNotification("PatientAddmissionRegisterID is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/braceletSetting/getDefaultBraceletSettings',
+            data: JSON.stringify({ patientAddmissionRegisterID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить список настроек браслета
+    getListBangle: function () {
+
+        var listBangle = null;
+        $.ajax({
+            type: "POST",
+            async: false,
+            url: '/BraceletSetting/ListBangle',
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listBangle = result;
+            }
+        });
+
+        return listBangle;
+    }
+};
+;

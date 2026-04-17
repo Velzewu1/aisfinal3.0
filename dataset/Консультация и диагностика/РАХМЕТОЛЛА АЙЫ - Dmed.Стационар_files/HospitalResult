@@ -1,0 +1,120 @@
+/* Minification failed. Returning unminified contents.
+(107,42-43): run-time error JS1003: Expected ':': }
+ */
+var HospitalResults = {
+    // Найти факты
+    list: function (searchCriteria, async, successComplete) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+        
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: async,
+            url: '/hospitalResult/getHospitalResults',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+                
+                if (successComplete) successComplete(result);
+            }
+        });
+
+        return listModel;
+    },
+
+    // Отправить госпитализацию в БГ
+    sendHospitalResult: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            url: '/hospitalResult/resendHospitalResult',
+            type: 'POST',
+            async: false,
+            data: JSON.stringify({ resultId: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Отправить отказ в госпитализации в БГ
+    sendHospitalRefuse: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            url: '/hospitalResult/resendRefuseResult',
+            type: 'POST',
+            async: false,
+            data: JSON.stringify({ resultId: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Удалить факт отказа из внешней систмы
+    deleteExternalSystemRefuseResult: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            url: '/hospitalResult/deleteExternalSystemRefuseResult',
+            type: 'POST',
+            async: false,
+            data: JSON.stringify({ resultId: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Удалить факт госпитализации из внешней систмы
+    deleteExternalSystemHospitalResult: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            url: '/hospitalResult/deleteExternalSystemHospitalResult',
+            type: 'POST',
+            async: false,
+            data: JSON.stringify({ resultId: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Сохранить факт госпитализации 
+    save: function (model, successComplete) {
+        if (model === null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/hospitalResult/save',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+};

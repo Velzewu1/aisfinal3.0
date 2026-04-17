@@ -1,0 +1,1 @@
+var Posts={get:function(n,t){n||showPopupNotification("PostID is empty",NotificationTypes.danger);var i=null;return $.ajax({type:"POST",async:!1,url:"/sur/getPost",data:JSON.stringify({id:n}),contentType:"application/json; charset=utf-8",success:function(n){i=n;t&&t(i)}}),i}}

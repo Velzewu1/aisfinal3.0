@@ -1,0 +1,723 @@
+/* Minification failed. Returning unminified contents.
+(347,33-34): run-time error JS1195: Expected expression: >
+(349,18-19): run-time error JS1195: Expected expression: )
+(362,13-14): run-time error JS1002: Syntax error: }
+(402,9-10): run-time error JS1002: Syntax error: }
+(488,59-60): run-time error JS1195: Expected expression: >
+(488,73-74): run-time error JS1004: Expected ';': )
+(511,13-14): run-time error JS1002: Syntax error: }
+(544,9-10): run-time error JS1002: Syntax error: }
+(672,5-6): run-time error JS1002: Syntax error: }
+(648,9,671,11): run-time error JS1018: 'return' statement outside of function: return $(this).each(function () {
+            var $self = $(this);
+
+            Outgoing.render($self);
+            Caller.render($self);
+            Display.render($self);
+
+            $self.data('messenger', {
+                options: function (options) {
+                    $.extend(true, settings, defaults, options);
+                },
+                call: function (members) {
+                    authenticate();
+
+                    Signaling.init().then(function () {
+                        var connection = Connection.init(members);
+                        Outgoing.call(connection.id);
+                    });
+                },
+                stopActives: function () {
+                    Connection.stopActives();
+                }
+            });
+        })
+(538,13,543,14): run-time error JS1018: 'return' statement outside of function: return {
+                call: call,
+                answer: answer,
+                stop: stop,
+                render: render
+            }
+(393,13,401,14): run-time error JS1018: 'return' statement outside of function: return {
+                init: init,
+                offer: offer,
+                answer: answer,
+                destroy: destroy,
+                get: get,
+                isActive: isActive,
+                stopActives: stopActives
+            }
+ */
+(function ($) {
+    $.fn.messenger = function (options) {
+        var googleStunUrls = [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302',
+            'stun:stun2.l.google.com:19302',
+            'stun:stun3.l.google.com:19302',
+            'stun:stun4.l.google.com:19302'
+        ];
+
+        var messageTypes = {
+            message: 10,
+            call: 20,
+            answer: 30,
+            candidate: 40,
+            cancel: 50,
+            data: 60,
+            request: 70,
+            accept: 80,
+            reject: 90,
+            delete: 100
+        };
+
+        var connectionStates = {
+            open: "open",
+            closed: "closed"
+        };
+
+        var defaults = {
+            url: "",
+            events: {
+                caller: {
+                    stop: function () { }
+                },
+                conference: {
+                    error: function () { }
+                },
+                outgoing: {
+                    cancel: function () { }
+                },
+                error: function () { }
+            },
+            messages: {
+                CallCompleted: "Звонок завершен",
+                OutgoingCall: "Исходящий звонок",
+                Hours: "ч.",
+                Minutes: "м.",
+                Seconds: "с.",
+                NotFoundError: "Не найдено устройство записи",
+                SecurityError: "Ошибка безопасности соединения",
+                PermissionDeniedError: "Запрещен доступ к устройству записи. Разрешите браузеру запись и повторите попытку",
+                NotAllowedError: "Запрещен доступ к устройству записи. Разрешите браузеру запись и повторите попытку",
+            }
+        };
+
+        var settings = $.extend(true, {}, defaults, options);
+
+        var authenticate = function () {
+            $.ajax({
+                url: settings.url + "/api/Messenger/SignIn",
+                xhrFields: {
+                    withCredentials: true
+                },
+                traditional: true,
+                async: false,
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                success: function (result) {
+                    settings.context = {
+                        url: result.Url,
+                        token: result.Token
+                    };
+                },
+                error: function (ex) {
+                    settings.events.error(ex);
+                }
+            });
+        };
+
+        var Signaling = function () {
+            var hubConnection = null;
+
+            var handlers = [
+                {
+                    messageType: messageTypes.call,
+                    process: function (connection, chatModel) {
+                        return Caller.answer(chatModel.roomId, chatModel);
+                    }
+                },
+                {
+                    messageType: messageTypes.answer,
+                    process: function (connection, chatModel) {
+                        connection.peerConnection.setRemoteDescription(new window.RTCSessionDescription(JSON.parse(chatModel.message)))
+                            .catch(function (e) {
+                                Caller.stop(chatModel.roomId);
+                                Display.show(settings.messages[e.name] || e.message);
+                            });
+                    }
+                },
+                {
+                    messageType: messageTypes.candidate,
+                    process: function (connection, chatModel) {
+                        if (!connection.peerConnection || !chatModel.message) return;
+
+                        var candidate = new window.RTCIceCandidate(JSON.parse(chatModel.message));
+                        connection.peerConnection.addIceCandidate(candidate);
+                    }
+                },
+                {
+                    messageType: messageTypes.cancel,
+                    process: function (connection, chatModel) {
+                        return Caller.stop(chatModel.roomId);
+                    }
+                },
+                {
+                    messageType: messageTypes.request,
+                    process: function (connection, chatModel) {
+                        invoke({
+                            roomId: chatModel.roomId,
+                            messageType: messageTypes.accept,
+                            message: 'accept'
+                        });
+                    }
+                },
+                {
+                    messageType: messageTypes.accept,
+                    process: function (connection, chatModel) {
+                        Outgoing.cancel();
+                        Caller.call(chatModel.roomId);
+                    }
+                },
+                {
+                    messageType: messageTypes.reject,
+                    process: function (connection, chatModel) {
+                        Outgoing.cancel();
+                    }
+                },
+            ];
+
+            var init = function () {
+                hubConnection = new signalR.HubConnectionBuilder()
+                    .withUrl(settings.context.url + '/chat', {
+                        accessTokenFactory: function () { return settings.context.token; },
+                        skipNegotiation: true,
+                        transport: signalR.HttpTransportType.WebSockets
+                    })
+                    .configureLogging(signalR.LogLevel.Trace)
+                    .build();
+
+                hubConnection.on('message', function (chatModel) {
+                    var connection = Connection.get(chatModel.roomId);
+
+                    if (!connection) return;
+
+                    var _handlers = $.grep(handlers, function (h) {
+                        return h.messageType === chatModel.messageType;
+                    });
+
+                    _handlers.map(function (h) { h.process(connection, chatModel); });
+                });
+
+                hubConnection.onclose(function () {
+                    if (!Connection.isActive()) return;
+
+                    setTimeout(function () {
+                        Signaling.start();
+                    }, 5000);
+                });
+
+                return start();
+            };
+
+            var start = function () {
+                return hubConnection.start().catch(function (error) {
+                    setTimeout(function () { Signaling.start(); }, 5000);
+                    console.log(error);
+                    return Promise.reject(error);
+                });
+            };
+
+            var stop = function () {
+                hubConnection.stop();
+            };
+
+            var invoke = function (message) {
+                return hubConnection.invoke('message', message).catch(function () {
+                    setTimeout(function () { Signaling.invoke(message); }, 5000);
+                });
+            };
+
+            return {
+                init: init,
+                invoke: invoke,
+                stop: stop,
+                start: start
+            };
+        }();
+
+        var Connection = function () {
+            var connections = [];
+
+            var get = function (roomId) {
+                var connection = $.grep(connections, function (c) { return c.id == roomId; });
+                if (connection.length > 0) return connection[0];
+
+                return undefined;
+            };
+
+            var init = function (members) {
+                var conference = undefined;
+
+                $.ajax({
+                    url: settings.url + "/api/Messenger/CreateConference",
+                    data: JSON.stringify({
+                        Members: members,
+                        Token: settings.context.token
+                    }),
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    traditional: true,
+                    async: false,
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (result) {
+                        conference = result;
+                    },
+                    error: function (ex) {
+                        settings.events.conference.error(ex);
+                    }
+                });
+
+                if (!conference) return undefined;
+
+                var connection = get(conference.Room.ID);
+                if (connection) return connection;
+                
+                $.ajax({
+                    type: 'POST',
+                    url: conference.Url + '/api/setting/turnServerData',
+                    headers: {
+                        Authorization: 'Bearer ' + conference.Token
+                    },
+                    async: false,
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (result) {
+                        let base64 = CryptoJS.enc.Utf8.parse(cryptoJSextension.key(conference.TurnToken))
+                        let decrypt = CryptoJS.TripleDES.decrypt(result, base64, {
+                                mode: CryptoJS.mode.ECB,
+                                padding: CryptoJS.pad.Pkcs7
+                            }
+                        );
+                        
+                        let parseData = decrypt.toString(CryptoJS.enc.Utf8);
+                        turnServer = JSON.parse(parseData);
+                    },
+                    error: function (ex) {
+                        settings.events.connection.error(ex);
+                    }
+                });
+
+                var iceServers = [{
+                    urls: googleStunUrls
+                }];
+
+                if (turnServer) {
+                    iceServers.push({
+                        urls: 'stun:' + turnServer.Url,
+                        username: turnServer.Username,
+                        credential: turnServer.Password
+                    });
+
+                    iceServers.push({
+                        urls: 'turn:' + turnServer.Url + '?transport=udp',
+                        username: turnServer.Username,
+                        credential: turnServer.Password
+                    });
+
+                    iceServers.push({
+                        urls: 'turn:' + turnServer.Url + '?transport=tcp',
+                        username: turnServer.Username,
+                        credential: turnServer.Password
+                    });
+                }
+
+                connection = {
+                    id: conference.Room.ID,
+                    token: conference.Token,
+                    name: conference.Room.Name,
+                    url: conference.Url,
+                    peerConnection: new window.RTCPeerConnection({
+                        iceServers: iceServers
+                    }),
+                    state: connectionStates.closed
+                };
+
+                connection.peerConnection.onicecandidate = function (event) {
+                    if (!event.candidate) return;
+
+                    Signaling.invoke({
+                        roomId: conference.Room.ID,
+                        messageType: messageTypes.candidate,
+                        message: JSON.stringify(event.candidate)
+                    });
+                };
+
+                connections.push(connection);
+
+                return connection;
+            };
+
+            var offer = function (roomId) {
+                var connection = get(roomId);
+                if (connection.state === connectionStates.open) return;
+
+                connection.peerConnection.createOffer({
+                    mandatory: {
+                        OfferToReceiveAudio: true,
+                        OfferToReceiveVideo: true
+                    }
+                }).then(function (offer) {
+                    return connection.peerConnection.setLocalDescription(offer);
+                }).then(function () {
+                    Signaling.invoke({
+                        roomId: roomId,
+                        messageType: messageTypes.call,
+                        message: JSON.stringify(connection.peerConnection.localDescription)
+                    });
+
+                    connection.state = connectionStates.open;
+                }).catch(function (error) {
+                    console.log(error);
+                    Caller.stop(roomId);
+                    Display.show(settings.messages[error.name] || error.message);
+                });
+            };
+
+            var answer = function (roomId, chatModel) {
+                var connection = get(roomId);
+                if (connection.state === connectionStates.open) return;
+
+                connection.peerConnection.createAnswer({
+                    mandatory: {
+                        OfferToReceiveAudio: true,
+                        OfferToReceiveVideo: true
+                    }
+                }).then(answer => {
+                    return connection.peerConnection.setLocalDescription(answer);
+                }).then(function () {
+                    Signaling.invoke({
+                        roomId: roomId,
+                        messageType: messageTypes.answer,
+                        message: JSON.stringify(connection.peerConnection.localDescription)
+                    });
+
+                    connection.state = connectionStates.open;
+                }).catch(function (error) {
+                    console.log(error);
+                    Caller.stop(roomId);
+                    Display.show(settings.messages[error.name] || error.message);
+                });
+            };
+
+            var destroy = function (roomId) {
+                var connection = get(roomId);
+
+                Signaling.invoke({
+                    roomId: roomId,
+                    messageType: messageTypes.cancel,
+                    message: 'cancel'
+                }).then(function () {
+                    connection.peerConnection.close();
+                    connections.splice(connections.map(function (c) { return c.id; }).indexOf(connection.id), 1);
+
+                    if (!isActive()) Signaling.stop();
+                });
+            };
+
+            var isActive = function () {
+                var activeConnections = $.grep(connections, function (connection) {
+                    return connection.state === connectionStates.closed;
+                });
+
+                return activeConnections.length > 0;
+            };
+
+            var stopActives = function () {
+                connections.map(function (connection) {
+                    Caller.stop(connection.id);
+                });
+            };
+
+            return {
+                init: init,
+                offer: offer,
+                answer: answer,
+                destroy: destroy,
+                get: get,
+                isActive: isActive,
+                stopActives: stopActives
+            };
+        }();
+
+        var Caller = function () {
+            var _roomId = undefined;
+            var _self = undefined;
+            var localVideo = undefined;
+            var startDate = undefined;
+
+            var call = function (roomId) {
+                if (!($('#' + _self.prop('id') + '_video').hasClass('hidden'))) return;
+
+                $('#' + _self.prop('id') + '_video').removeClass('hidden');
+                _roomId = roomId;
+                startDate = new Date();
+
+                var connection = Connection.get(roomId);
+
+                connection.peerConnection.ontrack = function (event) {
+                    var video = document.getElementById('remoteVideo');
+                    video.srcObject = event.streams[0];
+                };
+
+                getStream().then(function (stream) {
+                    localVideo = stream;
+                    document.getElementById('localVideo').srcObject = stream;
+
+                    stream.getTracks().forEach(function (track) {
+                        return connection.peerConnection.addTrack(track, stream);
+                    });
+
+                    Connection.offer(roomId);
+
+                    $('#' + _self.prop('id') + '_stop').unbind("click");
+
+                    $('#' + _self.prop('id') + '_stop').click(function () {
+                        stop(_roomId);
+                    });
+                }).catch(function (e) {
+                    stop(roomId);
+
+                    var message = settings.messages[e.name] ? settings.messages[e.name] : e.name;
+                    Display.show(settings.messages.CallCompleted + ". " + message);
+                });
+            };
+
+            var answer = function (roomId, chatModel) {
+                if (!($('#' + _self.prop('id') + '_video').hasClass('hidden'))) return;
+
+                $('#' + _self.prop('id') + '_video').removeClass('hidden');
+                _roomId = roomId;
+
+                var connection = Connection.get(roomId);
+
+                connection.peerConnection.ontrack = function (event) {
+                    var video = document.getElementById('remoteVideo');
+                    video.srcObject = event.streams[0];
+                };
+
+                getStream().then(function (stream) {
+                    localVideo = stream;
+                    document.getElementById('localVideo').srcObject = stream;
+
+                    startDate = new Date();
+
+                    stream.getTracks().forEach(function (track) {
+                        return connection.peerConnection.addTrack(track, stream);
+                    });
+
+                    Connection.answer(roomId, chatModel);
+
+                    $('#' + _self.prop('id') + '_stop').unbind("click");
+
+                    $('#' + _self.prop('id') + '_stop').click(function () {
+                        stop(_roomId);
+                    });
+                }).catch(function (e) {
+                    stop(roomId);
+
+                    var message = settings.messages[e.name] ? settings.messages[e.name] : e.name;
+                    Display.show(settings.messages.CallCompleted + ". " + message);
+                });;
+            };
+
+            var stop = function (roomId) {
+                $('#' + _self.prop('id') + '_video').addClass('hidden');
+                if (localVideo) {
+                    localVideo.getTracks().forEach(track => track.stop());
+                    localVideo = undefined;
+                }
+                document.getElementById('localVideo').srcObject = undefined;
+                document.getElementById('remoteVideo').srcObject = undefined;
+
+                Connection.destroy(roomId);
+
+                var endDate = new Date();
+                startDate = startDate || new Date();
+
+                var diff = endDate.getTime() - startDate.getTime();
+
+                var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                Display.show(settings.messages.CallCompleted + " " + hours + " " + settings.messages.Hours + " " + minutes + " " + settings.messages.Minutes + " " + seconds + " " + settings.messages.Seconds);
+
+                startDate = undefined;
+
+                settings.events.caller.stop();
+            };
+
+            var getStream = function () {
+                return navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: true
+                });
+            };
+
+            var render = function ($self) {
+                _self = $self;
+
+                $("#" + _self.prop('id') + "_video").remove();
+
+                var html = '\
+    <div id="' + _self.prop('id') + '_video" class="video hidden"> \
+    <video id="localVideo" class="local-video" autoplay muted></video> \
+    <video id="remoteVideo" class="remote-video" autoplay></video> \
+    <div class="video-footer"> \
+        <button id="' + _self.prop('id') + '_stop" type="button" class="btn btn-danger btn-circle"> \
+            <span class="glyphicon glyphicon-earphone"></span> \
+        </button> \
+    </div> \
+    </div>';
+                _self.append(html);
+            };
+
+            return {
+                call: call,
+                answer: answer,
+                stop: stop,
+                render: render
+            };
+        }();
+
+        var Outgoing = function () {
+            var _roomId = undefined;
+            var _self = undefined;
+
+            var call = function (roomId) {
+                if (!($('#' + _self.prop('id') + '_request').hasClass('hidden'))) return;
+
+                _roomId = roomId;
+
+                var connection = Connection.get(roomId);
+
+                $('#' + _self.prop('id') + '_title').html(connection.name);
+
+                $('#' + _self.prop('id') + '_request').removeClass('hidden');
+
+                Signaling.invoke({
+                    roomId: roomId,
+                    messageType: messageTypes.request,
+                    message: 'request'
+                });
+
+                $('#' + _self.prop('id') + '_cancel').unbind("click");
+
+                $('#' + _self.prop('id') + '_cancel').click(function () {
+                    cancel();
+                    Connection.destroy(roomId);
+                    settings.events.outgoing.cancel();
+                });
+            };
+
+            var cancel = function () {
+                $('#' + _self.prop('id') + '_request').addClass('hidden');
+            };
+
+            var render = function ($self) {
+                _self = $self;
+
+                $("#" + _self.prop('id') + "_request").remove();
+
+                var html = '\
+    <div id="' + _self.prop('id') + '_request" class="request hidden"> \
+    <div class="request-vertical"> \
+        <div class="request-body"> \
+            <div class="request-body-element"> \
+                <div class="request-body-element-vertical"> \
+                    <h3>' + settings.messages.OutgoingCall + '</h3> \
+                    <p id="' + _self.prop('id') + '_title"></p></br> \
+                    <div> \
+                        <button id="' + _self.prop('id') + '_cancel" type="button" class="btn btn-danger btn-circle"> \
+                            <span class="glyphicon glyphicon-earphone"></span> \
+                        </button> \
+                    </div> \
+                </div> \
+            </div> \
+        </div> \
+    </div> \
+    </div>';
+                _self.append(html);
+            };
+
+            return {
+                call: call,
+                cancel: cancel,
+                render: render
+            };
+        }();
+
+        Display = function () {
+            var _self = undefined;
+
+            var render = function ($self) {
+                _self = $self;
+
+                var html = '\
+                <div id="' + _self.prop('id') + '_display" class="display"> \
+                    <div class="display-vertical"> \
+                        <div class="display-body"> \
+                            <div class="display-body-element"> \
+                                <div class="display-body-element-vertical"> \
+                                    \<h4 id="' + _self.prop('id') + '_description">' + settings.messages.CallCompleted + '</h4></br> \
+                                </div> \
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+                ';
+
+                _self.append(html);
+            };
+
+            var show = function (description) {
+                $('#' + _self.prop('id') + '_description').html(description);
+
+                $('#' + _self.prop('id') + '_display').removeClass("hidden");
+            };
+
+            return {
+                render: render,
+                show: show
+            };
+        }();
+
+        return $(this).each(function () {
+            var $self = $(this);
+
+            Outgoing.render($self);
+            Caller.render($self);
+            Display.render($self);
+
+            $self.data('messenger', {
+                options: function (options) {
+                    $.extend(true, settings, defaults, options);
+                },
+                call: function (members) {
+                    authenticate();
+
+                    Signaling.init().then(function () {
+                        var connection = Connection.init(members);
+                        Outgoing.call(connection.id);
+                    });
+                },
+                stopActives: function () {
+                    Connection.stopActives();
+                }
+            });
+        });
+    }
+}(jQuery));;

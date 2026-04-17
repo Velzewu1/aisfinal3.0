@@ -1,0 +1,99 @@
+/* Minification failed. Returning unminified contents.
+(29,42-43): run-time error JS1003: Expected ':': }
+(47,46-47): run-time error JS1003: Expected ':': }
+(65,42-43): run-time error JS1003: Expected ':': }
+(84,42-43): run-time error JS1003: Expected ':': }
+ */
+var MedProductExpenses = {
+    //Удалить расход ИМН
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/medProductExpense/delete',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    // Сохранить расход ИМН
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medProductExpense/saveMedProductExpense',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    // Сохранить список расходов ИМН
+    saveList: function (listModel, successComplete) {
+        if (listModel == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medProductExpense/saveMedProductExpenses',
+            data: JSON.stringify({ listModel }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete(result);
+            }
+        });
+    },
+
+    // Сохранить из шаблона
+    saveMedProductExpensesFromTemplate: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medProductExpense/saveMedProductExpensesFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            }
+        });
+    },
+
+    // Получить список расходов ИМН из шаблона
+    convertFromTemplate: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var medProductExpenses = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/medProductExpense/convertFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                medProductExpenses = result;
+            },
+        });
+
+        return medProductExpenses;
+    },
+};;

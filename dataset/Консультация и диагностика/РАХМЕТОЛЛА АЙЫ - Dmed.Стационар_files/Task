@@ -1,0 +1,1 @@
+var Tasks={check:function(n,t){n||showPopupNotification("Id is empty",NotificationTypes.danger);$.ajax({type:"POST",async:!1,url:"/task/checkDefect",data:JSON.stringify({defectID:n}),contentType:"application/json; charset=utf-8",success:function(n){t&&t(n)}})}}

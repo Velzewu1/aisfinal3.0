@@ -1,0 +1,158 @@
+﻿.inspection-event-schedule {
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 1px 0px rgba(0, 0, 0, 0.08);
+    display: block;
+    margin-top: -1px;
+    overflow: auto;
+    padding-top: 1px;
+    position: relative;
+    width: 100%;
+}
+
+.schedule-row .picture-indicator {
+    overflow: hidden;
+    display: block;
+    position: absolute;
+    left: 15%;
+    top: 4px;
+}
+
+.inspection-event-schedule .schedule-row {
+    display: block;
+    float: left;
+    width: 100%;
+}
+
+.inspection-event-schedule .schedule-time-cell, .inspection-event-schedule .schedule-item-cell {
+    border-color: #e5e5e5;
+    display: block;
+    float: left;
+    height: 60px;
+    margin-top: -1px;
+}
+
+.inspection-event-schedule .schedule-time-cell {
+    background: #f1f1f1;
+    border-top-style: solid;
+    border-top-width: 1px;
+    line-height: 60px;
+    text-align: center;
+    width: 20%;
+}
+
+.inspection-event-schedule .schedule-item-cell {
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    position: relative;
+    width: 80%;
+}
+
+.inspection-event-schedule .schedule-item-cell .schedule-item {    
+    color: #fff;
+    cursor: pointer;    
+    overflow: hidden;
+    position: absolute;    
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+    top: -1px;
+    white-space: nowrap;
+    z-index: 2;
+    border: 1px solid rgba(0,0,0,0.08)
+}
+
+.inspection-event-schedule .schedule-item-cell .schedule-item.busy:hover, 
+.inspection-event-schedule .schedule-item-cell .schedule-item.busy:active,
+.inspection-event-schedule .schedule-item-cell .schedule-item.busy.active {
+    box-shadow: 2px 0px 100px 2px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    z-index: 3;
+}
+
+.schedule-item .item-complete {
+    display: inline-block;
+    width: 10%;
+    box-sizing: border-box;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.06);
+    margin-right: 0;
+    float: left;
+}
+
+.schedule-item .item-text {
+    display: inline-block;
+    width: 90%;
+    box-sizing: border-box;
+    line-height: 0px;
+    text-align: center;
+    position: relative;
+    margin-right: 0;
+    /*float: left;*/
+    text-transform: capitalize;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;   
+}
+
+.inspection-event-schedule .schedule-item-cell:hover, .inspection-event-schedule .schedule-item-cell:hover, .inspection-event-schedule .schedule-item-cell.active { background: #f1f1f1; }
+
+.schedule-nav {
+    background: #f1f1f1;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 1px 0px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    z-index: 5;
+    padding: 8px;
+    text-align: right;    
+}
+
+.schedule-nav .schedule-nav-button {
+    background: #fff;
+    border-radius: 100%;
+    display: inline-block;
+    margin: 0 8px;
+    padding: 8px 4px;
+    text-align: center;
+    width: 40px;
+    box-shadow: 2px 2px 1px 0px rgba(0, 0, 0, 0.08);
+    border: 1px solid #ccc;
+}
+
+.schedule-nav-button.nav-right {
+    cursor: pointer;
+}
+
+.schedule-nav-button.nav-left {
+    cursor: pointer;
+
+}
+
+.schedule-nav .calendar-datepicker {
+    display: inline-block;
+}
+
+.schedule-item .item-empty-medical-record, .schedule-item .item-patient-markers{
+    display: inline-block;
+    float: left;
+    width: 7%;
+    text-align: center;
+    position: relative;   
+}
+
+.item-label {
+    margin-right: 3px;
+    position: relative;
+    display: inline-block;
+}
+
+.schedule-item .tooltip {
+    position: fixed;
+}
+.schedule-item .tooltip .tooltip-inner {    
+    word-wrap: break-word;
+    text-align: left;
+    white-space: pre-wrap;
+    opacity: 0.8;
+}

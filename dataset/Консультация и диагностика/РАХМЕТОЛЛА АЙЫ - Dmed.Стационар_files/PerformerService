@@ -1,0 +1,1 @@
+var PerformerServices={list:function(n){n==null&&showPopupNotification("SearchCriteria is empty",NotificationTypes.danger);var t=null;return $.ajax({type:"POST",async:!1,url:"/performerService/getPerformerServices",data:JSON.stringify({listQueryModel:n}),contentType:"application/json; charset=utf-8",success:function(n){t=n}}),t}}

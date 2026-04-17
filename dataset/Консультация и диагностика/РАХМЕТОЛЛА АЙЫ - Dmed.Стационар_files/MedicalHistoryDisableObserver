@@ -1,0 +1,41 @@
+/* Minification failed. Returning unminified contents.
+(2,44-45): run-time error JS1195: Expected expression: )
+(2,47-48): run-time error JS1195: Expected expression: >
+(3,60-61): run-time error JS1195: Expected expression: >
+(7,10-11): run-time error JS1195: Expected expression: )
+(15,10-11): run-time error JS1195: Expected expression: )
+(20,10-11): run-time error JS1195: Expected expression: )
+(21,6-7): run-time error JS1195: Expected expression: )
+(23,63-64): run-time error JS1004: Expected ';': :
+(23,71-72): run-time error JS1195: Expected expression: )
+(27,58-59): run-time error JS1195: Expected expression: >
+(27,75-76): run-time error JS1004: Expected ';': )
+ */
+function cannotEditMedicalHistoryDisableBtnAndLinkObserver(resource) {
+    const observer = new MutationObserver(() => {
+        disableElements(".isBtnDisabledWithTitle", button => {
+            button.disabled = true;
+            button.title = resource || "Modifying a closed medical record is prohibited.";
+            button.removeAttribute("onclick");
+        });
+
+        disableElements(".isLinkDisabledWithTitle", link => {
+            link.removeAttribute("style");
+            link.classList.add("disabled-label");
+            link.title = resource || "Modifying a closed medical record is prohibited.";
+            link.removeAttribute("onclick");
+            link.removeAttribute("href");
+        });
+
+        disableElements(".isLabelDisabledWithTitle", label => {
+            label.classList.add("disabled-label");
+            label.title = resource || "Modifying a closed medical record is prohibited.";
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+function disableElements(selector, action) {
+    document.querySelectorAll(selector).forEach(element => action(element));
+};

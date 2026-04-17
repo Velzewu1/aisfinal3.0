@@ -1,0 +1,158 @@
+/* Minification failed. Returning unminified contents.
+(105,46-47): run-time error JS1003: Expected ':': }
+ */
+var PatientDetailHistories = {
+    // Проверить статус
+    getInsuranceStatus: function (personID) {
+        if (!personID) {
+            showPopupNotification("PersonID is empty", NotificationTypes.danger);
+        }
+
+        var insuranceStatus = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/getInsuranceStatus',
+            data: JSON.stringify({ personID: personID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                insuranceStatus = result;
+            },
+        });
+
+        return insuranceStatus;
+    },
+    // Обновить информацию о пациенте
+    refresh: function (personID) {
+        if (!personID) {
+            showPopupNotification("PersonID is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/refreshPersonDetail',
+            data: JSON.stringify({ personID: personID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить адрес пациента
+    savePersonAddress: function (personAddress) {
+        if (!personAddress) showPopupNotification("PersonAddress is empty", NotificationTypes.danger);
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/savePersonAddress',
+            data: JSON.stringify(personAddress),
+            contentType: 'application/json; charset=utf-8'
+        });
+    },
+    // Получить номер телефона ФЛ
+    getPhoneNumber: function (personID) {
+        if (!personID) {
+            showPopupNotification("PersonID is empty", NotificationTypes.danger);
+        }
+
+        var phoneNumber = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/getPatientPhoneNumber',
+            data: JSON.stringify({ personID: personID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                phoneNumber = result;
+            },
+        });
+
+        return phoneNumber;
+    },
+    // Получить контакты пациента
+    getContactFamilies: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/getContactFamilies',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    // Сохранить контакты пациента
+    saveContactFamilies: function (listModel, successComplete) {
+        if (!listModel) {
+            showPopupNotification("ListModel is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/saveContactFamilies',
+            data: JSON.stringify({ listModel }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return listModel;
+    },
+    // Удалить контактные пациента
+    deleteContactFamilies: function (patientDetailHistoryID, successComplete) {
+        if (!patientDetailHistoryID) {
+            showPopupNotification("PatientDetailHistoryID is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/deleteContactFamilies',
+            data: JSON.stringify({ patientDetailHistoryID: patientDetailHistoryID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },    
+
+    // Получить адреса пациента
+    getPersonAddresses: function (searchCriteria) {
+        if (!searchCriteria) showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/patientDetailHistory/getPersonAddresses',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    }
+};

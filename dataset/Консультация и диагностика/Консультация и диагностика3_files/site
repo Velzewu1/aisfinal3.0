@@ -1,0 +1,847 @@
+/* Minification failed. Returning unminified contents.
+(686,6): run-time error JS1004: Expected ';'
+ */
+var guid = function () {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+          .toString(16)
+          .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+      s4() + '-' + s4() + s4() + s4();
+};
+
+var pad = function (number) {
+    if (number < 10) {
+        return '0' + number;
+    }
+    return number;
+};
+
+var setLoadingIndicatorMessage = function (message)
+{
+    $('.loading-description').text(message || '');
+};
+
+String.prototype.latinize = (function () {
+    var L = {
+        // 1 ряд
+        'Й': 'Q', 'й': 'q', 'Ц': 'W', 'ц': 'w', 'У': 'E', 'у': 'e', 'К': 'R', 'к': 'r', 'Е': 'T', 'е': 't', 'Н': 'Y', 'н': 'y',
+        'Г': 'U', 'г': 'u', 'Ш': 'I', 'ш': 'i', 'Щ': 'O', 'щ': 'o', 'З': 'P', 'з': 'p', 'Х': '{', 'х': '[', 'Ъ': '}', 'ъ': ']',
+        // 2 ряд
+        'Ф': 'A', 'ф': 'a', 'Ы': 'S', 'ы': 's', 'В': 'D', 'в': 'd', 'А': 'F', 'а': 'f', 'П': 'G', 'п': 'g', 'Р': 'H', 'р': 'h',
+        'О': 'J', 'о': 'j', 'Л': 'K', 'л': 'k', 'Д': 'L', 'д': 'l', 'Ж': ':', 'ж': ';', 'Э': '"', 'э': '\'',
+        // 3 ряд
+        'Я': 'Z', 'я': 'z', 'Ч': 'X', 'ч': 'x', 'С': 'C', 'с': 'c', 'М': 'V', 'м': 'v', 'И': 'B', 'и': 'b', 'Т': 'N', 'т': 'n',
+        'Ь': 'M', 'ь': 'm', 'Б': '<', 'б': ',', 'Ю': '>', 'ю': '.', ',': '?', '.': '/',
+        // Дополнительно
+        'Ё': '~', 'ё': '`'
+    },
+    r = '',
+    k;
+    for (k in L) r += k;
+    r = new RegExp('[' + r + ']', 'g');
+    k = function (a) {
+        return a in L ? L[a] : '';
+    };
+    return function () {
+        return this.replace(r, k);
+    };
+})();
+
+String.prototype.parseISODate = function () {
+    var parts = this.match(/\d+/g);
+    return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
+};
+
+Date.prototype.toISOString = function () {
+    return this.getFullYear() + '-' + pad(this.getMonth() + 1) + '-' + pad(this.getDate()) + 'T' + pad(this.getHours()) + ':' + pad(this.getMinutes()) + ':' + pad(this.getSeconds());
+}
+
+Date.prototype.clearTime = function() {
+    this.setHours(0);
+    this.setMinutes(0);
+    this.setSeconds(0);
+    this.setMilliseconds(0);
+    return this;
+}
+
+var NotificationTypes = {
+    info: 'info',
+    error: 'error',
+    danger: 'danger',
+    success: 'success',
+    warning: 'warning'
+};
+
+function AlertKendoWindow(message) {
+    var kendoWindow = $("<div />").kendoWindow({
+        title: false,
+        resizable: false,
+        modal: true,
+        width: 520
+    });
+
+    kendoWindow.data("kendoWindow")
+        .content($("<div />").html(alertTemplate({ message: message })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm")
+        .click(function () {
+            kendoWindow.data("kendoWindow").close();
+        })
+        .end();
+}
+
+var alertTemplate = kendo.template("<div>" +
+    "<div class='attention-title-border'>" +
+    "<div class='attention-title-text'>" +
+    "Внимание!" +
+    "</div>" +
+    "</div> " +
+
+    "<div class='attention-message'>#= message #</div>" +
+
+    "<div style='text-align: right;'>" +
+    "<button class='attention-confirm'>Ок</button>" +
+    "</div>" +
+    "</div> "
+);
+
+var showNotification = function (message, notificationType, time) {
+    
+    if (!notificationType)
+        notificationType = NotificationTypes.info;
+
+    if (notificationType == NotificationTypes.error) notificationType = 'danger';
+
+    var uid = guid();
+    
+    if (!time)
+        time = 15000;
+
+    $('#notification-dialog').append('\
+<div id="' + uid + '" class="alert alert-' + notificationType + ' alert-dismissible" role="alert"> \
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"> \
+        <span aria-hidden="true">&times;</span> \
+    </button> \
+    ' + message + ' \
+</div> \
+');
+
+    var timeout = setTimeout(function () {
+        $('#notification-dialog #' + uid).fadeOut('slow');
+    }, time);
+
+    $('#notification-dialog #' + uid).mousemove(function (e) {
+        clearTimeout(timeout);
+    });
+
+    $('#notification-dialog #' + uid).mouseleave(function (e) {
+        timeout = setTimeout(function () {
+            $('#notification-dialog #' + uid).fadeOut('slow');
+        }, 7000);
+    });
+};
+
+
+var confirmationTextareaDialog = function (options) {
+    var id = guid();
+    var btnConfirmId = guid();
+    var btnCancelId = guid();
+    var textareaId = guid();
+
+    options.confirmText = options.confirmText || jsResource.Yes;
+    options.cancelText = options.cancelText || jsResource.No;
+    options.title = options.title || 'Внимание';
+    options.onCancel = options.onCancel || function () { };
+    options.onConfirm = options.onConfirm || function () { };
+    options.onClose = options.onClose || function () { };
+    options.textAlign = options.textAlign || 'text-center';
+    options.textareaPlaceholder = options.textareaPlaceholder || 'Примечание';
+
+    $('body').append('\
+<div id=' + id + ' class="modal fade" tabindex="-1" role="dialog" z-index="1000000" style="z-index: 100000"> \
+    <div class="modal-dialog" z-index="1000000" style="z-index: 100000"> \
+        <div class="modal-content"> \
+            <div class="modal-header modal-warning"> \
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> \
+                <p class="modal-title"><strong>' + options.title + '</strong></p> \
+            </div> \
+            <div class="modal-body"> \
+                <p class="'+ options.textAlign + '">' + options.message + '</p> \
+                <textarea \
+                    id="'+ textareaId + '" \
+                    class="form-control" \
+                    style="max-width: 100%; min-width: 100%" \
+                    placeholder="' + options.textareaPlaceholder +'" ></textarea > \
+            </div> \
+            <div class="modal-footer"> \
+                <button \
+                    style="padding-left:20px; padding-right: 20px;" \
+                    id="' + btnConfirmId + '" \
+                    type="button" class= "btn btn-sm btn-danger" > '
+                        + options.confirmText +
+                '</button > \
+                <button \
+                    style="padding-left:20px; padding-right: 20px;" \
+                    id="' + btnCancelId + '" \
+                    type="button" \
+                    class="btn btn-sm btn-default" \
+                    data-dismiss="modal" > '
+                        + options.cancelText +
+                '</button > \
+            </div> \
+        </div> \
+    </div> \
+</div>');
+
+    $('#' + btnConfirmId).click(function () {
+        var textareaValue = $('#' + textareaId).val()
+        options.onConfirm(textareaValue);
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + btnCancelId).click(function () {
+        options.onCancel();
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + id).on('hidden.bs.modal', function (e) {
+        options.onClose();
+        $('#' + id).remove();
+    });
+
+    $('#' + id).modal('show');
+}
+
+var confirmationDialog = function (options) {
+    var id = guid();
+    var btnConfirmId = guid();
+    var btnConfirm2Id = options.onConfirm2 ? guid() : null;
+    var btnCancelId = guid();
+
+    options.confirmText = options.confirmText || jsResource.Yes;
+    options.confirmText2 = options.onConfirm2 ? (options.confirmText2 || jsResource.Yes) : null;
+    options.cancelText = options.cancelText || jsResource.No;
+    options.title = options.title || 'Внимание';
+    options.onCancel = options.onCancel || function () { };
+    options.onConfirm = options.onConfirm || function () { };
+    options.onConfirm2 = options.onConfirm2 || function () { };
+    options.onClose = options.onClose || function () { };
+    options.textAlign = options.textAlign || 'text-center';
+
+    $('body').append('\
+<div id=' + id + ' class="modal fade" tabindex="-1" role="dialog" z-index="1000000" style="z-index: 100000"> \
+    <div class="modal-dialog" z-index="1000000" style="z-index: 100000"> \
+        <div class="modal-content"> \
+            <div class="modal-header modal-warning"> \
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> \
+                <p class="modal-title"><strong>' + options.title + '</strong></p> \
+            </div> \
+            <div class="modal-body"> \
+                <p class="'+ options.textAlign +'">' + options.message + '</p> \
+            </div> \
+            <div class="modal-footer"> \
+                <button style="padding-left:20px; padding-right: 20px;" id="' + btnConfirmId + '" type="button" class="btn btn-sm btn-danger">' + options.confirmText + '</button> \
+                ' + (btnConfirm2Id != null ? '<button style="padding-left:20px; padding-right: 20px;" id="' + btnConfirm2Id + '" type="button" class="btn btn-sm btn-danger">' + options.confirmText2 + '</button>' : '')  +' \
+                <button style="padding-left:20px; padding-right: 20px;" id="' + btnCancelId + '" type="button" class="btn btn-sm btn-default" data-dismiss="modal">' + options.cancelText + '</button> \
+            </div> \
+        </div> \
+    </div> \
+</div>');
+
+    $('#' + btnConfirmId).click(function () {
+        options.onConfirm();
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + btnConfirm2Id).click(function () {
+        options.onConfirm2();
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + btnCancelId).click(function () {
+        options.onCancel();
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + id).on('hidden.bs.modal', function (e) {
+        options.onClose();
+        $('#' + id).remove();
+    });
+
+    $('#' + id).modal('show');
+}
+
+var warningDialog = function (options) {
+    var id = guid();
+    var btnCancelId = guid();
+    options.onCancel = options.onCancel || function () { };
+    options.onClose = options.onClose || function () { };
+
+    $('body').append('\
+<div id=' + id + ' class="modal fade" tabindex="-1" role="dialog" z-index="1000000" style="z-index: 100000"> \
+    <div class="modal-dialog" z-index="1000000" style="z-index: 100000"> \
+        <div class="modal-content"> \
+            <div class="modal-header modal-warning"> \
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> \
+                <p class="modal-title"><strong>Внимание</strong></p> \
+            </div> \
+            <div class="modal-body"> \
+                <p class="text-center">' + options.message + '</p> \
+            </div> \
+            <div class="modal-footer"> \
+                <button style="padding-left:20px; padding-right: 20px;" id="' + btnCancelId + '" type="button" class="btn btn-sm btn-default" data-dismiss="modal">' + options.cancelText + '</button> \
+            </div> \
+        </div> \
+    </div> \
+</div>');
+
+    $('#' + btnCancelId).click(function () {
+        options.onCancel();
+        $('#' + id).modal('hide');
+    });
+
+    $('#' + id).on('hidden.bs.modal', function (e) {
+        options.onClose();
+        $('#' + id).remove();
+    });
+
+    $('#' + id).modal('show');
+}
+
+var kendoCulture = function (culture) {
+    var defaultCulture = "ru-RU";
+
+    //if (culture) { kendo.culture(culture); return }
+
+    kendo.culture(defaultCulture);
+    kendo.culture().numberFormat["."] = ".";
+};
+
+function watermark(text) {
+    if (!text) return;
+    const columns = 3;
+    const rows = 3;
+    for (let col = 0; col < columns; col++) {
+        for (let row = 0; row < rows; row++) {
+            const wm = document.createElement('div');
+            wm.className = 'watermark';
+            const left = 15 + (65 / (columns - 1)) * col;
+            const top = 20 + (60 / (rows - 1)) * row;
+            wm.style.left = left + '%';
+            wm.style.top = top + '%';
+            wm.textContent = text;
+            document.body.appendChild(wm);
+        }
+    }
+}
+
+$(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
+    var lang = localStorage.getItem('lang') || 'ru';
+    jqXHR.setRequestHeader('Accept-Language', lang);
+});
+
+$(document).ready(function () {
+    jQuery.ajaxSettings.traditional = true;
+
+    $('a.scroll-link').on('click', function (e) {
+        e.preventDefault();
+        scrollLink($(this), $('.navbar').outerHeight());
+    });
+
+    $.validator.setDefaults({
+        ignore: [],
+        errorPlacement: function (error, element) {
+            if ($(element).closest('.k-dropdowntree').length > 0) {
+                $(element).closest('.k-dropdowntree').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-combobox').length > 0) {
+                $(element).closest('.k-combobox').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-datepicker').length > 0) {
+                $(element).closest('.k-datepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-datetimepicker').length > 0) {
+                $(element).closest('.k-datetimepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-numerictextbox').length > 0) {
+                $(element).closest('.k-numerictextbox').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-timepicker').length > 0) {
+                $(element).closest('.k-timepicker').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-dropdown').length > 0) {
+                $(element).closest('.k-dropdown').find('.k-state-default').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-editor').length > 0) {
+                $(element).closest('.k-editor').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else if ($(element).closest('.k-multiselect').length > 0) {
+                $(element).closest('.k-multiselect').tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            } else {
+                $(element).tooltip("destroy").data("title", error.text()).tooltip({ placement: 'bottom' });
+            }
+        },
+        success: function (label, element) {
+            $(label).tooltip("destroy");
+        },
+        highlight: function (element, errorClass, validClass) {
+            if ($(element).closest('.k-dropdowntree').length > 0) {
+                $(element).closest('.k-dropdowntree').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-combobox').length > 0) {
+                $(element).closest('.k-combobox').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-datepicker').length > 0) {
+                $(element).closest('.k-datepicker').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-datetimepicker').length > 0) {
+                $(element).closest('.k-datetimepicker').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-numerictextbox').length > 0) {
+                $(element).closest('.k-numerictextbox').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-timepicker').length > 0) {
+                $(element).closest('.k-timepicker').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-dropdown').length > 0) {
+                $(element).closest('.k-dropdown').find('.k-state-default').addClass('element-validation-error');
+            } else if ($(element).closest('.k-editor').length > 0) {
+                $(element).closest('.k-editor').addClass('element-validation-error');
+            } else if ($(element).closest('.k-multiselect').length > 0) {
+                $(element).closest('.k-multiselect').addClass('element-validation-error');
+            } else {
+                $(element).addClass('element-validation-error');
+            }
+            $(element).closest('.validation-frame').addClass('validation-frame-error');
+            $('label[for="' + $(element).attr('id') + '"]').addClass('field-validation-error');
+        },
+        unhighlight: function (element, errorClass, validClass) {
+            if (!$(element).attr('id')) return;
+
+            if ($(element).closest('.k-dropdowntree').length > 0) {
+                $(element).closest('.k-dropdowntree').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-combobox').length > 0) {
+                $(element).closest('.k-combobox').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-datepicker').length > 0) {
+                $(element).closest('.k-datepicker').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-datetimepicker').length > 0) {
+                $(element).closest('.k-datetimepicker').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-numerictextbox').length > 0) {
+                $(element).closest('.k-numerictextbox').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-timepicker').length > 0) {
+                $(element).closest('.k-timepicker').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-dropdown').length > 0) {
+                $(element).closest('.k-dropdown').find('.k-state-default').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-editor').length > 0) {
+                $(element).closest('.k-editor').removeClass('element-validation-error');
+            } else if ($(element).closest('.k-multiselect').length > 0) {
+                $(element).closest('.k-multiselect').removeClass('element-validation-error');
+            } else {
+                $(element).removeClass('element-validation-error');
+            }
+            $(element).closest('.validation-frame').removeClass('validation-frame-error');
+            $('label[for="' + $(element).attr('id') + '"]').removeClass('field-validation-error');
+        },
+        onkeyup: function (element) { this.element(element); },
+        invalidHandler: function (event, validator) {
+            var errorMessages = '';
+            validator.errorList.forEach(function (error) {
+                errorMessages += error.message + '<br />';
+            });
+            showNotification(errorMessages, NotificationTypes.error);
+        }
+    });
+
+    (function () {
+        var debounceTimer = null;
+
+        $(document).on({
+            ajaxStart: function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    if ($.active > 0) {
+                        kendo.ui.progress($('.k-grid'), false);
+                        kendo.ui.progress($('.k-listview'), false);
+                        $('body').addClass('loading');
+                    }
+                }, 1500)
+            },
+            ajaxStop: function () {
+                clearTimeout(debounceTimer);
+                $('body').removeClass('loading');
+            },
+            ajaxComplete: function () {
+                clearTimeout(debounceTimer);
+                $('body').removeClass('loading');
+            }
+        });
+    }()) 
+});
+
+(function () {
+    var lang = localStorage.getItem('lang');
+    if (lang) {
+        $.ajax({
+            type: 'POST',
+            url: '/authentication/authentication/changeCulture',
+            data: JSON.stringify({ lang: lang }),
+            contentType: 'application/json; charset=utf-8',
+        });
+        kendoCulture(lang);
+    } else {
+        kendoCulture();
+    }
+})();
+
+var culture = function () {
+    var changeCulture = function (lang) {
+        $.ajax({
+            type: 'POST',
+            url: '/authentication/authentication/changeCulture',
+            data: JSON.stringify({ lang: lang }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                localStorage.setItem('lang', result);
+                location.reload();                
+            },
+        });
+    };
+
+    var culture = function () {
+        return localStorage.getItem('lang') || 'ru';
+    };
+
+    return {
+        changeCulture: changeCulture,
+        culture: culture,
+    };
+}();
+
+var upperkey = function (e) {
+    var selectionEnd = $(e.target).get(0).selectionEnd;
+    var value = $(e.target).val();
+    if (e.which != 13 && e.which != 46 && e.which != 8 && e.which != 17 && (e.which < 96 || e.which > 105) && value) {
+        value = value.toUpperCase();
+        $(e.target).val(value);
+        $(e.target).get(0).setSelectionRange(selectionEnd, selectionEnd);
+    }
+};
+
+var scrollLink = function (clickedLink, navHeight) {
+    var elementClass = clickedLink.attr('href').replace('#', '.');
+    var scrollPosition = 0;
+    if (elementClass != '.top-content') {
+        elementClass += '-container';
+        scrollPosition = $(elementClass).offset().top - navHeight;
+    }
+    if ($(window).scrollTop() != scrollPosition) {
+        $('html, body').stop().animate({ scrollTop: scrollPosition }, 1000);
+    }
+};
+
+window.onerror = function (errorMsg, url, lineNumber) {
+    if (
+        errorMsg === "Uncaught TypeError: Cannot read properties of null (reading 'style')" &&
+        url.startsWith('https://www.gstatic.com/recaptcha/releases')
+    ) {
+        return false
+    }
+            
+    showNotification(errorMsg + " " + url + " " + lineNumber, NotificationTypes.error);
+    $('body').removeClass('loading');
+
+    return false;
+}
+
+function parseJsonDate(jsonDateString) {
+    return new Date(parseInt(jsonDateString.substr(6)));
+}
+
+function phoneMask(str) {
+    if (
+        (str.length > 11 && str.substring(0, 2) === '+7')
+            || (str.length > 10 && str.substring(0, 1) === '8')
+            || (str.length > 10 && str.substring(0, 2) !== '+7')
+    ) {
+        if (str.substring(0, 1) === '8')
+            str = str.substring(1, 50);
+        else if (str.substring(0, 2) === '+7')
+            str = str.substring(2, 50);
+        var num = str.substring(0, 50).replace(/\D/g, '');
+
+        return '+7' + '(' + num.substring(0, 3) + ')' + num.substring(3, 6) + '-' + num.substring(6, 8) + '-' + num.substring(8, 10);
+    } else {
+
+        return str;
+    }
+}
+
+function phoneKzValidation(phoneNumber, element) {
+    phoneNumber = phoneNumber.replace(/\s+/g, "");
+    return this.optional(element) || phoneNumber.length > 9 &&
+        phoneNumber.match(/^\+?7\-?\(?[0-9]{3}\)?\-?[0-9]{3}\-?[0-9]{2}\-?[0-9]{2}$/);
+}
+
+function OnKeyUpMobilePhone(e) {
+    if (e.keyCode != 8 && e.keyCode != 46) {
+        e.currentTarget.value = phoneMask(e.currentTarget.value);
+    }
+};
+
+function openDialogBySelector(init) {
+    var modalContent = $(init.selector);
+    $(init.selector).remove();
+
+    var id = init.selector.substr(1) + '_container';
+    $('#' + id).remove();
+
+    $('body').append('<div id=' + id + ' class="modal fade" tabindex="-1" role="dialog" data-backdrop="static">' +
+        '  <div class="modal-dialog ' + (init.modalSize || '') + ' ">' +
+        '    <div class="modal-content">' +
+        '      <div class="modal-header">' +
+        '        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+        '        <p class="modal-title">' + init.title + '</p>' +
+        '      </div>' +
+        '      <div class="modal-body">' +
+        '      </div>' +
+        '    </div>' +
+        '  </div>' +
+        '</div>');
+
+    $('#' + id + ' .modal-body').html(null);
+    $('#' + id + ' .modal-body').append(modalContent);
+
+    $(modalContent).removeClass('dialog');
+
+    if (init.htmlAttributes) {
+        if (init.htmlAttributes.top)
+            $('#' + id + ' .modal-dialog').css({ 'margin': init.htmlAttributes.top + ' auto' });
+        if (init.htmlAttributes.top)
+            $('#' + id).css({ 'z-index': init.htmlAttributes.zIndex });
+    }
+
+
+
+    //$('#' + id).draggable({
+    //    handle: ".modal-header"
+    //});
+
+    if (init.onShow) {
+        var onShow = function () {
+            init.onShow();
+            $('#' + id).unbind('shown.bs.modal', onShow);
+        }
+
+        $('#' + id).bind('shown.bs.modal', onShow);
+    }
+
+    //$('#' + id).on('hidden.bs.modal', function(e) {
+    //    $('#' + id).remove();
+    //});
+
+    $('#' + id).modal('show');
+}
+
+var kendoWindow = null; // Объявляем переменную для хранения окна
+
+function ConfirmKendoWindowWithParam(attentionConfirm, param, message) {
+    // Если окно не существует, создаем новое окно
+    if (!kendoWindow) {
+        kendoWindow = $("<div />").kendoWindow({
+            title: false,
+            resizable: false,
+            modal: true,
+            width: 520,
+            animation: false
+        });
+    }
+
+    // Очищаем предыдущие обработчики событий перед установкой новых
+    kendoWindow.data("kendoWindow").unbind("deactivate");
+
+    kendoWindow
+        .data("kendoWindow")
+        .content($("<div />").html(attentionConfirmation({ message: message })))
+        .center().open();
+
+    kendoWindow.find(".attention-confirm, .attention-cancel").on("click", function () {
+        if ($(this).hasClass("attention-confirm")) {
+            kendoWindow.data("kendoWindow").bind("deactivate", function () {
+                attentionConfirm(param);
+            });
+        }
+        kendoWindow.data("kendoWindow").close();
+    });
+}
+
+var attentionConfirmation = function (param) {
+    var param = {
+        message: param.message ? param.message : '',
+        attentionConfirmBtnName: param.attentionConfirmBtnName ? param.attentionConfirmBtnName : 'Да',
+        attentionCancelBtnName: param.attentionCancelBtnName ? param.attentionCancelBtnName : 'Нет'
+    }
+    return kendo.template("<div>" +
+        "<div class='row attention-title-border'>" +
+        "<div class='attention-title-text'>" +
+        "Внимание!" +
+        "</div>" +
+        "</div> " +
+
+        "<div class='attention-message'>" + param.message + "</div>" +
+
+        "<div style='text-align: center;'>" +
+        "<button class='attention-confirm'>" + param.attentionConfirmBtnName + "</button>" +
+        "<button class='attention-cancel'>" + param.attentionCancelBtnName + "</button>" +
+        "</div>" +
+        "</div> "
+    );
+}
+
+async function GetAppVersionAsync() {
+    return fetch('/api/Assembly/GetAppVersion')
+        .then(response => response.json())
+        .then(data => {
+            let version = "V." + data.version;
+            return version
+        })
+        .catch(err => "")
+}
+
+function _openWithPost(url, data) {
+    const $form = $('<form>', {
+        action: url,
+        method: 'POST',
+        target: '_blank'
+    });
+
+    $.each(data, function (key, value) {
+        $('<input>').attr({
+            type: 'hidden',
+            name: key,
+            value: value
+        }).appendTo($form);
+    });
+
+    $form.appendTo('body').submit().remove();
+}
+;
+var Stimulsoft = (function () {
+
+    this.GenerateReport = function (obj) {
+        var encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(obj.data || {}))));
+        window.open("/" + obj.area + "/Report/GenerateReport?query=" + encodedData, "_blank");
+    }
+
+    this.ExportReport = function (obj, fileName) {
+        var encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(obj.data || {}))));
+        window.open("/" + obj.area + "/Report/ExportFileReport?fileName=" + fileName + "&query=" + encodedData);
+    }
+
+    this.GeneratePdf = function (param) {
+        var mapForm = document.createElement("form");
+        mapForm.className = "hidden";
+        mapForm.target = "_blank";
+        mapForm.method = "POST";
+        mapForm.action = param.action;
+        var mapInput = document.createElement("input");
+        mapInput.type = "text";
+        mapInput.name = "data";
+        mapInput.value = JSON.stringify(param);
+        mapForm.appendChild(mapInput);
+
+        document.body.appendChild(mapForm);
+
+        mapForm.submit();
+    }
+
+    return {
+        GenerateReport: GenerateReport,
+        ExportReport: ExportReport,
+        GeneratePdf: GeneratePdf
+    }
+})();;
+/**
+ * объект для работы с капчей от google
+ * капча одна для разных форм
+ * вызывается, если требуется, перед обращением к серверу, передавая функцию обращения как параметр
+ */
+var Captcha = (function () {
+    var widget,
+        dialogId,
+        captchaId,
+        publicKey,
+        captchaResponse,
+        showCallback = function (response) { };
+
+    var captchaSuccessCallback = function (response) {
+        showCallback(response);
+    }
+
+    return {
+        /**
+        * создает капчу в разметке
+        * @param {} reCaptchaPublicKey - публичный ключ для reCAPTCHA         
+        * @returns {} 
+        */
+        create: function (reCaptchaPublicKey) {
+            publicKey = reCaptchaPublicKey;
+            captchaId = 'recapcha';
+            dialogId = 'recaptcha-dialog';
+
+            $('#' + dialogId).kendoWindow({
+                width: 335,
+                title: 'Докажите, что вы не робот',
+                visible: false,
+                draggable: false,
+                modal: true,
+            });
+        },
+        /**
+        * показывает капчу в новом окне
+        * @param {} callback - функция вызывается после удачного подтверждения проверки
+        * @returns {} 
+        */
+        show: function (resultFunc) {
+            showCallback = resultFunc;
+
+            $('#recaptcha-dialog').data('kendoWindow').center().open();
+
+            if (widget >= 0) {
+                grecaptcha.reset(widget);
+                return;
+            }
+
+            widget = grecaptcha.render(captchaId, {
+                sitekey: publicKey,
+                callback: function (response) {
+                    captchaResponse = response;
+
+                    grecaptcha.reset(widget);
+                    $('#recaptcha-dialog').data('kendoWindow').close();
+
+                    captchaSuccessCallback(response);
+                }
+            });
+        },
+        showPromise: function () {
+            return new Promise((resolve, reject) => {
+                $('#recaptcha-dialog').getKendoWindow().center().open();
+
+                if (widget >= 0) {
+                    grecaptcha.reset(widget);
+                    resolve();
+                }
+
+                widget = grecaptcha.render(captchaId, {
+                    sitekey: publicKey,
+                    callback: function (response) {
+                        grecaptcha.reset(widget);
+                        $('#recaptcha-dialog').data('kendoWindow').close();
+                        resolve(response);                        
+                    }
+                }); 
+            });            
+        },
+        /**
+        * возвращает результат проверки капчи
+        * @returns {} 
+        */
+        getResponse: function () {
+            if (!captchaResponse) return null;
+
+            var response = captchaResponse.slice(0);
+            captchaResponse = null;
+
+            return response;
+        }
+    };
+}());;

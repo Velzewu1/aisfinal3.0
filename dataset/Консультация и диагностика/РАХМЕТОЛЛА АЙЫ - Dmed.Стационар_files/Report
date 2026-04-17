@@ -1,0 +1,769 @@
+/* Minification failed. Returning unminified contents.
+(314,29-30): run-time error JS1195: Expected expression: >
+(314,46-47): run-time error JS1004: Expected ';': )
+(315,13-14): run-time error JS1195: Expected expression: .
+(318,13-14): run-time error JS1002: Syntax error: }
+(321,57-58): run-time error JS1004: Expected ';': {
+(327,6-7): run-time error JS1195: Expected expression: ,
+(329,54-55): run-time error JS1004: Expected ';': {
+(335,6-7): run-time error JS1195: Expected expression: ,
+(337,55-56): run-time error JS1004: Expected ';': {
+(343,6-7): run-time error JS1195: Expected expression: ,
+(345,57-58): run-time error JS1004: Expected ';': {
+(353,29-30): run-time error JS1195: Expected expression: >
+(353,46-47): run-time error JS1004: Expected ';': )
+(357,14-15): run-time error JS1195: Expected expression: )
+(358,6-7): run-time error JS1195: Expected expression: ,
+(360,69-70): run-time error JS1004: Expected ';': {
+(366,6-7): run-time error JS1195: Expected expression: ,
+(368,48-49): run-time error JS1004: Expected ';': {
+(374,6-7): run-time error JS1195: Expected expression: ,
+(376,47-48): run-time error JS1004: Expected ';': {
+(382,6-7): run-time error JS1195: Expected expression: ,
+(384,43-44): run-time error JS1004: Expected ';': {
+(390,6-7): run-time error JS1195: Expected expression: ,
+(392,26-34): run-time error JS1197: Too many errors. The file might not be a JavaScript file: function
+ */
+var Reports = {
+    generateFuncStructurePatientListReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateFuncStructurePatientListReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generatePregnancyTransportationProtocolReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generatePregnancyTransportationProtocolReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateForm114ReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateForm114ReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateMaternityAndNewbornCardReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateMaternityAndNewbornCardReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateDialisCardReportPdf:  function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateDialisCardReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTransfusionLeafPatientReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTransfusionLeafPatientReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateAsiaScaleReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateAsiaScaleReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateCardGBOReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateCardGBOReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateMedAssignmentListReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateMedAssignmentListReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateStatsPatientInChamberAwakeningReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateStatsPatientInChamberAwakeningReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTemperatureListReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTemperatureListReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateMedAppointmentMedicinesReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateMedAppointmentMedicinesReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateExecuteResuscitationResultReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateExecuteResuscitationResultReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateExecuteImmunizationResultReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateExecuteImmunizationResultReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateExecuteTransfusionResultReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateExecuteTransfusionResultReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    generateTraumaRoomCertificateReportHtml: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/reports/reportGenerator/generateTraumaRoomCertificateReportHtml',
+            data: model,
+            success: function (html) {
+                var wnd = window.open('about:blank');
+                wnd.document.open();
+                wnd.document.write(html);
+                wnd.document.close();
+
+                setTimeout(function () {
+                    wnd.print();
+                    wnd.close();
+                }, 1000);
+            },
+        });
+    },
+    
+    generateAnesthesiaCardReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateAnesthesiaCardReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTitleReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTitleReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTitleDayHospitalReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTitleDayHospitalReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTitleNewBornReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTitleNewBornReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTitleObstetricReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTitleObstetricReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateInPatientDayHospitalReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateInPatientDayHospitalReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateInPatientReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateInPatientReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateInPatientNarcoReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateInPatientNarcoReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateInPatientPsychoReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateInPatientPsychoReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateInPatientOnkoReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateInPatientOnkoReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateHealthIndicatorReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateHealthIndicatorReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateMenuDishDietReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateMenuDishDietReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateReanimationMedAssignmentReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateReanimationMedAssignmentReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generatePatientMonitoringReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generatePatientMonitoringReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateResuscitationOKBReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateResuscitationOKBReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateResuscitationReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateResuscitationReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateExecuteDrugResultReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateExecuteDrugResultReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generatePatientInfoReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generatePatientInfoReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateTalonOfHospitalizationReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTalonOfHospitalizationReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateReferralOfHospitalizationReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateReferralOfHospitalizationReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateBangleReportPdf: function (request) {
+        fetch('../reportGenerator/generateBangleReportPdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            });
+    },
+    
+    generateEastingPortionReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateEastingPortionReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateEastingMenuReportPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateEastingMenuReportPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateMedAssignmentLabelPdf: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateMedAssignmentLabelPdf?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateDoctorTaskListReportPdf: function (request) {
+        fetch('../reportGenerator/generateDoctorTaskListReportPdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            });
+    },
+
+    antiCOVID19VirusinactivatedPlasmaReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/antiCOVID19VirusinactivatedPlasmaReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    eastingClaimReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/eastingClaimReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    surgProcsByDoctorView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/surgProcsByDoctorView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    surgProcesLogView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/surgProcesLogView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    surgProcesShortView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/surgProcesShortView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    listOfPatientsView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/listOfPatientsView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    listOfServiceDrugsView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/listOfServiceDrugsView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    temperatureListLogView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/temperatureListLogView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    newBornsAndMothersView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/newBornsAndMothersView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    formHouse001View: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/formHouse001View?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    formDay001View: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/formDay001View?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    procedureLog029View: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/procedureLog029View?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    hospitalStayView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/hospitalStayView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    summaryReport4View: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/summaryReport4View?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form064ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form064ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    monitoringDelaysFailuresReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/monitoringDelaysFailuresReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    dutyDoctorReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/dutyDoctorReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    emergencyAdmissionQuantityByRefTypeReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/emergencyAdmissionQuantityByRefTypeReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    emergencyAdmissionQuantityByPostProfileReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/emergencyAdmissionQuantityByPostProfileReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    emergencyAdmissionQuantityByOrgHealthCareReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/emergencyAdmissionQuantityByOrgHealthCareReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    exceededDrugDosageReasonReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/exceededDrugDosageReasonReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form001ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form001ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    medicationReconciliationTableBySuppliesItemizedReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/medicationReconciliationTableBySuppliesItemizedReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    medicationReconciliationTableByAppointmentsItemizedReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/medicationReconciliationTableByAppointmentsItemizedReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    medicationReconciliationTableBySuppliesSummaryReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/medicationReconciliationTableBySuppliesSummaryReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    medicationReconciliationTableByAppointmentsSummaryReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/medicationReconciliationTableByAppointmentsSummaryReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form006ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form006ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form005ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form005ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form007_1ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form007_1ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form013ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form013ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form016ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form016ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form019ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form019ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form020ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form020ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    surgProceWithComplicationReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/surgProceWithComplicationReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form021ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form021ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form014ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form014ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form032ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form032ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    form024ReportView: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/form024ReportView?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+
+    generateTitleReportWithAdditionalReports: function (request) {
+        const requestString = $.param(request);
+        const link = '../reportGenerator/generateTitleReportWithAdditionalReports?' + requestString;
+
+        window.open(link, '_blank');
+        window.focus();
+    },
+    
+    generateHospitalRefuseReportHtml: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/reports/reportGenerator/generateHospitalRefuseReportHtml',
+            data: model,
+            success: function (html) {
+                var wnd = window.open('about:blank');
+                wnd.document.open();
+                wnd.document.write(html);
+                wnd.document.close();
+
+                setTimeout(function () {
+                    wnd.print();
+                    wnd.close();
+                }, 1000);
+            },
+        });
+    },
+
+    generateLaboratoryResultReportModelHtml: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/reports/reportGenerator/generateLaboratoryResultReportModelHtml',
+            data: model,
+            success: function (html) {
+                var wnd = window.open('about:blank');
+                wnd.document.open();
+                wnd.document.write(html);
+                wnd.document.close();
+
+                setTimeout(function () {
+                    wnd.print();
+                    wnd.close();
+                }, 1000);
+            },
+        });
+    },
+
+    generateExecuteServiceResultReportHtml: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/reports/reportGenerator/generateExecuteServiceResultReportHtml',
+            data: model,
+            success: function (html) {
+                var wnd = window.open('about:blank');
+                wnd.document.open();
+                wnd.document.write(html);
+                wnd.document.close();
+
+                setTimeout(function () {
+                    wnd.print();
+                    wnd.close();
+                }, 1000);
+            },
+        });
+    }
+};

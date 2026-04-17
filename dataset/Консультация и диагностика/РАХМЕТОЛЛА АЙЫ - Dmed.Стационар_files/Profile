@@ -1,0 +1,1 @@
+var Profiles={save:function(n,t){return n==null&&showPopupNotification("Model is empty",NotificationTypes.danger),$.ajax({type:"POST",async:!1,url:"/profile/Save",data:JSON.stringify(n),contentType:"application/json; charset=utf-8",success:function(i){n=i;t&&t(i)}}),n}}

@@ -1,0 +1,475 @@
+/* Minification failed. Returning unminified contents.
+(50,42-43): run-time error JS1003: Expected ':': }
+(112,42-43): run-time error JS1003: Expected ':': }
+(170,42-43): run-time error JS1003: Expected ':': }
+(300,58-59): run-time error JS1195: Expected expression: .
+(300,71-72): run-time error JS1004: Expected ';': )
+(302,10-11): run-time error JS1004: Expected ';': )
+(308,51-52): run-time error JS1004: Expected ';': {
+(326,6-7): run-time error JS1195: Expected expression: ,
+(329,55-56): run-time error JS1004: Expected ';': {
+(347,6-7): run-time error JS1195: Expected expression: ,
+(350,37-38): run-time error JS1004: Expected ';': {
+(368,6-7): run-time error JS1195: Expected expression: ,
+(371,50-51): run-time error JS1004: Expected ';': {
+(386,6-7): run-time error JS1195: Expected expression: ,
+(389,44-45): run-time error JS1004: Expected ';': {
+(404,6-7): run-time error JS1195: Expected expression: ,
+(407,43-44): run-time error JS1004: Expected ';': {
+(417,42-43): run-time error JS1003: Expected ':': }
+(428,6-7): run-time error JS1195: Expected expression: ,
+(431,70-71): run-time error JS1004: Expected ';': {
+(446,6-7): run-time error JS1195: Expected expression: ,
+(427,9-27): run-time error JS1018: 'return' statement outside of function: return assignments
+(367,9-21): run-time error JS1018: 'return' statement outside of function: return model
+(346,9-25): run-time error JS1018: 'return' statement outside of function: return listModel
+(325,9-21): run-time error JS1018: 'return' statement outside of function: return model
+ */
+var SurgProces = {
+    //Получить операции
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getSurgProces',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    //Удалить историю болезни
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/surgProc/deleteSurgProc',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (window.MedicalHistory && window.MedicalHistory.methods)
+                    window.MedicalHistory.methods.refreshDefectBadges();
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить операции
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/saveSurgProc',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (window.MedicalHistory && window.MedicalHistory.methods)
+                    window.MedicalHistory.methods.refreshDefectBadges();
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Загрузить операционную бригаду из шаблона
+    getTeam: function (templateID) {
+        if (!templateID) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getOperationTeamFromTemplate/',
+            data: JSON.stringify({ templateID: templateID }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    // Получить историю болезни
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/GetSurgProc',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+    //Завершить операцию
+    complate: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+        
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/complateSurgProc',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete();
+            }
+        });
+
+        return model;
+    },
+    //Возобновить операцию
+    continue: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/continueSurgProc',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete();
+            }
+        });
+    },
+}
+
+//Показатели здоровья
+var SurgProcHealthIndicators = {
+    // Удалить показатель здоровья
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/surgProc/deletePatientHealthIndicator',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить показатель здоровья
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/savePatientHealthIndicator',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Найти показатели здоровья
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getHealthIndicators',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+    // Найти настройки показателей здоровья
+    settings: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getHealthIndicatorSettings',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+};
+
+//Этапы операции
+var SurgProcStages = {
+    // Удалить этап операции
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/surgProc/DeleteStage',
+            data: JSON.stringify({ surgProcStageID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+    // Сохранить этап операции
+    save: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/saveStage',
+            data: JSON.stringify({ surgProcStage: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+    // Найти показатели здоровья
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getStages',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+};
+
+var SurgProcAssignments = {
+    // Сохранить назначения при операции
+    save: function (model, successComplete, errorFunction) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/saveAssignment',
+            data: JSON.stringify({ assignment: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+            error: function (message) {
+                if (errorFunction) errorFunction(message?.responseText);
+            }
+        });
+
+        return model;
+    },
+
+    // Сохранить назначение на время
+    saveRecord: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/saveAssignmentRecord',
+            data: JSON.stringify({ record: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Найти параметры к услуге
+    getResearchesParameter: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var listModel = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getResearchParameters',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                listModel = result;
+            }
+        });
+
+        return listModel;
+    },
+
+    // Получить список назначений
+    list: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/getMedicalAssignments',
+            data: JSON.stringify({ listQueryModel: searchCriteria }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Удалить назначение на время
+    deleteRecord: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/deleteAssignmentRecord',
+            data: JSON.stringify({ recordID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Удалить назначение
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/deleteAssignment',
+            data: JSON.stringify({ assignmentID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Получить назначения из шаблона
+    convertFromTemplate: function (model) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        var assignments = [];
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/convertFromTemplate',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                assignments = result;
+            },
+            error: function () {
+                assignments = null;
+            }
+        });
+
+        return assignments;
+    },
+
+    // Отменить выполнение назначения
+    executeCancelMedAssignmentRec: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/surgProc/executeCancelMedAssignmentRec',
+            data: JSON.stringify({ model: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+}
+;

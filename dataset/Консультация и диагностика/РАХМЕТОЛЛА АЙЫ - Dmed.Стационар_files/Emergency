@@ -1,0 +1,194 @@
+/* Minification failed. Returning unminified contents.
+(54,42-43): run-time error JS1003: Expected ':': }
+(147,42-43): run-time error JS1003: Expected ':': }
+ */
+var EmergencyRooms = {
+    // Получить обращение
+    get: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/getEmergencyRoom',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Получить обращение
+    getShort: function (id) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/getEmergencyRoomShort',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Сохранить обращение
+    save: function (model, successComplete) {
+        if (!model) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/saveEmergencyRoom',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Найти обращение
+    find: function (searchCriteria) {
+        if (!searchCriteria) {
+            showPopupNotification("SearchCriteria is empty", NotificationTypes.danger);
+        }
+
+        var model = null;
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/findEmergencyRoom',
+            data: JSON.stringify(searchCriteria),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+            },
+        });
+
+        return model;
+    },
+
+    // Удалить обращение
+    delete: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/deleteEmergencyRoom',
+            data: JSON.stringify({ id: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Изменить триаж
+    triageChange: function (id, triageType, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        if (!triageType) {
+            showPopupNotification("TriageType is empty", NotificationTypes.danger);
+        }
+
+        var model = this.get(id);
+        model.TriageType = triageType;
+        this.save(model, successComplete);
+    },
+
+    // Отменить отказ в госпитализации
+    cancelRefuse: function (id, successComplete) {
+        if (!id) {
+            showPopupNotification("Id is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/refuseCancel',
+            data: JSON.stringify({ patientAdmissionRegisterID: id }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                if (successComplete) successComplete();
+            },
+        });
+    },
+
+    // Отказать в госпитализации
+    refuse: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/refuse',
+            data: JSON.stringify({ model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    },
+
+    // Госпитализировать
+    hospitalize: function (model, successComplete) {
+        if (model == null) {
+            showPopupNotification("Model is empty", NotificationTypes.danger);
+        }
+
+        $.ajax({
+            type: 'POST',
+            async: false,
+            url: '/emergency/hospitalize',
+            data: JSON.stringify({ medicalHistory: model }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (result) {
+                model = result;
+                if (successComplete) successComplete(result);
+            },
+        });
+
+        return model;
+    }
+};
+
+// Цвета триажа
+var EmergencyRoomTriageColors = new Map();
+EmergencyRoomTriageColors.set(1, "green");
+EmergencyRoomTriageColors.set(2, "orange");
+EmergencyRoomTriageColors.set(3, "red");
+
+// Цвета обращений
+var EmergencyRoomgeStatusColors = new Map();
+EmergencyRoomgeStatusColors.set(1, "panel-warning");
+EmergencyRoomgeStatusColors.set(2, "panel-info");
+EmergencyRoomgeStatusColors.set(3, "panel-danger");;

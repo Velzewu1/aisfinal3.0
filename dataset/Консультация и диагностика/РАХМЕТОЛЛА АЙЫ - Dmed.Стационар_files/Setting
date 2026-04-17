@@ -1,0 +1,1 @@
+var Settings={select:function(n,t,i,r){t||showPopupNotification("Url is empty",NotificationTypes.danger);$("#settings-nav").find(".list-group-item").removeClass("active");$(n).addClass("active");$.ajax({type:"POST",url:t,data:r,contentType:"application/json; charset=utf-8",success:function(n){i&&i(n)}})}}
