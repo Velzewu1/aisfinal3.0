@@ -34,7 +34,7 @@ Last verified: scaffold build on `0.1.0`.
 | `extension/content/selectors.ts`       | ✅     | Allowlist enforced; value regex enforced.                  |
 | `extension/background/router.ts`       | ✅     | Routes all `ExtensionMessage` variants.                    |
 | `extension/background/event-bus.ts`    | ✅     | In-worker pub/sub with ring buffer.                        |
-| `extension/background/supabase-sync.ts`| ❌     | Skeleton; logs intent to sync but does not POST yet.       |
+| `extension/background/supabase-sync.ts`| 🟡     | Implemented; under reconciliation with the `ai_rpa_events` migration. |
 | `extension/sidepanel/main.ts`          | ✅     | Record / stop / text / confirm buttons.                    |
 | `backend/api/main.py`                  | ✅     | FastAPI app; CORS; health; routers mounted.                |
 | `backend/api/routers/schedule.py`      | ✅     | Contract surface is live; body validated.                  |
@@ -77,7 +77,7 @@ backend — is fully wired. That is why the smoke test in
 | Schemas are shared and strongly typed (Zod + Pydantic)   | ✅     |
 | Mock UI is usable for testing DOM actions                | ✅     |
 | Events carry `correlationId` end-to-end                  | ✅     |
-| Supabase sync is wired                                   | ❌ pending |
+| Supabase sync is wired                                   | 🟡 implemented; under reconciliation |
 | LLM provider returns validated JSON                      | ❌ pending |
 | CP-SAT solver enforces full constraint set               | 🟡 stub |
 
@@ -88,8 +88,10 @@ backend — is fully wired. That is why the smoke test in
    paths.
 2. **Complete `scheduler.solve`** with the constraint set from
    [`06_backend.md`](06_backend.md) §4. Add unit tests against pinned inputs.
-3. **Wire Supabase sync** in `supabase-sync.ts`; never block the agent loop
-   on sync failures.
+3. **Reconcile Supabase sync** in `supabase-sync.ts` against the
+   `ai_rpa_events` migration (table name, column names, row shape). Sink
+   is implemented and non-blocking; remaining work is verifying
+   end-to-end insert parity with `infra/supabase/0001_events.sql`.
 4. **Side-panel event timeline** that subscribes to the background event bus
    and renders recent events by `correlationId`.
 5. **Alternate-selector fallback** in the controller for

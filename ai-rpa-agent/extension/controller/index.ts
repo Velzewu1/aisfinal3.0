@@ -9,7 +9,8 @@ import { BackendClient } from "./backend-client.js";
 import { attachContext } from "./context.js";
 import { validateLlmOutput } from "./validate.js";
 import { interpretUtterance } from "../llm/interpret.js";
-import type { NormalizedUtteranceEvent } from "../voice/normalize.js";
+import { normalizeUtterance, type NormalizedUtteranceEvent } from "../voice/normalize.js";
+import type { TranscribedTextEvent } from "../voice/transcribe.js";
 
 const log = createLogger("controller");
 const backend = new BackendClient();
@@ -33,6 +34,12 @@ const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "final",
   "completed",
 ]);
+const ALLOWED_FILL_FIELDS: ReadonlySet<string> = new Set([
+  "complaints",
+  "anamnesis",
+  "objective_status",
+  "treatment",
+]);
 
 function checkIntentPolicy(intent: Intent): string | null {
   if (intent.kind === "navigate") {
@@ -46,6 +53,13 @@ function checkIntentPolicy(intent: Intent): string | null {
     }
     if (!ALLOWED_STATUSES.has(intent.status)) {
       return `set_status_status:${intent.status}`;
+    }
+  }
+  if (intent.kind === "fill") {
+    for (const slot of intent.slots) {
+      if (!ALLOWED_FILL_FIELDS.has(slot.field)) {
+        return `fill_field:${slot.field}`;
+      }
     }
   }
   return null;
@@ -81,7 +95,7 @@ function makeEvent<T extends AgentEvent["type"]>(
 }
 
 async function dispatchExecution(correlationId: string, intent: Intent, scheduleResult?: ScheduleResult): Promise<void> {
-  const actions = planActions(intent, scheduleResult);
+  const actions = planActions(intent, correlationId, scheduleResult);
   if (actions.length === 0) {
     log.warn("no actions planned", { intentKind: intent.kind }, correlationId);
     return;
@@ -147,14 +161,41 @@ function truncateForEvent(raw: unknown): string | undefined {
 }
 
 async function runFromUtterance(correlationId: string, text: string): Promise<void> {
-  const normalized: NormalizedUtteranceEvent = Object.freeze({
-    type: "utterance_normalized",
+  // Step 4 (utterance normalization) runs only here: voice sends raw STT text
+  // from the sidepanel; typed text uses the same path. `normalizeUtterance`
+  // expects a `TranscribedTextEvent` shim.
+  const transcribedShim: TranscribedTextEvent = Object.freeze({
+    type: "transcribed_text",
     correlationId,
     timestamp: nowIso(),
-    rawText: text,
-    normalizedText: text,
+    text,
     durationMs: 0,
   });
+
+  let normalized: NormalizedUtteranceEvent;
+  try {
+    normalized = normalizeUtterance(transcribedShim);
+  } catch (err: unknown) {
+    const token =
+      err instanceof Error && err.message.length > 0 ? err.message : "normalize_failed";
+    log.error("normalize failed", token, correlationId);
+    await emit(
+      makeEvent("validation_failed", correlationId, {
+        errors: [token],
+      }),
+    );
+    return;
+  }
+
+  await emit(
+    makeEvent("utterance_normalized", correlationId, {
+      rawChars: normalized.rawText.length,
+      normalizedChars: normalized.normalizedText.length,
+      ...(normalized.hints?.detectedLanguage
+        ? { detectedLanguage: normalized.hints.detectedLanguage }
+        : {}),
+    }),
+  );
 
   const contextualized = attachContext(normalized);
 
@@ -255,6 +296,10 @@ async function runWithInterpretation(correlationId: string, interpretation: LlmI
     await emit(makeEvent("schedule_requested", correlationId, { request: intent.request }));
     try {
       const result = await backend.schedule(intent.request, correlationId);
+      if (result === null) {
+        log.warn("schedule unavailable; skipping injection", undefined, correlationId);
+        return;
+      }
       await emit(makeEvent("schedule_generated", correlationId, { result }));
       await dispatchExecution(correlationId, intent, result);
     } catch (err: unknown) {
@@ -311,8 +356,16 @@ export const controller = {
       await emit(makeEvent("schedule_requested", msg.correlationId, { request: intent.request }));
       try {
         const result = await backend.schedule(intent.request, msg.correlationId);
-        await emit(makeEvent("schedule_generated", msg.correlationId, { result }));
-        await dispatchExecution(msg.correlationId, intent, result);
+        if (result === null) {
+          log.warn(
+            "confirmed schedule unavailable; skipping injection",
+            undefined,
+            msg.correlationId,
+          );
+        } else {
+          await emit(makeEvent("schedule_generated", msg.correlationId, { result }));
+          await dispatchExecution(msg.correlationId, intent, result);
+        }
       } catch (err: unknown) {
         log.error("confirmed schedule failed", String(err), msg.correlationId);
       }

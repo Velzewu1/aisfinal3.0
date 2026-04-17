@@ -1,10 +1,5 @@
-import {
-  VoiceRecorder,
-  preprocessAudio,
-  transcribeAudio,
-  normalizeUtterance,
-} from "../voice/index.js";
-import { newCorrelationId } from "../shared/correlation.js";
+import { VoiceRecorder, preprocessAudio, transcribeAudio } from "../voice/index.js";
+import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 import { suggestNext, SUGGESTION_TEXT } from "../controller/proactivity.js";
 import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
@@ -66,6 +61,14 @@ stopBtn?.addEventListener("click", () => {
   })();
 });
 
+async function emitAgentEvent(event: AgentEvent): Promise<void> {
+  try {
+    await chrome.runtime.sendMessage({ type: "event", event });
+  } catch (err: unknown) {
+    log.warn("emit failed", String(err), event.correlationId);
+  }
+}
+
 async function readApiKey(): Promise<string | null> {
   try {
     const stored = await chrome.storage.local.get("OPENAI_API_KEY");
@@ -96,6 +99,18 @@ async function runVoicePipeline(
     appendLog(`audio_preprocessing_failed ${correlationId}: ${String(err)}`);
     return;
   }
+  await emitAgentEvent({
+    id: newCorrelationId(),
+    type: "audio_preprocessed",
+    correlationId,
+    ts: nowIso(),
+    payload: {
+      durationMs: preprocessed.durationMs,
+      mimeType: preprocessed.mimeType,
+      sizeBytes: preprocessed.normalizedBlob.size,
+      sampleRateHint: preprocessed.sampleRateHint,
+    },
+  });
 
   let transcribed;
   try {
@@ -105,23 +120,25 @@ async function runVoicePipeline(
     return;
   }
   appendLog(`text_transcribed ${correlationId}: ${transcribed.text}`);
-
-  let normalized;
-  try {
-    normalized = normalizeUtterance(transcribed);
-  } catch (err: unknown) {
-    appendLog(`normalization_failed ${correlationId}: ${String(err)}`);
-    return;
-  }
-  appendLog(`text_normalized ${correlationId}: ${normalized.normalizedText}`);
+  await emitAgentEvent({
+    id: newCorrelationId(),
+    type: "speech_to_text_completed",
+    correlationId,
+    ts: nowIso(),
+    payload: {
+      chars: transcribed.text.length,
+      durationMs: transcribed.durationMs,
+      ...(transcribed.language ? { language: transcribed.language } : {}),
+    },
+  });
 
   try {
     await chrome.runtime.sendMessage({
       type: "user_utterance",
-      correlationId: normalized.correlationId,
-      text: normalized.normalizedText,
+      correlationId,
+      text: transcribed.text,
     });
-    appendLog(`user_utterance ${normalized.correlationId} dispatched`);
+    appendLog(`user_utterance ${correlationId} dispatched`);
   } catch (err: unknown) {
     appendLog(`dispatch_failed ${correlationId}: ${String(err)}`);
   }

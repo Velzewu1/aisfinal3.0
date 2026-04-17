@@ -12,6 +12,7 @@ export const FillAction = z.object({
   value: z.union([z.string(), z.number(), z.boolean()]),
 });
 
+/** @deprecated Reserved for future planner branches; not emitted today (`planner.ts` never produces `click`). Kept for executor + schema union stability. */
 export const ClickAction = z.object({
   kind: z.literal("click"),
   action: z.string().min(1),

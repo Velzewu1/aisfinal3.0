@@ -76,6 +76,8 @@ mutation, storage) directly. All effects flow
 1. It is the **only** place that turns a validated intent into an approved
    `ActionPlan`.
 2. It encodes policy: allowlists, confidence thresholds, risk overrides.
+   Confidence evaluation is a pure helper invoked from the decision gate,
+   not a standalone pipeline stage — it runs inside the Decision layer.
 3. It orchestrates the backend without giving the LLM imperative control.
 4. It keeps the executor simple: the executor receives fully-specified,
    already-approved operations and never "interprets" anything.
@@ -90,6 +92,13 @@ Detailed decision logic lives in [`03_controller.md`](03_controller.md).
 - Test: the executor can be unit-tested without flaking on LLM drift.
 - Compliance: a reviewer can demonstrate exactly how automation touches the
   host system.
+
+The executor also **owns selector resolution**: `DomAction`s cross the
+Decision → Execution boundary carrying logical ids only (e.g.
+`field: "complaints"`), and the executor is the single place that maps
+those ids to approved `data-*` attributes. The controller and planner
+never emit CSS or XPath. This keeps the Decision layer DOM-free and
+makes selector policy reviewable in one file.
 
 Selector policy, action schema, and missing-element handling live in
 [`04_executor.md`](04_executor.md).

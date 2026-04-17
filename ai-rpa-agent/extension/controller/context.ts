@@ -1,4 +1,6 @@
+import type { AgentEvent } from "@ai-rpa/schemas";
 import type { NormalizedUtteranceEvent } from "../voice/normalize.js";
+import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("controller.context");
@@ -11,8 +13,12 @@ const log = createLogger("controller.context");
  * `ContextualizedUtteranceEvent` that is ready for the reasoning layer.
  *
  * Invariants:
- *   - Pure synchronous function. Output depends only on input + overrides.
- *   - No LLM, no network, no backend, no `chrome.*`, no `document.*`.
+ *   - Pure synchronous function w.r.t. its return value: output depends
+ *     only on input + overrides.
+ *   - Emits a best-effort `context_attached` AgentEvent for observability
+ *     via `chrome.runtime.sendMessage`; emission is fire-and-forget and
+ *     never affects the returned `ContextualizedUtteranceEvent`.
+ *   - No LLM, no network, no backend, no `document.*`.
  *   - Does NOT decide which intent runs — it only augments the utterance
  *     with labels the LLM prompt needs. Controller decision logic lives
  *     in `confidence.ts` / `index.ts`.
@@ -84,7 +90,34 @@ export function attachContext(
     { currentPage, activeForm: activeForm ?? null, patientName, patientId: patientId ?? null },
     input.correlationId,
   );
+  emitContextAttached(input.correlationId, context);
   return event;
+}
+
+function emitContextAttached(
+  correlationId: string,
+  context: ContextualizedUtteranceEvent["context"],
+): void {
+  const payload: Extract<AgentEvent, { type: "context_attached" }>["payload"] = {
+    currentPage: context.currentPage,
+    ...(context.activeForm ? { activeForm: context.activeForm } : {}),
+    ...(context.patientId ? { patientId: context.patientId } : {}),
+    ...(context.patientName ? { patientName: context.patientName } : {}),
+  };
+  const event: Extract<AgentEvent, { type: "context_attached" }> = {
+    id: newCorrelationId(),
+    type: "context_attached",
+    correlationId,
+    ts: nowIso(),
+    payload,
+  };
+  try {
+    void chrome.runtime.sendMessage({ type: "event", event }).catch(() => {
+      // Audit sink is best-effort; never propagate failure.
+    });
+  } catch {
+    // Audit sink is best-effort; never propagate failure.
+  }
 }
 
 // ------------------------------------------------------------------ //

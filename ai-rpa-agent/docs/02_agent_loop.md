@@ -49,13 +49,17 @@ control signal.
 `validation_failed` and either retry with a constrained prompt or request
 clarification from the user. On success: emit `validation_passed`.
 
-### Step 8 — Confidence evaluation
-Extract `confidence ∈ [0, 1]`. Attach risk flags from the intent kind
-(see [`03_controller.md`](03_controller.md)).
-
 ---
 
 ## Decision
+
+### Step 8 — Confidence evaluation
+Extract `confidence ∈ [0, 1]` and attach risk flags derived from the
+intent kind. Implemented as a pure helper
+(`controller/confidence.ts::evaluateConfidence`) that is invoked from the
+decision gate (Step 9) rather than as a separate stage in the pipeline;
+it shares the Decision layer's trust posture.
+See [`03_controller.md`](03_controller.md).
 
 ### Step 9 — Controller decision gate
 The controller emits `decision_made` with one of:
@@ -69,17 +73,21 @@ Route the validated intent into one of four branches:
 `fill` · `navigate` · `schedule` · `set_status`.
 
 ### Step 11 — Action planning
-Convert the intent into an `ActionPlan` = ordered `DomAction[]`. Pure
+Convert the intent into an `ActionPlan` = ordered `DomAction[]`. Actions
+carry **logical** field / nav / entity ids; no CSS or XPath. Pure
 function; no DOM, no network, no LLM.
-
-### Step 12 — DOM selector resolution
-Map logical field ids to approved `data-*` attributes
-(`data-field`, `data-action`, `data-nav`, `data-status-entity`,
-`data-schedule-grid`). Raw CSS/XPath is rejected at this boundary.
 
 ---
 
 ## Execution
+
+### Step 12 — DOM selector resolution
+Map the logical ids carried in each `DomAction` to approved `data-*`
+attributes (`data-field`, `data-action`, `data-nav`, `data-status-entity`,
+`data-schedule-grid`). Owned by the **executor** (`content/executor.ts`):
+the controller / planner never emit CSS or XPath, and the resolution is
+the first thing the executor does inside `dispatch` for each action.
+Raw CSS/XPath is rejected at this boundary.
 
 ### Step 13 — Executor dispatch
 Controller sends `execute_plan` to the active tab via
@@ -113,10 +121,14 @@ only — no HTML fragments from the backend.
 ## Audit
 
 ### Step 18 — Event logging + Supabase sync
-Every step above emits one or more `AgentEvent` records sharing the same
-`correlationId`. The background service worker:
+Critical steps emit `AgentEvent` records sharing the same `correlationId`;
+other steps are logged internally through the structured logger without
+creating a durable event. The exact set of durable event types is defined
+by the `AgentEvent` discriminated union in `packages/schemas/src/events.ts`
+and enumerated in [`05_events.md`](05_events.md); additions require a
+schema version bump. The background service worker:
 
-1. Publishes to the in-process event bus.
+1. Publishes every emitted event to the in-process event bus.
 2. Syncs to the append-only `ai_rpa_events` table in Supabase.
 3. Notifies the side-panel timeline for live display.
 

@@ -6,10 +6,16 @@ import { ScheduleRequest, ScheduleResult } from "./schedule.js";
 
 export const EventType = z.enum([
   "voice_captured",
+  "audio_preprocessed",
+  "speech_to_text_completed",
+  "utterance_normalized",
+  "context_attached",
   "intent_parsed",
   "validation_passed",
   "validation_failed",
+  "confidence_evaluated",
   "decision_made",
+  "action_plan_created",
   "dom_action_executed",
   "dom_action_failed",
   "schedule_requested",
@@ -31,6 +37,44 @@ export const VoiceCapturedEvent = BaseEvent.extend({
     durationMs: z.number().int().nonnegative(),
     mimeType: z.string().min(1),
     sizeBytes: z.number().int().nonnegative(),
+  }),
+});
+
+export const AudioPreprocessedEvent = BaseEvent.extend({
+  type: z.literal("audio_preprocessed"),
+  payload: z.object({
+    durationMs: z.number().int().nonnegative(),
+    mimeType: z.string().min(1),
+    sizeBytes: z.number().int().nonnegative(),
+    sampleRateHint: z.number().int().positive().optional(),
+  }),
+});
+
+export const SpeechToTextCompletedEvent = BaseEvent.extend({
+  type: z.literal("speech_to_text_completed"),
+  payload: z.object({
+    chars: z.number().int().nonnegative(),
+    durationMs: z.number().int().nonnegative(),
+    language: z.string().min(1).optional(),
+  }),
+});
+
+export const UtteranceNormalizedEvent = BaseEvent.extend({
+  type: z.literal("utterance_normalized"),
+  payload: z.object({
+    rawChars: z.number().int().nonnegative(),
+    normalizedChars: z.number().int().nonnegative(),
+    detectedLanguage: z.string().min(1).optional(),
+  }),
+});
+
+export const ContextAttachedEvent = BaseEvent.extend({
+  type: z.literal("context_attached"),
+  payload: z.object({
+    currentPage: z.string().min(1),
+    activeForm: z.string().min(1).optional(),
+    patientId: z.string().min(1).optional(),
+    patientName: z.string().min(1).optional(),
   }),
 });
 
@@ -56,12 +100,30 @@ export const ValidationFailedEvent = BaseEvent.extend({
   }),
 });
 
+export const ConfidenceEvaluatedEvent = BaseEvent.extend({
+  type: z.literal("confidence_evaluated"),
+  payload: z.object({
+    score: z.number().min(0).max(1),
+    level: z.enum(["high", "medium", "low"]),
+    requiresConfirmation: z.boolean(),
+  }),
+});
+
 export const DecisionMadeEvent = BaseEvent.extend({
   type: z.literal("decision_made"),
   payload: z.object({
     decision: z.enum(["execute", "confirm", "reject"]),
     confidence: z.number().min(0).max(1),
     reason: z.string().min(1).optional(),
+  }),
+});
+
+export const ActionPlanCreatedEvent = BaseEvent.extend({
+  type: z.literal("action_plan_created"),
+  payload: z.object({
+    intentKind: z.string().min(1),
+    actionCount: z.number().int().nonnegative(),
+    actionKinds: z.array(z.string().min(1)),
   }),
 });
 
@@ -111,10 +173,16 @@ export const UserConfirmationReceivedEvent = BaseEvent.extend({
 
 export const AgentEvent = z.discriminatedUnion("type", [
   VoiceCapturedEvent,
+  AudioPreprocessedEvent,
+  SpeechToTextCompletedEvent,
+  UtteranceNormalizedEvent,
+  ContextAttachedEvent,
   IntentParsedEvent,
   ValidationPassedEvent,
   ValidationFailedEvent,
+  ConfidenceEvaluatedEvent,
   DecisionMadeEvent,
+  ActionPlanCreatedEvent,
   DomActionExecutedEvent,
   DomActionFailedEvent,
   ScheduleRequestedEvent,
