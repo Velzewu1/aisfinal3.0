@@ -4,31 +4,36 @@ import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("supabase-sync");
 
+/** Must match `infra/supabase/0001_events.sql` (`public.ai_rpa_events`). */
+const AI_RPA_EVENTS_TABLE = "ai_rpa_events" as const;
+
 /**
- * Append-only sync: persists events to the Supabase `ai_rpa_events` table.
+ * Row shape for Supabase insert — mirrors the migration exactly (snake_case columns).
  *
- * Row shape matches `infra/supabase/0001_events.sql` exactly:
- *   - `id` — UUID text primary key (see `rowPrimaryKey`).
- *   - `correlation_id` — `event.correlationId`
- *   - `type` — `event.type` (not `event_type`)
- *   - `ts` — `event.ts` (canonical **event** time, ISO timestamptz)
- *   - `payload` — `event.payload` (jsonb; inner payload only; event shape unchanged)
- *   - `inserted_at` — wall-clock **persistence** time (ISO timestamptz)
- *
- * Invariants:
- *   - Non-blocking relative to the agent loop: a failed insert never throws,
- *     so the pipeline cannot be crashed by the audit sink.
- *   - Failures are NOT silent: each one logs via `createLogger` (`warn`/`error`)
- *     with `correlationId` + event metadata so the audit gap is visible.
- *   - No decision logic, no DOM, no LLM. Only a single INSERT per event.
- *   - Client is lazily constructed once `SUPABASE_URL` and
- *     `SUPABASE_ANON_KEY` are present in `chrome.storage.local`.
+ * Mapping from `AgentEvent` (persistence only — payload is not transformed):
+ *   - `event.id`           → `id` (UUID string; see `rowPrimaryKey`)
+ *   - `event.correlationId` → `correlation_id`
+ *   - `event.type`         → `type`  (not `event_type`)
+ *   - `event.ts`           → `ts`    (canonical event time; not `created_at`)
+ *   - `event.payload`      → `payload`
+ *   - wall-clock insert    → `inserted_at` (distinct from `ts`; DB also has `default now()`)
  */
+type AiRpaEventInsertRow = {
+  id: string;
+  correlation_id: string;
+  type: string;
+  ts: string;
+  payload: AgentEvent["payload"];
+  inserted_at: string;
+};
 
 let cachedClient: SupabaseClient | null = null;
 let cachedKeyFingerprint: string | null = null;
 
-/** UUID for `ai_rpa_events.id`: use the v4 embedded in `cid_<uuid>` event ids, else generate. */
+/**
+ * Primary key for `ai_rpa_events.id` (migration: `text` PK storing a UUID string).
+ * Prefer the v4 embedded in `cid_<uuid>` event ids when present; otherwise generate.
+ */
 function rowPrimaryKey(eventId: string): string {
   if (eventId.startsWith("cid_")) {
     const uuid = eventId.slice("cid_".length);
@@ -41,6 +46,36 @@ function rowPrimaryKey(eventId: string): string {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === "function") return c.randomUUID();
   throw new Error("crypto.randomUUID unavailable");
+}
+
+function buildInsertRow(event: AgentEvent): AiRpaEventInsertRow {
+  return {
+    id: rowPrimaryKey(event.id),
+    correlation_id: event.correlationId,
+    type: event.type,
+    ts: event.ts,
+    payload: event.payload,
+    inserted_at: new Date().toISOString(),
+  };
+}
+
+function logPostgrestInsertError(
+  err: { message: string; code?: string; details?: string; hint?: string },
+  event: AgentEvent,
+): void {
+  log.error(
+    "supabase insert failed",
+    {
+      table: AI_RPA_EVENTS_TABLE,
+      eventId: event.id,
+      eventType: event.type,
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint,
+    },
+    event.correlationId,
+  );
 }
 
 async function getClient(correlationId?: string): Promise<SupabaseClient | null> {
@@ -74,38 +109,31 @@ async function getClient(correlationId?: string): Promise<SupabaseClient | null>
   }
 }
 
+/**
+ * Append-only sync: persists events to `public.ai_rpa_events`.
+ *
+ * Invariants:
+ *   - Non-blocking: failures do not throw into the agent loop.
+ *   - Failures are always logged at `error` with correlation id and event metadata.
+ *   - No decision logic, no DOM, no LLM. Single INSERT per call.
+ */
 export async function syncEvent(event: AgentEvent): Promise<void> {
   try {
     const supabaseClient = await getClient(event.correlationId);
     if (supabaseClient === null) {
-      log.warn(
-        "supabase client unavailable; event not persisted",
-        { id: event.id, type: event.type },
+      log.error(
+        "supabase client unavailable; event not persisted (check SUPABASE_URL / SUPABASE_ANON_KEY)",
+        { table: AI_RPA_EVENTS_TABLE, eventId: event.id, eventType: event.type },
         event.correlationId,
       );
       return;
     }
 
-    const { error } = await supabaseClient.from("ai_rpa_events").insert({
-      id: rowPrimaryKey(event.id),
-      correlation_id: event.correlationId,
-      type: event.type,
-      ts: event.ts,
-      payload: event.payload,
-      inserted_at: new Date().toISOString(),
-    });
+    const row = buildInsertRow(event);
+    const { error } = await supabaseClient.from(AI_RPA_EVENTS_TABLE).insert(row);
 
     if (error !== null) {
-      log.error(
-        "supabase insert failed",
-        {
-          eventType: event.type,
-          eventId: event.id,
-          message: error.message,
-          code: error.code,
-        },
-        event.correlationId,
-      );
+      logPostgrestInsertError(error, event);
       return;
     }
 
@@ -113,7 +141,12 @@ export async function syncEvent(event: AgentEvent): Promise<void> {
   } catch (err: unknown) {
     log.error(
       "supabase sync failed",
-      { eventType: event.type, eventId: event.id, error: String(err) },
+      {
+        table: AI_RPA_EVENTS_TABLE,
+        eventType: event.type,
+        eventId: event.id,
+        error: String(err),
+      },
       event.correlationId,
     );
   }

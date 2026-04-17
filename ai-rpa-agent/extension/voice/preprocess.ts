@@ -1,4 +1,5 @@
 import type { VoiceCapturedEvent } from "./recorder.js";
+import { buildAgentEvent, publishAgentEvent } from "../shared/agent-event-publish.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("voice.preprocess");
@@ -12,10 +13,13 @@ const log = createLogger("voice.preprocess");
  * Invariants:
  *   - Stateless, deterministic function. Same input buffer + same platform
  *     WebAudio implementation → same output bytes, same noise profile.
- *   - No DOM mutation, no network, no LLM, no backend, no `chrome.*`.
+ *   - No DOM mutation, no network, no LLM, no backend.
+ *     `chrome.runtime.sendMessage` is used only to publish `audio_preprocessed`
+ *     (observability).
  *   - No imports from `extension/controller/`, `extension/llm/`,
  *     `extension/background/`, or `extension/content/`.
- *   - Never emits an `AgentEvent`. The controller owns event emission.
+ *   - Emits `audio_preprocessed` only (observability); same payload as
+ *     `packages/schemas` / controller pipeline.
  *
  * Output format note (deterministic re-encode path):
  *   WebAudio can only deterministically encode PCM. `MediaRecorder` can
@@ -107,6 +111,15 @@ export async function preprocessAudio(
       silenceRatio: noiseProfile.silenceRatio,
     },
     event.correlationId,
+  );
+
+  await publishAgentEvent(
+    buildAgentEvent("audio_preprocessed", event.correlationId, {
+      durationMs,
+      mimeType: OUTPUT_MIME_TYPE,
+      sizeBytes: normalizedBlob.size,
+      sampleRateHint: TARGET_SAMPLE_RATE,
+    }),
   );
 
   return Object.freeze({

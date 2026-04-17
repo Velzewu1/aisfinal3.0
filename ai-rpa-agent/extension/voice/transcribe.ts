@@ -1,4 +1,5 @@
 import type { PreprocessedAudioEvent } from "./preprocess.js";
+import { buildAgentEvent, publishAgentEvent } from "../shared/agent-event-publish.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("voice.transcribe");
@@ -15,11 +16,12 @@ const DEFAULT_FILENAME = "audio.wav";
  *
  * Invariants:
  *   - Stateless async function. Output depends only on input + API response.
- *   - No DOM mutation, no `chrome.*`, no `document.*`, no `window.*` (except `fetch`).
+ *   - No DOM mutation, no `document.*`, no `window.*`. Network: STT `fetch` and
+ *     `chrome.runtime.sendMessage` for perception `AgentEvent`s only.
  *   - No imports from `extension/controller/`, `extension/llm/`,
- *     `extension/background/`, `extension/content/`, or `packages/schemas/`.
+ *     `extension/background/`, or `extension/content/`.
  *   - No business logic: text is passed through verbatim.
- *   - No event emission. The controller owns `AgentEvent` emission.
+ *   - Emits `speech_to_text_completed` and `text_transcribed` (observability).
  *   - No randomness, no branching on `correlationId`.
  */
 
@@ -134,5 +136,14 @@ export async function transcribeAudio(
     { chars: text.length, language: language ?? null },
     input.correlationId,
   );
+
+  const sttPayload = {
+    chars: text.length,
+    durationMs: input.durationMs,
+    ...(language !== undefined ? { language } : {}),
+  };
+  await publishAgentEvent(buildAgentEvent("speech_to_text_completed", input.correlationId, sttPayload));
+  await publishAgentEvent(buildAgentEvent("text_transcribed", input.correlationId, sttPayload));
+
   return event;
 }

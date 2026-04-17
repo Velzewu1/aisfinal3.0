@@ -20,7 +20,7 @@
     "type": "module"
   },
   "side_panel": {
-    "default_path": "sidepanel/index.html"
+    "default_path": "sidepanel/sidepanel.html"
   },
   "action": {
     "default_title": "Open AI RPA side panel"

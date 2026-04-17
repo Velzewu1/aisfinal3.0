@@ -7,10 +7,10 @@ import { ScheduleRequest, ScheduleResult } from "./schedule.js";
 /**
  * `AgentEvent.type` values map to the agent loop in `docs/02_agent_loop.md`.
  * Primary emitters (extension):
- * - Step 1 `voice_captured` — sidepanel → background (`controller/index` also mirrors on ingest).
- * - Step 2 `audio_preprocessed` — `extension/controller/index.ts` (voice path, post–`voice_captured`).
- * - Step 3 `text_transcribed` (+ legacy `speech_to_text_completed`) — same.
- * - Step 4 `text_normalized` (+ legacy `utterance_normalized`) — `runFromUtterance` (voice + typed).
+ * - Step 1 `voice_captured` — sidepanel → background (`controller/index` mirrors on ingest).
+ * - Step 2 `audio_preprocessed` — `extension/voice/preprocess.ts`.
+ * - Step 3 `text_transcribed` (+ legacy `speech_to_text_completed`) — `extension/voice/transcribe.ts`.
+ * - Step 4 `text_normalized` (+ legacy `utterance_normalized`) — `extension/voice/normalize.ts` (typed + voice text paths via `runFromUtterance`).
  * - Step 5 `context_attached` — `extension/controller/context.ts`.
  * - Step 8 `confidence_evaluated` — `extension/controller/confidence.ts`.
  * - Step 11 `action_plan_created` — `extension/controller/planner.ts`.

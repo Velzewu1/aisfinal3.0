@@ -56,10 +56,17 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
 **Invariant:** untrusted **outputs** from the AI zone (`extension/llm`) must not
 drive DOM mutation, storage mutation, or integration side effects without
 validation and controller approval. The LLM client may still call its provider
-over the network. **Perception** (`extension/voice`) may call the network
-**only** for speech-to-text (e.g. Whisper via `fetch`); it does **not**
-validate structured intents, decide plans, or mutate the host page DOM. All
-**control-path** effects (approved automation, scheduling) flow
+over the network.
+
+**Perception (`extension/voice`) and STT:** Speech-to-text is an **external
+perception dependency**: the voice module **may** use the network **only** to
+call the STT provider (e.g. OpenAI Whisper via `fetch`). That path turns audio
+into text; it does not produce or enforce automation semantics. The voice module
+**must not** validate `LlmInterpretation` / structured intents (Zod or
+equivalent), **decide** plans or policy outcomes, or **execute** RPA / mutate
+the host page DOM—those stay in the controller and content script respectively.
+
+All **control-path** effects (approved automation, scheduling) flow
 `Validation → Controller → (Executor | Backend)`.
 
 ## 3. Module map
@@ -72,17 +79,25 @@ validate structured intents, decide plans, or mutate the host page DOM. All
 | `extension/controller/`            | decision  | no              | yes (backend)     | **yes**  |
 | `extension/content/`               | execution | **yes**         | no                | no       |
 | `extension/background/`            | audit     | no              | yes (Supabase)    | no       |
-| `extension/sidepanel/`             | UI orchestrator | its own DOM only | indirect (perception / STT) | no       |
+| `extension/sidepanel/`             | UI orchestrator | its own DOM only | **indirect** — may start perception/STT **via messages**; no direct STT/LLM HTTP in the panel (see §3) | no       |
 | `backend/api/`                     | service   | no              | —                 | no       |
 | `backend/core/scheduler.py`        | service   | no              | —                 | no       |
 
-**`extension/sidepanel/`:** orchestrates the **perception** path from the UI (e.g.
-audio capture handoff, preprocessing triggers, transcription kickoff, utterance
-normalization triggers) via `chrome.runtime` messages to the service worker /
-controller — it does **not** perform STT `fetch` itself, but those steps can
-**induce** STT network calls inside `extension/voice`. It remains outside
-decision, validation, and execution: no `LlmInterpretation` validation, no
-policy gate, no `DomAction` execution.
+**`extension/voice/`:** Implements capture, optional preprocessing, and
+transcription. **Network:** STT provider API only (see §2). **Out of scope:**
+`LlmInterpretation` validation, controller decisions, and host DOM execution.
+
+**`extension/sidepanel/` (UI orchestrator):** The side panel **may** trigger the
+perception pipeline from the UI (e.g. record/stop, typed utterance submit) via
+`chrome.runtime.sendMessage` to the service worker / controller. It **may**
+**initiate STT network activity indirectly**—user actions and messages cause the
+controller to run preprocessing and transcription, which performs the STT
+`fetch` inside `extension/voice` (not in the side panel). It **may** kick off the
+normalization path the same way (messages that ultimately run `normalizeUtterance`
+after text is available). The side panel **must not** **decide** automation
+(`execute` / `confirm` / `reject`), **validate** `LlmInterpretation` or policy, or
+**execute** host-page RPA / `DomAction` DOM automation (it only mutates its own
+extension UI). It does **not** call the LLM or STT HTTP APIs directly.
 
 ## 4. Why the controller exists
 
@@ -152,9 +167,11 @@ other legitimate cross-layer shape.
 - The **content script** is the executor; it is the only thing running in the
   page context.
 - The **side panel** is the user surface (push-to-talk, text fallback,
-  confirmation buttons, event timeline) and a **UI orchestrator** for perception
-  steps (messages that lead to preprocessing, STT, and normalization); it does
-  not validate, decide, or execute automation.
+  confirmation buttons, event timeline) and a **UI orchestrator**: it **may**
+  trigger the perception pipeline and **indirectly** cause STT (and follow-on
+  normalization) via messages to the service worker. It **must not** validate
+  structured intents, decide plans, or execute host-page automation; it does not
+  perform STT or LLM HTTP calls itself.
 
 ## 8. Extension points
 

@@ -38,20 +38,26 @@ export const InjectScheduleSlot = z.object({
 export type InjectScheduleSlot = z.infer<typeof InjectScheduleSlot>;
 
 /**
- * Strict DOM / host payload for `inject_schedule`.
- * API `ScheduleResult` from `./schedule.ts` is mapped to this shape in the planner.
+ * Strict payload carried on `inject_schedule` actions (DOM / `CustomEvent` detail).
+ *
+ * Distinct from `ScheduleResult` in `./schedule.ts` (solver API). The planner maps that
+ * API shape into this executor-facing object (`grid`, `slots`, optional `metadata`).
  */
-export const InjectSchedulePayload = z.object({
+export const ScheduleInjectPayload = z.object({
   grid: z.string().min(1),
   slots: z.array(InjectScheduleSlot),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
-export type InjectSchedulePayload = z.infer<typeof InjectSchedulePayload>;
+export type ScheduleInjectPayload = z.infer<typeof ScheduleInjectPayload>;
+
+/** Stable alias for {@link ScheduleInjectPayload}. */
+export const InjectSchedulePayload = ScheduleInjectPayload;
+export type InjectSchedulePayload = ScheduleInjectPayload;
 
 export const InjectScheduleAction = z.object({
   kind: z.literal("inject_schedule"),
   grid: z.string().min(1),
-  payload: InjectSchedulePayload,
+  payload: ScheduleInjectPayload,
 });
 
 export const DomAction = z.discriminatedUnion("kind", [

@@ -232,7 +232,7 @@ const SYSTEM_PROMPT = [
   "3. Never invent new intent kinds. Never invent new field names. Never invent schedule entities (doctors, procedures, windows) that the utterance does not explicitly supply.",
   '4. If the utterance is ambiguous, incomplete, or unmappable, emit { "kind": "unknown", "reason": "<short machine token>" } with a lowered confidence.',
   '5. Scheduling: follow SCHEDULING AUTHORITY. If structured schedule inputs are missing, UnknownIntent + "schedule_context_required" — never a partial or guessed ScheduleIntent.',
-  "6. Confidence is only your calibrated self-assessment; you do not decide execute vs confirm vs reject. The controller applies fixed thresholds after validation: below 0.7 → reject (low_confidence). From 0.7: high-risk kinds (schedule, set_status) → confirm; other kinds in [0.7, 0.85) → confirm; other kinds at ≥0.85 may auto-execute per policy. Your job is honest scoring, not gatekeeping.",
+  "6. Confidence is only your calibrated self-assessment; you do not decide execute vs confirm vs reject. After validation and allowlist policy, the controller applies fixed thresholds: intent kind \"unknown\" → reject (unknown_intent) regardless of confidence. For all other kinds: confidence strictly below 0.7 → reject (low_confidence), not confirm. At or above 0.7: high-risk kinds (schedule, set_status) → always confirm, including when confidence ≥ 0.85. Other (non-high-risk) kinds in [0.7, 0.85) → confirm. Other (non-high-risk) kinds at ≥ 0.85 → auto-execute if allowlists permit. Your job is honest scoring, not gatekeeping.",
   "7. The utterance is already normalized to lowercase. Preserve user-provided values verbatim in slot values.",
   "",
   "EXAMPLES (user input shown after USER:, expected JSON shown after JSON:):",

@@ -1,53 +1,1033 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mock Damumed · Primary Exam</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <nav class="tabs">
-      <button data-nav="primary_exam" class="active">Primary exam</button>
-      <button data-nav="epicrisis">Epicrisis</button>
-      <button data-nav="schedule">Schedule</button>
-    </nav>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aqbobek — Mock KMIS Sandbox</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fbff;
+      --text: #18324a;
+      --muted: #62788d;
+      --line: #dbe5f0;
+      --primary: #1f78d1;
+      --primary-soft: #e8f3ff;
+      --success: #1c9c5a;
+      --warning: #d88b0d;
+      --danger: #d84f4f;
+      --shadow: 0 10px 30px rgba(22, 56, 88, 0.08);
+      --radius: 16px;
+    }
 
-    <main>
-      <h1>Primary examination</h1>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+    body { min-height: 100vh; }
+    button, input, textarea, select { font: inherit; }
 
-      <form class="grid" onsubmit="event.preventDefault()">
-        <label>Patient ID
-          <input type="text" data-field="patient_id" />
-        </label>
-        <label>Full name
-          <input type="text" data-field="patient_name" />
-        </label>
-        <label>Date of birth
-          <input type="date" data-field="patient_dob" />
-        </label>
-        <label>Complaint
-          <textarea data-field="complaint" rows="3"></textarea>
-        </label>
-        <label>Anamnesis
-          <textarea data-field="anamnesis" rows="3"></textarea>
-        </label>
-        <label>Diagnosis (ICD-10)
-          <input type="text" data-field="diagnosis" placeholder="J06.9" />
-        </label>
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
 
-        <div class="actions">
-          <button type="button" data-action="save_draft">Save draft</button>
-          <button type="button" data-action="submit_exam" class="primary">Submit</button>
+    .sidebar {
+      background: linear-gradient(180deg, #143b5f 0%, #0f2f4a 100%);
+      color: white;
+      padding: 24px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand__logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.14);
+      font-weight: 700;
+    }
+
+    .brand__text small,
+    .nav__hint,
+    .sidebar__section p { color: rgba(255,255,255,0.72); }
+
+    .nav {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .nav button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      padding: 14px 16px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .nav button:hover,
+    .nav button.is-active {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .sidebar__section {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .sidebar__section h4 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .voice-command-list {
+      display: grid;
+      gap: 8px;
+      padding-left: 18px;
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.84);
+    }
+
+    .main {
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .topbar h1 { margin: 0 0 8px; font-size: 28px; }
+    .topbar p { margin: 0; color: var(--muted); }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .btn--primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .btn--soft {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: #cfe4ff;
+      box-shadow: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .panel--subtle { background: var(--panel-2); }
+
+    .panel h2, .panel h3 {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      display: grid;
+      gap: 8px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .metric strong { font-size: 30px; }
+    .muted { color: var(--muted); }
+
+    .tab-view { display: none; }
+    .tab-view.is-active { display: block; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input[type="text"], input[type="date"], input[type="time"], select, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cdd9e6;
+      border-radius: 12px;
+      background: white;
+      color: var(--text);
+    }
+
+    textarea { min-height: 104px; resize: vertical; }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .field small { color: var(--muted); }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h3 { margin: 0; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-pill--success { background: #e7f7ef; color: var(--success); }
+    .status-pill--warning { background: #fff3dc; color: var(--warning); }
+    .status-pill--danger { background: #fde9e9; color: var(--danger); }
+    .status-pill--info { background: #eaf3ff; color: var(--primary); }
+
+    .patient-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      background: white;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .patient-card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .patient-card h4 { margin: 0; }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 840px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e7eef6;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f6faff;
+      color: #34536d;
+      font-weight: 700;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .slot-cell {
+      min-width: 140px;
+      padding: 8px;
+    }
+
+    .slot {
+      min-height: 88px;
+      border: 1px dashed #c5d8ea;
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .appointment {
+      padding: 8px;
+      border-radius: 10px;
+      background: #e8f3ff;
+      color: #165191;
+      border: 1px solid #cfe4ff;
+      font-size: 13px;
+    }
+
+    .appointment strong { display: block; }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: white;
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .timeline-item__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f7fbff;
+      color: #3c5d78;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .hint-box {
+      border-left: 4px solid var(--primary);
+      background: #eef6ff;
+      padding: 14px 16px;
+      border-radius: 0 14px 14px 0;
+      color: #295680;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    [data-voice-target], [data-field-key], [data-module], [data-command], [data-slot-id], [data-status-row] {
+      scroll-margin-top: 16px;
+    }
+
+    .sr-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .grid--2, .grid--3, .grid--4 { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; }
+      .quick-actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Навигация по мок-платформе">
+      <div class="brand">
+        <div class="brand__logo">AQ</div>
+        <div class="brand__text">
+          <strong>Aqbobek Rehab</strong><br />
+          <small>Mock KMIS / Damumed Sandbox</small>
         </div>
-      </form>
+      </div>
 
-      <section class="status">
-        <span>Exam status:</span>
-        <span data-status-entity="primary_exam" data-status="draft">draft</span>
+      <div class="badge">Manifest V3 / DOM Sandbox Ready</div>
+
+      <nav class="nav" id="mainNav">
+        <button class="is-active" data-tab-target="dashboard" data-command="главная, dashboard, рабочий стол">Главная панель</button>
+        <button data-tab-target="patients" data-command="пациенты, список пациентов, открыть пациента">Список пациентов</button>
+        <button data-tab-target="primary-exam" data-command="первичный прием, первичный осмотр, открыть осмотр">Первичный прием</button>
+        <button data-tab-target="daily-notes" data-command="дневник, дневниковая запись, дневник процедур">Дневники процедур</button>
+        <button data-tab-target="schedule" data-command="расписание, график процедур, сетка процедур">Расписание на курс</button>
+        <button data-tab-target="discharge" data-command="эпикриз, выписной эпикриз, открыть эпикриз">Выписной эпикриз</button>
+      </nav>
+
+      <div class="sidebar__section">
+        <h4>Примеры голосовых команд</h4>
+        <ol class="voice-command-list">
+          <li>«Открой первичный прием Иванова»</li>
+          <li>«Перейди к выписному эпикризу»</li>
+          <li>«Заполни жалобы и объективный статус»</li>
+          <li>«Сформируй расписание на 9 дней»</li>
+          <li>«Поставь услугу выполнено в 10:30»</li>
+        </ol>
+      </div>
+
+      <div class="sidebar__section">
+        <h4>Точки интеграции расширения</h4>
+        <p>
+          Все ключевые зоны имеют <code>id</code>, <code>data-field-key</code>, <code>data-command</code>, <code>data-slot-id</code> и предсказуемую DOM-структуру.
+        </p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Песочница внешнего AI-агента</h1>
+          <p>Мок интерфейса для демонстрации голосовой навигации, гранулярного автозаполнения, расписания процедур и статусов выполнения.</p>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn--soft" id="openPatientBtn">Открыть первичный прием Иванова</button>
+          <button class="btn btn--soft" id="generateScheduleBtn">Сгенерировать расписание</button>
+          <button class="btn btn--primary" id="suggestNextStepBtn">Показать подсказку AI</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="tab-view is-active" data-voice-target="dashboard">
+        <div class="grid grid--4">
+          <article class="metric">
+            <span class="muted">Приемов сегодня</span>
+            <strong id="metricPatientsToday">18</strong>
+            <span class="status-pill status-pill--info">в активном потоке</span>
+          </article>
+          <article class="metric">
+            <span class="muted">Незаполненных дневников</span>
+            <strong id="metricOpenNotes">7</strong>
+            <span class="status-pill status-pill--warning">требуют внимания</span>
+          </article>
+          <article class="metric">
+            <span class="muted">Услуг без статуса</span>
+            <strong id="metricMissingStatuses">12</strong>
+            <span class="status-pill status-pill--danger">риск конца дня</span>
+          </article>
+          <article class="metric">
+            <span class="muted">Сэкономлено времени</span>
+            <strong>3.2 ч</strong>
+            <span class="status-pill status-pill--success">mock KPI</span>
+          </article>
+        </div>
+
+        <div class="grid grid--2" style="margin-top: 18px;">
+          <section class="panel">
+            <div class="section-title">
+              <h3>Активный пациент</h3>
+              <span class="status-pill status-pill--info" id="currentPatientBadge">Иванов Арсен</span>
+            </div>
+            <div class="grid grid--2">
+              <div class="field">
+                <label for="dashPatientName">ФИО</label>
+                <input id="dashPatientName" type="text" value="Иванов Арсен Маратович" readonly />
+              </div>
+              <div class="field">
+                <label for="dashDiagnosis">Основной диагноз</label>
+                <input id="dashDiagnosis" type="text" value="G80.1 Детский церебральный паралич, спастическая диплегия" readonly />
+              </div>
+              <div class="field">
+                <label for="dashCourseStart">Дата начала курса</label>
+                <input id="dashCourseStart" type="date" value="2026-04-13" readonly />
+              </div>
+              <div class="field">
+                <label for="dashCourseDay">День курса</label>
+                <input id="dashCourseDay" type="text" value="День 5 из 14" readonly />
+              </div>
+            </div>
+            <div class="footer-note">Эти поля можно использовать как контекст для LLM или как источник данных для автоматической навигации между формами.</div>
+          </section>
+
+          <section class="panel panel--subtle">
+            <div class="section-title">
+              <h3>Подсказка проактивного ассистента</h3>
+              <span class="status-pill status-pill--success">AI Prompt</span>
+            </div>
+            <div id="assistantSuggestion" class="hint-box" data-module="proactivity">
+              Первичный осмотр заполнен на 72%. Следующий шаг: дополнить назначения и автоматически сформировать расписание ЛФК, массажа и психолога на 9 рабочих дней.
+            </div>
+            <div class="chip-row" style="margin-top: 12px;">
+              <button class="chip" data-suggestion="Открыть назначения">Открыть назначения</button>
+              <button class="chip" data-suggestion="Сформировать расписание">Сформировать расписание</button>
+              <button class="chip" data-suggestion="Перейти к дневнику услуг">Перейти к дневнику услуг</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="patients" class="tab-view" data-voice-target="patients">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h2 style="margin:0;">Список пациентов</h2>
+              <div class="muted">Карточки кликабельны. Можно тестировать поиск пациента и переход в нужный документ.</div>
+            </div>
+            <div class="search-row">
+              <input id="patientSearchInput" type="text" placeholder="Поиск по ФИО / ID / диагнозу" style="width: 280px;" />
+              <button class="btn" id="patientSearchBtn">Найти</button>
+            </div>
+          </div>
+
+          <div class="grid grid--3" id="patientCardGrid">
+            <article class="patient-card" data-patient-id="AQ-00147" data-patient-name="Иванов Арсен" data-open-target="primary-exam">
+              <h4>Иванов Арсен Маратович</h4>
+              <div class="muted">ID: AQ-00147 · 8 лет</div>
+              <div>Диагноз: G80.1 ДЦП, спастическая диплегия</div>
+              <div class="chip-row">
+                <span class="status-pill status-pill--info">Первичный прием</span>
+                <span class="status-pill status-pill--warning">Дневник открыт</span>
+              </div>
+            </article>
+            <article class="patient-card" data-patient-id="AQ-00152" data-patient-name="Тлеуберген Алина" data-open-target="schedule">
+              <h4>Тлеуберген Алина Ерланкызы</h4>
+              <div class="muted">ID: AQ-00152 · 6 лет</div>
+              <div>Диагноз: F84.0 Расстройство аутистического спектра</div>
+              <div class="chip-row">
+                <span class="status-pill status-pill--success">Расписание готово</span>
+              </div>
+            </article>
+            <article class="patient-card" data-patient-id="AQ-00160" data-patient-name="Сериков Тимур" data-open-target="discharge">
+              <h4>Сериков Тимур Русланович</h4>
+              <div class="muted">ID: AQ-00160 · 10 лет</div>
+              <div>Диагноз: F82 Специфические нарушения моторного развития</div>
+              <div class="chip-row">
+                <span class="status-pill status-pill--danger">Ждет эпикриз</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="primary-exam" class="tab-view" data-voice-target="primary-exam">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h2 style="margin:0;">Первичный прием / Осмотр</h2>
+              <div class="muted">Все поля разделены по смысловым подкатегориям для теста Smart Parsing.</div>
+            </div>
+            <div class="search-row">
+              <span class="status-pill status-pill--info">Документ: PR-2026-0417-001</span>
+              <span class="status-pill status-pill--warning">Черновик</span>
+            </div>
+          </div>
+
+          <div class="grid grid--3">
+            <div class="field">
+              <label for="patientFullName">ФИО пациента</label>
+              <input id="patientFullName" data-field-key="patient_name" type="text" value="Иванов Арсен Маратович" />
+            </div>
+            <div class="field">
+              <label for="patientDob">Дата рождения</label>
+              <input id="patientDob" data-field-key="birth_date" type="date" value="2017-11-06" />
+            </div>
+            <div class="field">
+              <label for="patientDiagnosis">Диагноз</label>
+              <input id="patientDiagnosis" data-field-key="diagnosis" type="text" value="G80.1 Детский церебральный паралич, спастическая диплегия" />
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="margin-top: 18px;">
+            <div class="field">
+              <label for="complaintsField">Жалобы</label>
+              <textarea id="complaintsField" data-field-key="complaints" placeholder="Например: слабость в нижних конечностях, затруднение ходьбы, быстрая утомляемость"></textarea>
+              <small>Целевое поле для выделения жалоб из голосовой диктовки.</small>
+            </div>
+            <div class="field">
+              <label for="anamnesisField">Анамнез</label>
+              <textarea id="anamnesisField" data-field-key="anamnesis" placeholder="Анамнез заболевания, анамнез жизни, длительность симптомов"></textarea>
+              <small>Можно тестировать разнесение краткой истории болезни отдельно от текущих жалоб.</small>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="margin-top: 18px;">
+            <div class="field">
+              <label for="objectiveStatusField">Объективный статус</label>
+              <textarea id="objectiveStatusField" data-field-key="objective_status" placeholder="Неврологический статус, мышечный тонус, координация, походка"></textarea>
+            </div>
+            <div class="field">
+              <label for="neuroStatusField">Неврологический статус</label>
+              <textarea id="neuroStatusField" data-field-key="neurological_status" placeholder="Сухожильные рефлексы, пирамидные знаки, мышечная сила"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="margin-top: 18px;">
+            <div class="field">
+              <label for="recommendationsField">Назначения / рекомендации</label>
+              <textarea id="recommendationsField" data-field-key="recommendations" placeholder="ЛФК, массаж, психолог, сенсорная интеграция"></textarea>
+            </div>
+            <div class="field">
+              <label for="doctorConclusionField">Заключение врача</label>
+              <textarea id="doctorConclusionField" data-field-key="conclusion" placeholder="Краткий клинический вывод и цель курса"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid--4" style="margin-top: 18px;">
+            <div class="field">
+              <label for="painScale">Шкала боли</label>
+              <select id="painScale" data-field-key="pain_scale">
+                <option value="0">0 — отсутствует</option>
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="courseDays">Длительность курса</label>
+              <select id="courseDays" data-field-key="course_days">
+                <option>10 дней</option>
+                <option selected>14 дней</option>
+                <option>21 день</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="priorityFocus">Приоритет реабилитации</label>
+              <select id="priorityFocus" data-field-key="priority_focus">
+                <option selected>Улучшение походки</option>
+                <option>Снижение мышечного тонуса</option>
+                <option>Коммуникация / поведение</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="attendingDoctor">Куратор</label>
+              <input id="attendingDoctor" data-field-key="doctor_name" type="text" value="Др. Касымова А.М." />
+            </div>
+          </div>
+
+          <div class="footer-note">Подходящий сценарий для demo: LLM получает транскрипт и возвращает JSON, после чего extension мапит ключи на поля по <code>data-field-key</code>.</div>
+        </div>
+      </section>
+
+      <section id="daily-notes" class="tab-view" data-voice-target="daily-notes">
+        <div class="grid grid--2">
+          <section class="panel">
+            <div class="section-title">
+              <h2>Дневники процедур</h2>
+              <span class="status-pill status-pill--warning">Требуют статусы в реальном времени</span>
+            </div>
+            <div class="timeline" id="serviceTimeline">
+              <article class="timeline-item" data-status-row="svc-001">
+                <div class="timeline-item__head">
+                  <strong>ЛФК — индивидуальное занятие</strong>
+                  <span class="status-pill status-pill--warning">Запланировано</span>
+                </div>
+                <div class="timeline-item__meta">
+                  <span>09:00–09:40</span>
+                  <span>Специалист: Ермекова Д.С.</span>
+                  <span>Кабинет 203</span>
+                </div>
+                <div class="field">
+                  <label for="noteSvc001">Результат процедуры</label>
+                  <textarea id="noteSvc001" data-field-key="service_note_lfk" placeholder="Короткий дневник сразу после услуги"></textarea>
+                </div>
+                <div class="search-row">
+                  <button class="btn btn--soft mark-done-btn" data-target-status="svc-001">Поставить «Выполнено» сейчас</button>
+                  <input type="time" value="09:41" data-time-input-for="svc-001" />
+                </div>
+              </article>
+
+              <article class="timeline-item" data-status-row="svc-002">
+                <div class="timeline-item__head">
+                  <strong>Массаж — нижние конечности</strong>
+                  <span class="status-pill status-pill--warning">В процессе</span>
+                </div>
+                <div class="timeline-item__meta">
+                  <span>10:00–10:30</span>
+                  <span>Специалист: Абдуллина Н.К.</span>
+                  <span>Кабинет 107</span>
+                </div>
+                <div class="field">
+                  <label for="noteSvc002">Результат процедуры</label>
+                  <textarea id="noteSvc002" data-field-key="service_note_massage" placeholder="Например: мышечный тонус умеренно снижен, переносимость хорошая"></textarea>
+                </div>
+                <div class="search-row">
+                  <button class="btn btn--soft mark-done-btn" data-target-status="svc-002">Поставить «Выполнено» сейчас</button>
+                  <input type="time" value="10:31" data-time-input-for="svc-002" />
+                </div>
+              </article>
+
+              <article class="timeline-item" data-status-row="svc-003">
+                <div class="timeline-item__head">
+                  <strong>Психолог — сенсорная интеграция</strong>
+                  <span class="status-pill status-pill--danger">Нет отметки</span>
+                </div>
+                <div class="timeline-item__meta">
+                  <span>11:00–11:30</span>
+                  <span>Специалист: Нургалиева А.Ж.</span>
+                  <span>Кабинет 304</span>
+                </div>
+                <div class="field">
+                  <label for="noteSvc003">Результат процедуры</label>
+                  <textarea id="noteSvc003" data-field-key="service_note_psychology" placeholder="Контакт установлен, выполнение инструкций, эмоциональная реакция"></textarea>
+                </div>
+                <div class="search-row">
+                  <button class="btn btn--soft mark-done-btn" data-target-status="svc-003">Поставить «Выполнено» сейчас</button>
+                  <input type="time" value="11:33" data-time-input-for="svc-003" />
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel panel--subtle">
+            <div class="section-title">
+              <h2>Журнал статусов</h2>
+              <span class="status-pill status-pill--info">Для демонстрации timestamp-based RPA</span>
+            </div>
+            <div class="table-wrap">
+              <table id="statusAuditTable">
+                <thead>
+                  <tr>
+                    <th>Услуга</th>
+                    <th>Статус</th>
+                    <th>Фактическое время</th>
+                    <th>Комментарий</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr id="audit-svc-001">
+                    <td>ЛФК</td>
+                    <td>Ожидает</td>
+                    <td>—</td>
+                    <td>Нет записи</td>
+                  </tr>
+                  <tr id="audit-svc-002">
+                    <td>Массаж</td>
+                    <td>Ожидает</td>
+                    <td>—</td>
+                    <td>Нет записи</td>
+                  </tr>
+                  <tr id="audit-svc-003">
+                    <td>Психолог</td>
+                    <td>Ожидает</td>
+                    <td>—</td>
+                    <td>Нет записи</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="sr-note">Расширение может кликать по кнопкам выше или напрямую менять DOM статуса/таймштампа здесь.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="schedule" class="tab-view" data-voice-target="schedule">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h2 style="margin:0;">Умное расписание на 9 рабочих дней</h2>
+              <div class="muted">Сетка создана для демонстрации автогенерации слотов и проверки занятости специалистов.</div>
+            </div>
+            <div class="search-row">
+              <button class="btn btn--soft" id="fillScheduleBtn">Заполнить демо-расписание</button>
+              <button class="btn">Очистить слоты</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="scheduleTable" data-module="smart-scheduling">
+              <thead>
+                <tr>
+                  <th>Время</th>
+                  <th>День 1<br><span class="muted">13.04</span></th>
+                  <th>День 2<br><span class="muted">14.04</span></th>
+                  <th>День 3<br><span class="muted">15.04</span></th>
+                  <th>День 4<br><span class="muted">16.04</span></th>
+                  <th>День 5<br><span class="muted">17.04</span></th>
+                  <th>День 6<br><span class="muted">20.04</span></th>
+                  <th>День 7<br><span class="muted">21.04</span></th>
+                  <th>День 8<br><span class="muted">22.04</span></th>
+                  <th>День 9<br><span class="muted">23.04</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>09:00–09:40</td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d1-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d2-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d3-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d4-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d5-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d6-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d7-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d8-0900"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d9-0900"></div></td>
+                </tr>
+                <tr>
+                  <td>10:00–10:30</td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d1-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d2-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d3-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d4-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d5-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d6-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d7-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d8-1000"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d9-1000"></div></td>
+                </tr>
+                <tr>
+                  <td>11:00–11:30</td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d1-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d2-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d3-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d4-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d5-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d6-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d7-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d8-1100"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d9-1100"></div></td>
+                </tr>
+                <tr>
+                  <td>14:00–14:40</td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d1-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d2-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d3-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d4-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d5-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d6-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d7-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d8-1400"></div></td>
+                  <td class="slot-cell"><div class="slot" data-slot-id="d9-1400"></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer-note">Рекомендуемая логика demo: LLM/алгоритм выдает JSON-массив назначений, а extension находит нужный <code>data-slot-id</code> и вставляет карточки процедур с проверкой конфликта.</div>
+        </div>
+      </section>
+
+      <section id="discharge" class="tab-view" data-voice-target="discharge">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h2 style="margin:0;">Выписной эпикриз</h2>
+              <div class="muted">Отдельный документ для проверки навигации и заполнения другой формы.</div>
+            </div>
+            <div class="search-row">
+              <span class="status-pill status-pill--danger">Требуется заполнение</span>
+            </div>
+          </div>
+
+          <div class="grid grid--2">
+            <div class="field">
+              <label for="dischargeOutcome">Исход курса</label>
+              <textarea id="dischargeOutcome" data-field-key="discharge_outcome" placeholder="Динамика за курс, изменения моторики, переносимость процедур"></textarea>
+            </div>
+            <div class="field">
+              <label for="dischargeRecommendations">Рекомендации при выписке</label>
+              <textarea id="dischargeRecommendations" data-field-key="discharge_recommendations" placeholder="Домашние упражнения, повторный курс, консультации"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid--2" style="margin-top: 18px;">
+            <div class="field">
+              <label for="functionalProgress">Функциональный прогресс</label>
+              <textarea id="functionalProgress" data-field-key="functional_progress" placeholder="Например: улучшена устойчивость при ходьбе, увеличена активность"></textarea>
+            </div>
+            <div class="field">
+              <label for="followUpPlan">План наблюдения</label>
+              <textarea id="followUpPlan" data-field-key="follow_up_plan" placeholder="Контроль через 3 месяца, повторная оценка спастичности"></textarea>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
+  </div>
 
-    <script src="./selectors-demo.js"></script>
-  </body>
+  <script>
+    const navButtons = document.querySelectorAll('[data-tab-target]');
+    const tabViews = document.querySelectorAll('.tab-view');
+    const currentPatientBadge = document.getElementById('currentPatientBadge');
+    const assistantSuggestion = document.getElementById('assistantSuggestion');
+
+    function openTab(tabId) {
+      navButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.tabTarget === tabId));
+      tabViews.forEach(view => view.classList.toggle('is-active', view.id === tabId));
+      document.getElementById(tabId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    navButtons.forEach(btn => btn.addEventListener('click', () => openTab(btn.dataset.tabTarget)));
+
+    document.querySelectorAll('.patient-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const name = card.dataset.patientName;
+        currentPatientBadge.textContent = name;
+        document.getElementById('patientFullName').value = card.querySelector('h4').textContent;
+        openTab(card.dataset.openTarget || 'primary-exam');
+      });
+    });
+
+    document.getElementById('openPatientBtn').addEventListener('click', () => openTab('primary-exam'));
+    document.getElementById('generateScheduleBtn').addEventListener('click', () => {
+      fillDemoSchedule();
+      openTab('schedule');
+    });
+
+    document.getElementById('suggestNextStepBtn').addEventListener('click', () => {
+      assistantSuggestion.textContent = 'Осмотр сохранен. Следующий шаг: перейти в дневник процедур и проставить статусы “Выполнено” по завершенным услугам с фактическим временем.';
+    });
+
+    document.querySelectorAll('[data-suggestion]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const action = chip.dataset.suggestion;
+        if (action.includes('назначения')) openTab('primary-exam');
+        if (action.includes('расписание')) { fillDemoSchedule(); openTab('schedule'); }
+        if (action.includes('дневнику')) openTab('daily-notes');
+      });
+    });
+
+    document.querySelectorAll('.mark-done-btn').forEach(button => {
+      button.addEventListener('click', () => markServiceDone(button.dataset.targetStatus));
+    });
+
+    function markServiceDone(serviceId) {
+      const row = document.querySelector(`[data-status-row="${serviceId}"]`);
+      const timeInput = document.querySelector(`[data-time-input-for="${serviceId}"]`);
+      const auditRow = document.getElementById(`audit-${serviceId}`);
+      const note = row?.querySelector('textarea')?.value?.trim() || 'Краткий дневник внесен автоматически.';
+
+      if (row) {
+        const badge = row.querySelector('.status-pill');
+        badge.className = 'status-pill status-pill--success';
+        badge.textContent = 'Выполнено';
+      }
+
+      if (auditRow) {
+        auditRow.children[1].textContent = 'Выполнено';
+        auditRow.children[2].textContent = timeInput?.value || 'текущее время';
+        auditRow.children[3].textContent = note;
+      }
+
+      const missingStatuses = document.getElementById('metricMissingStatuses');
+      missingStatuses.textContent = Math.max(0, Number(missingStatuses.textContent) - 1);
+    }
+
+    const scheduleSeed = [
+      ['d1-0900', 'ЛФК', 'Ермекова Д.С.'],
+      ['d1-1000', 'Массаж', 'Абдуллина Н.К.'],
+      ['d1-1100', 'Психолог', 'Нургалиева А.Ж.'],
+      ['d2-0900', 'ЛФК', 'Ермекова Д.С.'],
+      ['d2-1400', 'Психолог', 'Нургалиева А.Ж.'],
+      ['d3-1000', 'Массаж', 'Абдуллина Н.К.'],
+      ['d4-0900', 'ЛФК', 'Ермекова Д.С.'],
+      ['d5-1100', 'Психолог', 'Нургалиева А.Ж.'],
+      ['d6-1000', 'Массаж', 'Абдуллина Н.К.'],
+      ['d7-0900', 'ЛФК', 'Ермекова Д.С.'],
+      ['d8-1400', 'Психолог', 'Нургалиева А.Ж.'],
+      ['d9-1000', 'Контроль врача', 'Касымова А.М.']
+    ];
+
+    function clearSchedule() {
+      document.querySelectorAll('[data-slot-id]').forEach(slot => slot.innerHTML = '');
+    }
+
+    function fillDemoSchedule() {
+      clearSchedule();
+      scheduleSeed.forEach(([slotId, title, specialist]) => {
+        const slot = document.querySelector(`[data-slot-id="${slotId}"]`);
+        if (!slot) return;
+        const card = document.createElement('div');
+        card.className = 'appointment';
+        card.innerHTML = `<strong>${title}</strong><span>${specialist}</span>`;
+        slot.appendChild(card);
+      });
+    }
+
+    document.getElementById('fillScheduleBtn').addEventListener('click', fillDemoSchedule);
+    document.querySelector('#schedule .toolbar .btn:not(#fillScheduleBtn)').addEventListener('click', clearSchedule);
+
+    document.getElementById('patientSearchBtn').addEventListener('click', () => {
+      const query = document.getElementById('patientSearchInput').value.toLowerCase().trim();
+      document.querySelectorAll('.patient-card').forEach(card => {
+        const matches = card.textContent.toLowerCase().includes(query);
+        card.style.display = !query || matches ? '' : 'none';
+      });
+    });
+  </script>
+</body>
 </html>

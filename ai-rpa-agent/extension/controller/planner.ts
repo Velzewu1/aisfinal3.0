@@ -1,10 +1,4 @@
-import type {
-  AgentEvent,
-  DomAction,
-  InjectSchedulePayload,
-  Intent,
-  ScheduleResult,
-} from "@ai-rpa/schemas";
+import type { AgentEvent, DomAction, Intent, ScheduleInjectPayload, ScheduleResult } from "@ai-rpa/schemas";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 
 /**
@@ -24,7 +18,7 @@ export function planActions(
   return actions;
 }
 
-function toInjectSchedulePayload(grid: string, result: ScheduleResult): InjectSchedulePayload {
+function toInjectSchedulePayload(grid: string, result: ScheduleResult): ScheduleInjectPayload {
   const metadata: Record<string, unknown> = { status: result.status };
   if (result.objective !== undefined) metadata.objective = result.objective;
   return {

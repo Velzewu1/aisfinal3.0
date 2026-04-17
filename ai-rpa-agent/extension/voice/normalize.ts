@@ -1,4 +1,6 @@
+import type { AgentEvent } from "@ai-rpa/schemas";
 import type { TranscribedTextEvent } from "./transcribe.js";
+import { buildAgentEvent, publishAgentEvent } from "../shared/agent-event-publish.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("voice.normalize");
@@ -12,9 +14,11 @@ const log = createLogger("voice.normalize");
  *
  * Invariants:
  *   - Pure synchronous function. Output depends only on input.
- *   - No LLM, no network, no `chrome.*`, no `document.*`, no `window.*`.
+ *   - No LLM, no network, no `document.*`, no `window.*`.
+ *     `chrome.runtime.sendMessage` is used only to publish `utterance_normalized` /
+ *     `text_normalized` (observability; best-effort).
  *   - No imports from `extension/controller/`, `extension/llm/`,
- *     `extension/background/`, `extension/content/`, or `packages/schemas/`.
+ *     `extension/background/`, or `extension/content/`.
  *   - No randomness, no clock-driven logic (only the output `timestamp`
  *     field reads `Date.now()`, which does not affect any branching).
  *   - No semantic interpretation: keyword hints are simple substring flags,
@@ -96,6 +100,17 @@ export function normalizeUtterance(input: TranscribedTextEvent): NormalizedUtter
     },
     input.correlationId,
   );
+
+  const auditPayload: Extract<AgentEvent, { type: "utterance_normalized" }>["payload"] = {
+    rawChars: event.rawText.length,
+    normalizedChars: event.normalizedText.length,
+    ...(event.hints?.detectedLanguage !== undefined
+      ? { detectedLanguage: event.hints.detectedLanguage }
+      : {}),
+  };
+  void publishAgentEvent(buildAgentEvent("utterance_normalized", input.correlationId, auditPayload));
+  void publishAgentEvent(buildAgentEvent("text_normalized", input.correlationId, auditPayload));
+
   return event;
 }
 

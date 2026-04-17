@@ -198,19 +198,6 @@ async function runFromUtterance(
     return;
   }
 
-  const normalizedPayload: Extract<
-    AgentEvent,
-    { type: "utterance_normalized" }
-  >["payload"] = {
-    rawChars: normalized.rawText.length,
-    normalizedChars: normalized.normalizedText.length,
-    ...(normalized.hints?.detectedLanguage
-      ? { detectedLanguage: normalized.hints.detectedLanguage }
-      : {}),
-  };
-  await emit(makeEvent("utterance_normalized", correlationId, normalizedPayload));
-  await emit(makeEvent("text_normalized", correlationId, normalizedPayload));
-
   const contextualized = attachContext(normalized);
 
   const apiKey = await readApiKey();
@@ -254,9 +241,6 @@ async function runFromUtterance(
 }
 
 async function runWithInterpretation(correlationId: string, interpretation: LlmInterpretation): Promise<void> {
-  await emit(makeEvent("intent_parsed", correlationId, { interpretation }));
-  await emit(makeEvent("validation_passed", correlationId, { schemaVersion: interpretation.schemaVersion }));
-
   const { intent } = interpretation;
 
   const policyError = checkIntentPolicy(intent);
@@ -269,6 +253,9 @@ async function runWithInterpretation(correlationId: string, interpretation: LlmI
     );
     return;
   }
+
+  await emit(makeEvent("intent_parsed", correlationId, { interpretation }));
+  await emit(makeEvent("validation_passed", correlationId, { schemaVersion: interpretation.schemaVersion }));
 
   const decision = decideAction(interpretation, correlationId);
 
@@ -373,15 +360,6 @@ export const controller = {
         return { accepted: false, step: "preprocess" as const, error: String(err) };
       }
 
-      await emit(
-        makeEvent("audio_preprocessed", correlationId, {
-          durationMs: preprocessed.durationMs,
-          mimeType: preprocessed.mimeType,
-          sizeBytes: preprocessed.normalizedBlob.size,
-          sampleRateHint: preprocessed.sampleRateHint,
-        }),
-      );
-
       let transcribed;
       try {
         transcribed = await transcribeAudio(preprocessed, { apiKey });
@@ -389,17 +367,6 @@ export const controller = {
         log.error("transcription failed", String(err), correlationId);
         return { accepted: false, step: "transcribe" as const, error: String(err) };
       }
-
-      const transcribedPayload: Extract<
-        AgentEvent,
-        { type: "speech_to_text_completed" }
-      >["payload"] = {
-        chars: transcribed.text.length,
-        durationMs: transcribed.durationMs,
-        ...(transcribed.language ? { language: transcribed.language } : {}),
-      };
-      await emit(makeEvent("speech_to_text_completed", correlationId, transcribedPayload));
-      await emit(makeEvent("text_transcribed", correlationId, transcribedPayload));
 
       return { accepted: true, text: transcribed.text, durationMs: transcribed.durationMs };
     }
