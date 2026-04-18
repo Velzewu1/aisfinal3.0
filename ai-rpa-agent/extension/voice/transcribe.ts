@@ -113,6 +113,8 @@ export async function transcribeAudio(
   }
 
   const text = typeof payload.text === "string" ? payload.text : "";
+  // TEMP: debug STT in service worker DevTools — remove when done
+  console.log("whisper result:", text);
   if (text.trim().length === 0) {
     log.warn("empty transcription", undefined, input.correlationId);
     throw new Error("empty_transcription");
