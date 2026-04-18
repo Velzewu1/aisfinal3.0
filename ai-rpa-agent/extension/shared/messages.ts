@@ -19,6 +19,10 @@ export type ExtensionMessage =
       type: "voice_captured";
       correlationId: string;
       audio: { mimeType: string; sizeBytes: number; durationMs: number; data: ArrayBuffer };
+      /** When set (e.g. content-tab path), controller decodes this instead of relying on `audio.data` (MV3 clone quirks). */
+      base64?: string;
+      /** MIME for decoded `base64` payload; falls back to `audio.mimeType`. */
+      mimeType?: string;
     }
   | { type: "user_utterance"; correlationId: string; text: string; transcribedDurationMs?: number }
   | { type: "llm_interpretation"; correlationId: string; interpretation: LlmInterpretation }

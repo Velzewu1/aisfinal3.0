@@ -9,6 +9,93 @@ const log = createLogger("router");
 
 const MAX_LOGGED_ISSUES = 10;
 
+/**
+ * Use callback `chrome.tabs.query` (not async/await) so the active tab is
+ * resolved reliably in the service worker.
+ */
+async function sendToContentScript(tabId: number, message: unknown, retries = 3): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await chrome.tabs.sendMessage(tabId, message);
+      return;
+    } catch (e: unknown) {
+      if (i === retries - 1) {
+        throw e instanceof Error ? e : new Error(String(e));
+      }
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+}
+
+export function recordingStartFromSidepanel(correlationId: string): Promise<{ started: true }> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      if (!tab?.id) {
+        log.error("no active tab found for mic recording");
+        reject(new Error("no_active_tab"));
+        return;
+      }
+      void sendToContentScript(tab.id, { type: "start_mic_recording", correlationId })
+        .then(() => resolve({ started: true }))
+        .catch((e: unknown) => {
+          log.error("mic message failed", String(e));
+          reject(e instanceof Error ? e : new Error(String(e)));
+        });
+    });
+  });
+}
+
+export function recordingStopFromSidepanel(correlationId: string): Promise<{ stopped: true }> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      if (!tab?.id) {
+        log.error("no active tab found for mic recording");
+        reject(new Error("no_active_tab"));
+        return;
+      }
+      void sendToContentScript(tab.id, { type: "stop_mic_recording", correlationId })
+        .then(() => resolve({ stopped: true }))
+        .catch((e: unknown) => {
+          log.error("mic message failed", String(e));
+          reject(e instanceof Error ? e : new Error(String(e)));
+        });
+    });
+  });
+}
+
+export async function forwardAudioChunkToSidepanel(correlationId: string, chunk: string): Promise<void> {
+  await chrome.runtime
+    .sendMessage({
+      type: "audio_chunk_forward",
+      correlationId,
+      chunk,
+    })
+    .catch(() => {});
+}
+
+/**
+ * Relays content-script `audio_complete` to the side panel: forwards base64 and
+ * metadata as-is (no mutation) so the panel can rebuild the Blob for `voice_captured`.
+ */
+export async function relayAudioCompleteFromContent(msg: {
+  correlationId: string;
+  mimeType: string;
+  startedAt: number;
+  base64: string;
+}): Promise<void> {
+  await chrome.runtime
+    .sendMessage({
+      type: "audio_complete_forward",
+      correlationId: msg.correlationId,
+      mimeType: msg.mimeType,
+      startedAt: msg.startedAt,
+      base64: msg.base64,
+    })
+    .catch(() => {});
+}
+
 async function emitEvent(event: AgentEvent): Promise<void> {
   try {
     await chrome.runtime.sendMessage({ type: "event", event });

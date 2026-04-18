@@ -1,4 +1,5 @@
 export { VoiceRecorder } from "./recorder.js";
+export { ContentTabVoiceRecorder } from "./content-tab-recorder.js";
 export type {
   VoiceCapturedEvent,
   VoiceDataCallback,

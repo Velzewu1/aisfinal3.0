@@ -14,7 +14,7 @@ const log = createLogger("voice");
  *   - No imports from `extension/background/`, `extension/controller/`,
  *     or `extension/content/`.
  *   - Reusable in any MV3 context that exposes `MediaRecorder` and
- *     `navigator.mediaDevices` (side panel, offscreen document, etc.).
+ *     `navigator.mediaDevices` (e.g. content script or dedicated page).
  *   - Deterministic shape: identical inputs produce identical event envelopes.
  */
 
@@ -25,6 +25,8 @@ export interface VoiceCapturedEvent {
   readonly audioBlob: Blob;
   readonly mimeType: string;
   readonly durationMs: number;
+  /** Raw base64 from the content script when available (side panel can forward for transcription). */
+  readonly base64?: string;
 }
 
 export type VoiceDataCallback = (chunk: Blob) => void;

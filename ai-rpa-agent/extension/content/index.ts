@@ -2,6 +2,7 @@ import type { DomAction, ExecutorResult } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import { isExtensionMessage } from "../shared/messages.js";
 import { executor } from "./executor.js";
+import { initMicRecorder } from "./recorder.js";
 
 const log = createLogger("content");
 
@@ -30,3 +31,5 @@ log.info("content script ready", { url: location.href });
  * call document.*, Element.prototype.*, or similar mutators.
  */
 void ({} as { _enforce?: DomAction });
+
+initMicRecorder();

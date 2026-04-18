@@ -1,11 +1,11 @@
-import { VoiceRecorder } from "../voice/index.js";
+import { ContentTabVoiceRecorder } from "../voice/index.js";
 import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 import { suggestNext, SUGGESTION_TEXT, type ProactiveSuggestion } from "../controller/proactivity.js";
 import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
 
 const log = createLogger("sidepanel");
-const recorder = new VoiceRecorder();
+const recorder = new ContentTabVoiceRecorder();
 let lastCorrelationId: string | null = null;
 
 const timelineEl = document.getElementById("timeline") as HTMLDivElement | null;
@@ -332,6 +332,9 @@ async function stopRecordingAndDispatch(): Promise<void> {
     const voiceRes = (await chrome.runtime.sendMessage({
       type: "voice_captured",
       correlationId: capture.correlationId,
+      ...(typeof capture.base64 === "string" && capture.base64.length > 0
+        ? { base64: capture.base64, mimeType: capture.mimeType }
+        : {}),
       audio: {
         mimeType: capture.mimeType,
         sizeBytes: capture.audioBlob.size,

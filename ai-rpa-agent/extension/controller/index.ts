@@ -42,10 +42,14 @@ const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "completed",
 ]);
 const ALLOWED_FILL_FIELDS: ReadonlySet<string> = new Set([
+  "patient_id",
+  "patient_name",
+  "patient_dob",
   "complaints",
   "anamnesis",
   "objective_status",
   "treatment",
+  "diagnosis",
 ]);
 
 function checkIntentPolicy(intent: Intent): string | null {
@@ -326,6 +330,35 @@ function voiceMessageToCapture(
   });
 }
 
+/** Rebuild binary audio from base64 (MV3 message clone can corrupt `ArrayBuffer` payloads). */
+function base64ToAudioBlob(base64: string, mimeType: string): Blob {
+  const byteString = atob(base64);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i += 1) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeType || "audio/webm;codecs=opus" });
+}
+
+function voiceCapturedMessageToEvent(
+  msg: MessageOf<"voice_captured">,
+  correlationId: string,
+): VoiceCapturedEvent {
+  const mime = typeof msg.mimeType === "string" && msg.mimeType.length > 0 ? msg.mimeType : msg.audio.mimeType;
+  if (typeof msg.base64 === "string" && msg.base64.length > 0) {
+    return Object.freeze({
+      type: "voice_captured",
+      timestamp: Date.now(),
+      correlationId,
+      audioBlob: base64ToAudioBlob(msg.base64, mime),
+      mimeType: mime,
+      durationMs: msg.audio.durationMs,
+    });
+  }
+  return voiceMessageToCapture(correlationId, msg.audio);
+}
+
 export const controller = {
   async onInput(msg: MessageOf<"voice_captured"> | MessageOf<"user_utterance">): Promise<unknown> {
     const { correlationId } = msg;
@@ -350,7 +383,7 @@ export const controller = {
         };
       }
 
-      const capture = voiceMessageToCapture(correlationId, msg.audio);
+      const capture = voiceCapturedMessageToEvent(msg, correlationId);
 
       let preprocessed;
       try {

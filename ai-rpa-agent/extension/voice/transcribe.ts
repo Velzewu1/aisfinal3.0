@@ -62,14 +62,22 @@ export async function transcribeAudio(
   input: PreprocessedAudioEvent,
   options: TranscribeOptions = {},
 ): Promise<TranscribedTextEvent> {
+  console.log(
+    "[DEBUG transcribe] called with:",
+    typeof input,
+    input instanceof Blob
+      ? "Blob size:" + input.size
+      : "base64 length:" + (input as unknown as { length?: number }).length,
+  );
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
   const model = options.model ?? DEFAULT_MODEL;
   const fetchImpl = options.fetchImpl ?? fetch;
 
+  const audioBlob = input.normalizedBlob;
   const form = new FormData();
   // Step 2's `PreprocessedAudioEvent` carries the audio as `normalizedBlob`
   // (the Step-3 prompt's informal `audioBlob` label refers to the same field).
-  form.append("file", input.normalizedBlob, DEFAULT_FILENAME);
+  form.append("file", audioBlob, DEFAULT_FILENAME);
   form.append("model", model);
   form.append("response_format", "json");
   if (options.language) {
@@ -80,6 +88,15 @@ export async function transcribeAudio(
   if (options.apiKey) {
     headers["authorization"] = `Bearer ${options.apiKey}`;
   }
+
+  console.log(
+    "transcribe input type:",
+    typeof audioBlob,
+    "is Blob:",
+    audioBlob instanceof Blob,
+    "size:",
+    audioBlob.size,
+  );
 
   let response: Response;
   try {

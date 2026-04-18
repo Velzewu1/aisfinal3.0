@@ -80,6 +80,34 @@ export class AudioPreprocessingUnavailable extends Error {
 export async function preprocessAudio(
   event: VoiceCapturedEvent,
 ): Promise<PreprocessedAudioEvent> {
+  if (
+    typeof AudioContext === "undefined" &&
+    typeof (globalThis as unknown as { webkitAudioContext?: unknown }).webkitAudioContext === "undefined"
+  ) {
+    // AudioContext not available (content script context)
+    // Return raw audio blob unchanged
+    const mimeType = canonicalMimeType(event.mimeType) || event.mimeType;
+    const normalizedBlob = event.audioBlob;
+    const durationMs = event.durationMs;
+
+    await publishAgentEvent(
+      buildAgentEvent("audio_preprocessed", event.correlationId, {
+        durationMs,
+        mimeType: mimeType || "audio/webm",
+        sizeBytes: normalizedBlob.size,
+        sampleRateHint: undefined,
+      }),
+    );
+
+    return Object.freeze({
+      correlationId: event.correlationId,
+      normalizedBlob,
+      mimeType: mimeType || "audio/webm",
+      sampleRateHint: 48_000,
+      durationMs,
+    });
+  }
+
   const mimeType = canonicalMimeType(event.mimeType);
   if (!isAllowedMimeType(mimeType)) {
     throw new AudioFormatNotSupported(event.mimeType);
