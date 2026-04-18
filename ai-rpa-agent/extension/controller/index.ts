@@ -401,9 +401,39 @@ async function runWithInterpretation(
 
   if (decision.kind === "confirm") {
     pendingConfirmations.set(correlationId, { correlationId, interpretation });
+    // Build draft preview payload for fill intents
+    const draftFields =
+      intent.kind === "fill"
+        ? intent.slots.map((s) => ({
+            field: s.field,
+            label: s.field.replace(/_/g, " "),
+            value: String(s.value),
+          }))
+        : undefined;
     await emit(
       makeEvent("user_confirmation_requested", correlationId, {
         summary: `Confirm ${intent.kind} (${decision.reason})`,
+        ...(draftFields ? { draftFields, intentKind: intent.kind } : {}),
+      }),
+    );
+    return;
+  }
+
+  // DRAFT PREVIEW GATE: fill intents ALWAYS require clinician approval,
+  // even when the decision gate says "execute". This ensures no generated
+  // content reaches the host DOM without human confirmation.
+  if (intent.kind === "fill") {
+    pendingConfirmations.set(correlationId, { correlationId, interpretation });
+    const draftFields = intent.slots.map((s) => ({
+      field: s.field,
+      label: s.field.replace(/_/g, " "),
+      value: String(s.value),
+    }));
+    await emit(
+      makeEvent("user_confirmation_requested", correlationId, {
+        summary: "Предпросмотр заполнения — подтвердите для сохранения",
+        draftFields,
+        intentKind: "fill",
       }),
     );
     return;

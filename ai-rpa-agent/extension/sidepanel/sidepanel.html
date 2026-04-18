@@ -880,6 +880,371 @@
       .timeline-empty svg {
         opacity: 0.45;
       }
+
+      /* File upload section */
+      .upload-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        padding: 14px 14px 12px;
+        box-shadow: var(--shadow-card);
+      }
+
+      .upload-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .upload-patient-badge {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(79, 142, 247, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(79, 142, 247, 0.2);
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .upload-dropzone {
+        position: relative;
+        border: 2px dashed var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 200ms var(--ease), background 200ms var(--ease), box-shadow 200ms var(--ease);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .upload-dropzone:hover {
+        border-color: var(--accent);
+        background: rgba(79, 142, 247, 0.04);
+      }
+
+      .upload-dropzone.dragover {
+        border-color: var(--accent);
+        background: rgba(79, 142, 247, 0.08);
+        box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+      }
+
+      .upload-dropzone-icon {
+        color: var(--text-secondary);
+        opacity: 0.6;
+        transition: opacity 200ms var(--ease), color 200ms var(--ease);
+      }
+
+      .upload-dropzone:hover .upload-dropzone-icon,
+      .upload-dropzone.dragover .upload-dropzone-icon {
+        color: var(--accent);
+        opacity: 1;
+      }
+
+      .upload-dropzone-text {
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .upload-dropzone-text strong {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .upload-dropzone-hint {
+        font-size: 10px;
+        color: var(--text-secondary);
+        opacity: 0.7;
+      }
+
+      .upload-file-input {
+        display: none;
+      }
+
+      .upload-file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .upload-file-list:empty {
+        display: none;
+      }
+
+      .file-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        animation: fade-in 200ms var(--ease);
+      }
+
+      .file-chip-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .file-chip-icon.pdf {
+        background: rgba(248, 113, 113, 0.12);
+        color: var(--error);
+      }
+
+      .file-chip-icon.txt {
+        background: rgba(79, 142, 247, 0.12);
+        color: var(--accent);
+      }
+
+      .file-chip-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .file-chip-name {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .file-chip-meta {
+        font-size: 10px;
+        color: var(--text-secondary);
+        margin-top: 1px;
+      }
+
+      .file-chip-status {
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 2px 7px;
+        border-radius: 999px;
+        text-transform: uppercase;
+      }
+
+      .file-chip-status.parsing {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--warning);
+      }
+
+      .file-chip-status.done {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--success);
+      }
+
+      .file-chip-status.error {
+        background: rgba(248, 113, 113, 0.12);
+        color: var(--error);
+      }
+
+      .file-chip-remove {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        border-radius: 4px;
+        padding: 0;
+        transition: background 200ms var(--ease), color 200ms var(--ease);
+      }
+
+      .file-chip-remove:hover {
+        background: rgba(248, 113, 113, 0.12);
+        color: var(--error);
+      }
+
+      /* Draft preview card */
+      .draft-preview {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        border-left: 4px solid var(--warning);
+        padding: 14px 14px 12px;
+        box-shadow: var(--shadow-card);
+        animation: fade-in 220ms var(--ease);
+      }
+
+      .draft-preview.hidden {
+        display: none;
+      }
+
+      .draft-preview-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .draft-preview-icon {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-lg);
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--warning);
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .draft-preview-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.35;
+      }
+
+      .draft-preview-badge {
+        flex-shrink: 0;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--warning);
+        text-transform: uppercase;
+      }
+
+      .draft-preview-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .draft-field {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 8px 10px;
+        transition: border-color 200ms var(--ease);
+      }
+
+      .draft-field:hover {
+        border-color: rgba(251, 191, 36, 0.4);
+      }
+
+      .draft-field-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 3px;
+      }
+
+      .draft-field-value {
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 80px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+
+      .draft-field-value::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .draft-field-value::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .draft-preview-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .draft-preview-actions .btn-primary {
+        background: var(--success);
+        border-color: var(--success);
+      }
+
+      .draft-preview-actions .btn-primary:hover {
+        background: #2bc68a;
+        border-color: #2bc68a;
+      }
+
+      /* Quick-action chips — guided workflow shortcuts */
+      .quick-actions {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding: 0 2px 4px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .quick-actions::-webkit-scrollbar {
+        display: none;
+      }
+
+      .quick-chip {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 11px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: border-color 200ms var(--ease), background 200ms var(--ease), color 200ms var(--ease), box-shadow 200ms var(--ease);
+        user-select: none;
+      }
+
+      .quick-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79, 142, 247, 0.06);
+      }
+
+      .quick-chip:active {
+        transform: scale(0.97);
+      }
+
+      .quick-chip-icon {
+        font-size: 13px;
+        line-height: 1;
+      }
     </style>
   </head>
   <body>
@@ -905,6 +1270,27 @@
           <span id="statusLabel" class="status-label">Готов</span>
         </div>
       </header>
+
+      <div id="quickActions" class="quick-actions" role="toolbar" aria-label="Быстрые действия">
+        <button type="button" class="quick-chip" data-utterance="открой первичный осмотр">
+          <span class="quick-chip-icon">📋</span> Первичный осмотр
+        </button>
+        <button type="button" class="quick-chip" data-utterance="пациент жалуется на задержку речевого развития, нарушение координации">
+          <span class="quick-chip-icon">💬</span> Заполнить жалобы
+        </button>
+        <button type="button" class="quick-chip" data-utterance="объективно: сознание ясное, мышечный тонус повышен, рефлексы оживлены">
+          <span class="quick-chip-icon">🩺</span> Объективно
+        </button>
+        <button type="button" class="quick-chip" data-utterance="диагноз g80">
+          <span class="quick-chip-icon">🏷️</span> Диагноз
+        </button>
+        <button type="button" class="quick-chip" data-utterance="открой дневниковую запись">
+          <span class="quick-chip-icon">📓</span> Дневник
+        </button>
+        <button type="button" class="quick-chip" data-utterance="массаж выполнен">
+          <span class="quick-chip-icon">✅</span> Статус
+        </button>
+      </div>
 
       <section class="voice-section" aria-labelledby="voice-heading">
         <h2 id="voice-heading" class="section-label">Голос</h2>
@@ -976,6 +1362,25 @@
         </div>
       </section>
 
+      <section class="upload-section" aria-labelledby="upload-heading">
+        <div class="upload-header">
+          <h2 id="upload-heading" class="section-label" style="margin:0">Файлы пациента</h2>
+          <span id="uploadPatientBadge" class="upload-patient-badge">не указан</span>
+        </div>
+        <div id="uploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить файл">
+          <svg class="upload-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="upload-dropzone-text">
+            Перетащите или <strong>нажмите</strong>
+          </div>
+          <div class="upload-dropzone-hint">PDF, TXT · до 5 МБ</div>
+        </div>
+        <input type="file" id="uploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
+        <div id="uploadFileList" class="upload-file-list"></div>
+      </section>
+
       <section
         id="confidenceBar"
         class="confidence-bar hidden"
@@ -997,6 +1402,19 @@
         <div class="proactive-actions">
           <button type="button" id="accept" class="btn btn-primary">Да</button>
           <button type="button" id="reject" class="btn btn-ghost">Пропустить</button>
+        </div>
+      </section>
+
+      <section id="draftPreview" class="draft-preview hidden" aria-live="polite" aria-label="Предпросмотр черновика">
+        <div class="draft-preview-header">
+          <div class="draft-preview-icon" aria-hidden="true">✎</div>
+          <div id="draftPreviewTitle" class="draft-preview-title">Предпросмотр заполнения</div>
+          <span class="draft-preview-badge">Черновик</span>
+        </div>
+        <div id="draftPreviewFields" class="draft-preview-fields"></div>
+        <div class="draft-preview-actions">
+          <button type="button" id="draftApprove" class="btn btn-primary">Подтвердить</button>
+          <button type="button" id="draftReject" class="btn btn-ghost">Отклонить</button>
         </div>
       </section>
 

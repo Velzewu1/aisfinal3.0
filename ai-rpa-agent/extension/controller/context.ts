@@ -1,7 +1,9 @@
-import type { AgentEvent } from "@ai-rpa/schemas";
+import type { AgentEvent, PageContext, PageFieldDescriptor, RetrievedContext as RetrievedContextType } from "@ai-rpa/schemas";
+import { PageContext as PageContextSchema } from "@ai-rpa/schemas";
 import type { NormalizedUtteranceEvent } from "../voice/normalize.js";
 import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
+import { assembleFilteredContext } from "../knowledge/retrieval.js";
 
 const log = createLogger("controller.context");
 
@@ -13,13 +15,15 @@ const log = createLogger("controller.context");
  * `ContextualizedUtteranceEvent` that is ready for the reasoning layer.
  *
  * Invariants:
- *   - Output depends on input + overrides + best-effort DOM discovery
- *     in the active tab (`chrome.scripting.executeScript` for `[data-field]`).
+ *   - Output depends on input + overrides + current-page context extracted
+ *     by the content script via `extract_page_context` message.
+ *   - Current-page context is validated through `PageContext.safeParse()`
+ *     before use — rejecting raw HTML, unrestricted DOM snapshots, and
+ *     structurally invalid payloads.
  *   - Emits a best-effort `context_attached` AgentEvent for observability
  *     via `chrome.runtime.sendMessage`; emission is fire-and-forget and
  *     never affects the returned `ContextualizedUtteranceEvent`.
- *   - No LLM, no network, no backend. No `document.*` in this thread — only
- *     in the injected page function.
+ *   - No LLM, no network, no backend. No `document.*` in this thread.
  *   - Does NOT decide which intent runs — it only augments the utterance
  *     with labels the LLM prompt needs. Controller decision logic lives
  *     in `confidence.ts` / `index.ts`.
@@ -29,16 +33,7 @@ const log = createLogger("controller.context");
  */
 
 const MOCK_CURRENT_PAGE = "primary_exam";
-const MOCK_ACTIVE_FORM = "primary_exam_form";
 const UNKNOWN_PATIENT_NAME = "Unknown";
-
-/** One `[data-field]` on the active page; used for LLM + controller allowlist. */
-export type PageFieldDescriptor = Readonly<{
-  field: string;
-  tag: string;
-  placeholder: string;
-  label: string;
-}>;
 
 export type ContextualizedUtteranceEvent = Readonly<{
   type: "context_attached";
@@ -59,6 +54,15 @@ export type ContextualizedUtteranceEvent = Readonly<{
     availableFields: readonly PageFieldDescriptor[];
   };
 
+  /**
+   * Retrieved knowledge context assembled from the assets layer.
+   * Conceptually separate from `context` (PageContext):
+   *   - PageContext = current-page DOM state (live, factual)
+   *   - retrievedContext = stored knowledge assets (templates, patient history)
+   * These are NEVER merged.
+   */
+  retrievedContext?: RetrievedContextType;
+
   durationMs: number;
 }>;
 
@@ -67,7 +71,7 @@ export interface ContextOverrides {
   readonly activeForm?: string;
   readonly patientId?: string;
   readonly patientName?: string;
-  /** When set, field discovery runs on this tab; otherwise the active tab in the current window. */
+  /** When set, context extraction runs on this tab; otherwise the active tab in the current window. */
   readonly tabId?: number;
 }
 
@@ -77,19 +81,22 @@ export async function attachContext(
 ): Promise<ContextualizedUtteranceEvent> {
   const text = input.normalizedText;
 
-  const pageSnapshot = await discoverPageSnapshot(input.correlationId, overrides.tabId);
+  const pageContext = await requestPageContext(input.correlationId, overrides.tabId);
 
   const currentPage =
-    overrides.currentPage ?? pageSnapshot?.currentPage ?? MOCK_CURRENT_PAGE;
-  const activeForm = overrides.activeForm ?? MOCK_ACTIVE_FORM;
-  const patientId = overrides.patientId ?? pageSnapshot?.patientId;
+    overrides.currentPage ?? pageContext?.currentPage ?? MOCK_CURRENT_PAGE;
+  // activeForm is extracted from live DOM (data-form / form[id] / data-section).
+  // If no form container is detected, we omit it entirely to avoid misleading the LLM.
+  const activeForm = overrides.activeForm ?? pageContext?.activeForm;
+  const patientId = overrides.patientId ?? pageContext?.patientId;
   const patientName =
     overrides.patientName ??
-    pageSnapshot?.patientName ??
+    pageContext?.patientName ??
     extractPatientName(text) ??
     UNKNOWN_PATIENT_NAME;
 
-  const availableFields = await discoverPageFields(input.correlationId, overrides.tabId);
+  const availableFields: readonly PageFieldDescriptor[] =
+    pageContext?.availableFields ?? [];
 
   const context: ContextualizedUtteranceEvent["context"] = {
     currentPage,
@@ -99,18 +106,35 @@ export async function attachContext(
     ...(patientName ? { patientName } : {}),
   };
 
+  // Assemble retrieved context (knowledge assets) — separate from PageContext.
+  // Uses page/patient signals to select relevant reusable templates and
+  // patient-scoped assets. This is a separate enrichment channel that
+  // never merges with PageContext and never bypasses validation.
+  const retrievedContext = assembleFilteredContext({
+    documentType: currentPage,
+    patientId: patientId,
+    // Specialty and diagnosis can be extracted from utterance in future patches
+  });
+
   const event: ContextualizedUtteranceEvent = Object.freeze({
     type: "context_attached",
     correlationId: input.correlationId,
     timestamp: new Date().toISOString(),
     text,
     context,
+    ...(retrievedContext ? { retrievedContext } : {}),
     durationMs: input.durationMs,
   });
 
   log.info(
     "context attached",
-    { currentPage, activeForm: activeForm ?? null, patientName, patientId: patientId ?? null },
+    {
+      currentPage,
+      activeForm: activeForm ?? null,
+      patientName,
+      patientId: patientId ?? null,
+      retrievedAssetCount: retrievedContext?.assets.length ?? 0,
+    },
     input.correlationId,
   );
   emitContextAttached(input.correlationId, context);
@@ -143,22 +167,26 @@ function emitContextAttached(
   }
 }
 
-interface PageSnapshot {
-  readonly currentPage?: string;
-  readonly patientId?: string;
-  readonly patientName?: string;
-}
+// ------------------------------------------------------------------ //
+// Current-page context: content-script extraction via message bus.    //
+// ------------------------------------------------------------------ //
 
 /**
- * One-shot DOM introspection: infers `currentPage` from the URL path (mock-ui
- * file -> mock-ui `data-nav` slug) and reads the patient snapshot exported by
- * `mock-ui/patient-loader.js` as `window.__CURRENT_PATIENT__`. Pure read-only;
- * does not mutate the page.
+ * Request the validated `PageContext` from the content script running in
+ * the active tab. Replaces the previous `chrome.scripting.executeScript`
+ * pattern with a message-based approach:
+ *
+ *   controller  ─ chrome.tabs.sendMessage({ type: "extract_page_context" }) ─►  content script
+ *   content script  ─ sendResponse({ ok, context }) ─►  controller
+ *
+ * The response is validated through `PageContext.safeParse()` so that
+ * malformed or policy-violating payloads (e.g. containing raw HTML) are
+ * rejected before they enter the reasoning pipeline.
  */
-async function discoverPageSnapshot(
+async function requestPageContext(
   correlationId: string,
   tabIdOverride?: number,
-): Promise<PageSnapshot | undefined> {
+): Promise<PageContext | undefined> {
   let tabId = tabIdOverride;
   if (tabId === undefined) {
     const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -167,104 +195,38 @@ async function discoverPageSnapshot(
   if (tabId === undefined) return undefined;
 
   try {
-    const [injection] = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (): { currentPage?: string; patientId?: string; patientName?: string } => {
-        const pageByFile: Record<string, string> = {
-          "index.html": "patient_list",
-          "": "patient_list",
-          "primary_exam.html": "primary_exam",
-          "epicrisis.html": "epicrisis",
-          "diary.html": "diary",
-          "schedule.html": "schedule",
-        };
-        const path = (window.location.pathname || "").split("/").pop() || "";
-        const currentPage = pageByFile[path];
-        const current = (window as unknown as {
-          __CURRENT_PATIENT__?: { id?: string; name?: string; shortName?: string };
-        }).__CURRENT_PATIENT__;
-        return {
-          ...(currentPage ? { currentPage } : {}),
-          ...(current?.id ? { patientId: current.id } : {}),
-          ...(current?.shortName || current?.name
-            ? { patientName: current.shortName ?? current.name }
-            : {}),
-        };
-      },
-    });
-    const raw = injection?.result;
-    if (typeof raw !== "object" || raw === null) return undefined;
-    const rec = raw as { currentPage?: unknown; patientId?: unknown; patientName?: unknown };
-    const out: PageSnapshot = {
-      ...(typeof rec.currentPage === "string" && rec.currentPage.length > 0
-        ? { currentPage: rec.currentPage }
-        : {}),
-      ...(typeof rec.patientId === "string" && rec.patientId.length > 0
-        ? { patientId: rec.patientId }
-        : {}),
-      ...(typeof rec.patientName === "string" && rec.patientName.length > 0
-        ? { patientName: rec.patientName }
-        : {}),
-    };
-    return out;
-  } catch (err: unknown) {
-    log.warn("page snapshot discovery failed", String(err), correlationId);
-    return undefined;
-  }
-}
+    const response = await chrome.tabs.sendMessage(tabId, {
+      type: "extract_page_context",
+    }) as { ok?: boolean; context?: unknown; error?: string } | undefined;
 
-async function discoverPageFields(
-  correlationId: string,
-  tabIdOverride?: number,
-): Promise<readonly PageFieldDescriptor[]> {
-  let tabId = tabIdOverride;
-  if (tabId === undefined) {
-    const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
-    tabId = active?.id;
-  }
-  if (tabId === undefined) return [];
-
-  try {
-    const [injection] = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (): Array<{ field: string; tag: string; placeholder: string; label: string }> => {
-        const seen = new Set<string>();
-        const out: Array<{ field: string; tag: string; placeholder: string; label: string }> = [];
-        for (const el of document.querySelectorAll("[data-field]")) {
-          if (!(el instanceof HTMLElement)) continue;
-          const field = el.dataset.field;
-          if (field === undefined || field.length === 0) continue;
-          if (seen.has(field)) continue;
-          seen.add(field);
-          const tag = el.tagName.toLowerCase();
-          const placeholder =
-            el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.placeholder : "";
-          const row = el.closest(".form-group, .field-wrapper, tr");
-          const labelEl = row?.querySelector("label, th");
-          const label = labelEl?.textContent?.trim() ?? "";
-          out.push({ field, tag, placeholder, label });
-        }
-        return out;
-      },
-    });
-    const raw = injection?.result;
-    if (!Array.isArray(raw)) return [];
-    const out: PageFieldDescriptor[] = [];
-    for (const item of raw) {
-      if (typeof item !== "object" || item === null) continue;
-      const rec = item as { field?: unknown; tag?: unknown; placeholder?: unknown; label?: unknown };
-      if (typeof rec.field !== "string" || rec.field.length === 0) continue;
-      out.push({
-        field: rec.field,
-        tag: typeof rec.tag === "string" ? rec.tag : "",
-        placeholder: typeof rec.placeholder === "string" ? rec.placeholder : "",
-        label: typeof rec.label === "string" ? rec.label : "",
-      });
+    if (!response || response.ok !== true || response.context === undefined) {
+      log.warn(
+        "page context extraction returned non-ok",
+        response?.error ?? "no response",
+        correlationId,
+      );
+      return undefined;
     }
-    return out;
+
+    // Validate through the PageContext Zod schema — enforces no raw HTML,
+    // field cap, path-only URL, and structural completeness.
+    const parsed = PageContextSchema.safeParse(response.context);
+    if (!parsed.success) {
+      const issues = parsed.error.issues
+        .slice(0, 5)
+        .map((i) => `${i.path.join(".") || "<root>"}:${i.code}`);
+      log.warn(
+        "page context validation failed",
+        { issues },
+        correlationId,
+      );
+      return undefined;
+    }
+
+    return parsed.data;
   } catch (err: unknown) {
-    log.warn("page field discovery failed", String(err), correlationId);
-    return [];
+    log.warn("page context request failed", String(err), correlationId);
+    return undefined;
   }
 }
 

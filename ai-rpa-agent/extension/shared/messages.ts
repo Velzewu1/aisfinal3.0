@@ -1,5 +1,4 @@
-import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation } from "@ai-rpa/schemas";
-import type { PageFieldDescriptor } from "../controller/context.js";
+import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation, PageFieldDescriptor } from "@ai-rpa/schemas";
 import type { ScheduleRequestBuildInput } from "../controller/schedule-request-from-context.js";
 
 /**
@@ -9,7 +8,7 @@ import type { ScheduleRequestBuildInput } from "../controller/schedule-request-f
  *   voice  -> background  (VoiceCaptured)
  *   sidepanel -> background (UserConfirmation)
  *   background -> controller (routed internally)
- *   controller -> content (ExecutePlan)
+ *   controller -> content (ExecutePlan | ExtractPageContext)
  *   content   -> background (ExecutorFinished)
  *
  * The LLM module and backend clients are invoked from the controller only.
@@ -43,7 +42,22 @@ export type ExtensionMessage =
       build?: ScheduleRequestBuildInput;
     }
   | { type: "auto_schedule"; correlationId: string }
+  | {
+      type: "ingest_file";
+      correlationId: string;
+      file: {
+        name: string;
+        mimeType: string;
+        sizeBytes: number;
+      };
+      /** Pre-parsed text content (parsing happens in sidepanel context where pdf.js is available). */
+      parsedText: string;
+      patientId?: string;
+      /** Asset content type override. */
+      contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom";
+    }
   | { type: "event"; event: AgentEvent };
+
 
 export type MessageOf<T extends ExtensionMessage["type"]> = Extract<ExtensionMessage, { type: T }>;
 

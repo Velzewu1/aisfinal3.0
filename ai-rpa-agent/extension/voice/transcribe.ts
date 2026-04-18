@@ -135,8 +135,12 @@ export async function transcribeAudio(
   });
 
   log.info(
-    "transcription complete",
-    { chars: text.length, language: language ?? null },
+    "transcription_received",
+    {
+      chars: text.length,
+      language: language ?? null,
+      durationMs: input.durationMs,
+    },
     input.correlationId,
   );
 

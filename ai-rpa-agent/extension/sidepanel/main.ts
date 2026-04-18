@@ -11,6 +11,12 @@ import {
   type ProactiveSuggestion,
 } from "../controller/proactivity.js";
 import type { AgentEvent, IntentKind, LlmInterpretation } from "@ai-rpa/schemas";
+import {
+  parseFile,
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILES_PER_SESSION,
+  ACCEPTED_MIME_TYPES,
+} from "../knowledge/file-parser.js";
 
 const log = createLogger("sidepanel");
 const recorder = new ContentTabVoiceRecorder();
@@ -47,6 +53,13 @@ const scheduleProceduresValueEl = document.getElementById("scheduleProceduresVal
 const scheduleSpecialistsValueEl = document.getElementById("scheduleSpecialistsValue") as HTMLSpanElement | null;
 const openScheduleBtn = document.getElementById("openSchedule") as HTMLButtonElement | null;
 const scheduleDismissBtn = document.getElementById("scheduleDismiss") as HTMLButtonElement | null;
+
+// Draft preview elements
+const draftPreviewEl = document.getElementById("draftPreview") as HTMLElement | null;
+const draftPreviewTitleEl = document.getElementById("draftPreviewTitle") as HTMLDivElement | null;
+const draftPreviewFieldsEl = document.getElementById("draftPreviewFields") as HTMLDivElement | null;
+const draftApproveBtn = document.getElementById("draftApprove") as HTMLButtonElement | null;
+const draftRejectBtn = document.getElementById("draftReject") as HTMLButtonElement | null;
 
 type DotKind = "success" | "info" | "warning" | "error";
 
@@ -199,12 +212,27 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
         title: "Валидация",
         description: `Схема ${ev.payload.schemaVersion}`,
       };
-    case "validation_failed":
+    case "validation_failed": {
+      const errors = ev.payload.errors.slice(0, 3);
+      // Translate machine tokens to human-readable Russian for demo
+      const humanErrors = errors.map((e) => {
+        if (e === "llm_api_key_missing") return "API-ключ не установлен";
+        if (e === "llm_network_error") return "Сеть: нет связи с LLM";
+        if (e === "llm_http_error") return "LLM вернул ошибку";
+        if (e === "llm_empty_response") return "LLM: пустой ответ";
+        if (e === "llm_invalid_json") return "LLM: невалидный JSON";
+        if (e === "llm_parse_error") return "LLM: ошибка разбора";
+        if (e.startsWith("out_of_policy_value")) return "Вне политики безопасности";
+        if (e === "normalize_failed") return "Ошибка нормализации текста";
+        if (e === "field_not_on_current_page") return "Поле не найдено на странице";
+        return e;
+      });
       return {
         dot: "error",
-        title: "Ошибка валидации",
-        description: ev.payload.errors.slice(0, 3).join("; "),
+        title: "Ошибка",
+        description: humanErrors.join("; "),
       };
+    }
     case "confidence_evaluated": {
       const pct = Math.round(ev.payload.score * 100);
       return {
@@ -213,12 +241,23 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
         description: `${pct}% · ${ev.payload.requiresConfirmation ? "нужно подтверждение" : "авто"}`,
       };
     }
-    case "decision_made":
+    case "decision_made": {
+      const decisionLabel = ev.payload.decision === "execute"
+        ? "Авто-выполнение"
+        : ev.payload.decision === "confirm"
+          ? "Требует подтверждения"
+          : "Отклонено";
+      const riskNote = ev.payload.reason === "high_risk_operation"
+        ? " (высокий риск)"
+        : ev.payload.reason === "auto_execute"
+          ? " (низкий риск)"
+          : "";
       return {
         dot: ev.payload.decision === "execute" ? "success" : ev.payload.decision === "confirm" ? "warning" : "error",
         title: "Решение",
-        description: `${ev.payload.decision} · ${Math.round(ev.payload.confidence * 100)}%`,
+        description: `${decisionLabel}${riskNote} · ${Math.round(ev.payload.confidence * 100)}%`,
       };
+    }
     case "action_plan_created":
       return {
         dot: "info",
@@ -664,6 +703,12 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
 
   if (ev.type === "context_attached") {
     lastAttachedContextPage = ev.payload.currentPage;
+    // Track patient ID for file upload asset binding
+    const pid = (ev.payload as { patientId?: string }).patientId;
+    if (pid && pid.length > 0) {
+      uploadPatientId = pid;
+      updatePatientBadge();
+    }
     onContextAttachedForExamProgress(ev.payload);
     return;
   }
@@ -721,7 +766,18 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
   }
 
   if (ev.type === "user_confirmation_requested") {
-    showProactiveConfirm(ev.correlationId, ev.payload.summary);
+    const payload = ev.payload as {
+      summary: string;
+      draftFields?: Array<{ field: string; label?: string; value: string }>;
+      intentKind?: string;
+    };
+    if (payload.draftFields && payload.draftFields.length > 0) {
+      // Rich draft preview for fill intents
+      showDraftPreview(ev.correlationId, payload.summary, payload.draftFields);
+    } else {
+      // Simple confirm card for non-fill intents
+      showProactiveConfirm(ev.correlationId, payload.summary);
+    }
   }
 });
 
@@ -733,5 +789,357 @@ scheduleDismissBtn?.addEventListener("click", () => {
   hideScheduleSummary();
 });
 
+// ------------------------------------------------------------------ //
+// Draft preview — clinician approval gate for generated fill content  //
+// ------------------------------------------------------------------ //
+
+let draftPreviewCorrelationId: string | null = null;
+
+function showDraftPreview(
+  correlationId: string,
+  title: string,
+  fields: Array<{ field: string; label?: string; value: string }>,
+): void {
+  if (!draftPreviewEl || !draftPreviewFieldsEl || !draftPreviewTitleEl) return;
+
+  draftPreviewCorrelationId = correlationId;
+  draftPreviewTitleEl.textContent = title;
+
+  // Render field cards
+  draftPreviewFieldsEl.innerHTML = "";
+  for (const f of fields) {
+    const fieldEl = document.createElement("div");
+    fieldEl.className = "draft-field";
+
+    const labelEl = document.createElement("div");
+    labelEl.className = "draft-field-label";
+    labelEl.textContent = f.label || f.field.replace(/_/g, " ");
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "draft-field-value";
+    valueEl.textContent = f.value || "(пусто)";
+
+    fieldEl.append(labelEl, valueEl);
+    draftPreviewFieldsEl.append(fieldEl);
+  }
+
+  draftPreviewEl.classList.remove("hidden");
+  pushLocalTimeline("warning", "Черновик", `${fields.length} полей — ожидает подтверждения`);
+}
+
+function hideDraftPreview(): void {
+  draftPreviewEl?.classList.add("hidden");
+  draftPreviewCorrelationId = null;
+  if (draftPreviewFieldsEl) draftPreviewFieldsEl.innerHTML = "";
+}
+
+async function handleDraftDecision(approved: boolean): Promise<void> {
+  const correlationId = draftPreviewCorrelationId;
+  if (!correlationId) {
+    pushLocalTimeline("warning", "Черновик", "Нет активного черновика");
+    return;
+  }
+  beginAsync();
+  try {
+    await chrome.runtime.sendMessage({
+      type: "user_confirmation",
+      correlationId,
+      accepted: approved,
+    });
+    pushLocalTimeline(
+      approved ? "success" : "warning",
+      "Черновик",
+      approved ? "Подтверждено — сохранение в систему" : "Отклонено врачом",
+    );
+    hideDraftPreview();
+  } catch (err: unknown) {
+    pushLocalTimeline("error", "Черновик", String(err));
+  } finally {
+    endAsync();
+  }
+}
+
+draftApproveBtn?.addEventListener("click", () => {
+  void handleDraftDecision(true);
+});
+
+draftRejectBtn?.addEventListener("click", () => {
+  void handleDraftDecision(false);
+});
+
+// ------------------------------------------------------------------ //
+// Quick-action chips — guided workflow shortcuts for demo             //
+// ------------------------------------------------------------------ //
+
+const quickActionsEl = document.getElementById("quickActions");
+quickActionsEl?.addEventListener("click", (e: Event) => {
+  const target = (e.target as HTMLElement).closest<HTMLButtonElement>(".quick-chip");
+  if (!target) return;
+  const utterance = target.dataset.utterance;
+  if (!utterance) return;
+
+  // Fill text input and auto-submit
+  if (utterEl) {
+    utterEl.value = utterance;
+    utterEl.focus();
+  }
+  void submitUtterance();
+});
+
 renderAssistantMode();
 refreshTimelineEmpty();
+
+// ------------------------------------------------------------------ //
+// File upload — patient-scoped asset ingestion                       //
+// ------------------------------------------------------------------ //
+
+const uploadDropzoneEl = document.getElementById("uploadDropzone") as HTMLDivElement | null;
+const uploadFileInputEl = document.getElementById("uploadFileInput") as HTMLInputElement | null;
+const uploadFileListEl = document.getElementById("uploadFileList") as HTMLDivElement | null;
+const uploadPatientBadgeEl = document.getElementById("uploadPatientBadge") as HTMLSpanElement | null;
+
+let uploadPatientId: string | undefined;
+let uploadedFileCount = 0;
+
+type FileChipState = {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  mimeType: string;
+  status: "parsing" | "done" | "error";
+  errorMsg?: string;
+  assetId?: string;
+};
+
+const fileChips = new Map<string, FileChipState>();
+
+function updatePatientBadge(): void {
+  if (!uploadPatientBadgeEl) return;
+  uploadPatientBadgeEl.textContent = uploadPatientId ?? "не указан";
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} Б`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function getFileExtType(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "pdf";
+  return "txt";
+}
+
+function renderFileChip(chip: FileChipState): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "file-chip";
+  el.dataset.chipId = chip.id;
+
+  const extType = getFileExtType(chip.name);
+
+  const iconEl = document.createElement("div");
+  iconEl.className = `file-chip-icon ${extType}`;
+  iconEl.textContent = extType.toUpperCase();
+
+  const bodyEl = document.createElement("div");
+  bodyEl.className = "file-chip-body";
+
+  const nameEl = document.createElement("div");
+  nameEl.className = "file-chip-name";
+  nameEl.textContent = chip.name;
+
+  const metaEl = document.createElement("div");
+  metaEl.className = "file-chip-meta";
+  metaEl.textContent = formatFileSize(chip.sizeBytes);
+
+  bodyEl.append(nameEl, metaEl);
+
+  const statusEl = document.createElement("span");
+  statusEl.className = `file-chip-status ${chip.status}`;
+  statusEl.textContent =
+    chip.status === "parsing"
+      ? "…"
+      : chip.status === "done"
+        ? "✓"
+        : "✗";
+  if (chip.errorMsg) {
+    statusEl.title = chip.errorMsg;
+  }
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "file-chip-remove";
+  removeBtn.type = "button";
+  removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  removeBtn.title = "Удалить";
+  removeBtn.addEventListener("click", () => {
+    fileChips.delete(chip.id);
+    el.remove();
+  });
+
+  el.append(iconEl, bodyEl, statusEl, removeBtn);
+  return el;
+}
+
+function updateFileChipStatus(chipId: string, status: FileChipState["status"], errorMsg?: string, assetId?: string): void {
+  const chip = fileChips.get(chipId);
+  if (!chip) return;
+  chip.status = status;
+  chip.errorMsg = errorMsg;
+  chip.assetId = assetId;
+
+  const chipEl = uploadFileListEl?.querySelector(`[data-chip-id="${chipId}"]`);
+  if (!chipEl) return;
+
+  const statusEl = chipEl.querySelector(".file-chip-status");
+  if (statusEl) {
+    statusEl.className = `file-chip-status ${status}`;
+    statusEl.textContent = status === "parsing" ? "…" : status === "done" ? "✓" : "✗";
+    if (errorMsg) (statusEl as HTMLElement).title = errorMsg;
+  }
+}
+
+function inferMimeType(file: File): string {
+  if (file.type && file.type.length > 0) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "txt" || ext === "text") return "text/plain";
+  return "application/octet-stream";
+}
+
+async function handleFileUpload(file: File): Promise<void> {
+  const mimeType = inferMimeType(file);
+  const normalizedMime = mimeType.toLowerCase().split(";")[0].trim();
+
+  // Validate MIME type
+  if (!ACCEPTED_MIME_TYPES.has(normalizedMime) && !ACCEPTED_MIME_TYPES.has(mimeType)) {
+    pushLocalTimeline("error", "Файл", `Неподдерживаемый формат: ${file.name}`);
+    return;
+  }
+
+  // Validate size
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    pushLocalTimeline("error", "Файл", `Превышен лимит ${formatFileSize(MAX_FILE_SIZE_BYTES)}: ${file.name}`);
+    return;
+  }
+
+  // Validate count
+  if (uploadedFileCount >= MAX_FILES_PER_SESSION) {
+    pushLocalTimeline("warning", "Файл", `Лимит файлов (${MAX_FILES_PER_SESSION}) достигнут`);
+    return;
+  }
+
+  uploadedFileCount++;
+  const chipId = newCorrelationId();
+  const chip: FileChipState = {
+    id: chipId,
+    name: file.name,
+    sizeBytes: file.size,
+    mimeType: normalizedMime,
+    status: "parsing",
+  };
+  fileChips.set(chipId, chip);
+  const chipEl = renderFileChip(chip);
+  uploadFileListEl?.prepend(chipEl);
+  pushLocalTimeline("info", "Файл", `Обработка: ${file.name}`);
+
+  try {
+    // Read file
+    const buffer = await file.arrayBuffer();
+
+    // Parse in sidepanel context (pdf.js available here)
+    const parseResult = await parseFile(buffer, file.name, normalizedMime);
+
+    if (!parseResult.ok) {
+      updateFileChipStatus(chipId, "error", parseResult.error);
+      pushLocalTimeline("error", "Файл", `Ошибка парсинга: ${parseResult.error}`);
+      return;
+    }
+
+    // Send parsed text to background for asset registration
+    const correlationId = newCorrelationId();
+    const response = (await chrome.runtime.sendMessage({
+      type: "ingest_file",
+      correlationId,
+      file: {
+        name: file.name,
+        mimeType: normalizedMime,
+        sizeBytes: file.size,
+      },
+      parsedText: parseResult.text,
+      patientId: uploadPatientId,
+    })) as { ok: boolean; assetId?: string; error?: string } | undefined;
+
+    if (response?.ok && response.assetId) {
+      updateFileChipStatus(chipId, "done", undefined, response.assetId);
+      const truncNote = parseResult.truncated ? " (усечён)" : "";
+      const pageNote = parseResult.pageCount ? ` · ${parseResult.pageCount} стр.` : "";
+      pushLocalTimeline(
+        "success",
+        "Файл",
+        `${file.name}${pageNote}${truncNote} → актив ${response.assetId.slice(0, 8)}…`,
+      );
+    } else {
+      const errorMsg = response?.error ?? "unknown_error";
+      updateFileChipStatus(chipId, "error", errorMsg);
+      pushLocalTimeline("error", "Файл", `Ошибка регистрации: ${errorMsg}`);
+    }
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    updateFileChipStatus(chipId, "error", errorMsg);
+    pushLocalTimeline("error", "Файл", `${file.name}: ${errorMsg}`);
+  }
+}
+
+function handleFiles(files: FileList | File[]): void {
+  for (const file of files) {
+    void handleFileUpload(file);
+  }
+}
+
+// Drop zone: click to open file picker
+uploadDropzoneEl?.addEventListener("click", () => {
+  uploadFileInputEl?.click();
+});
+
+uploadDropzoneEl?.addEventListener("keydown", (e: KeyboardEvent) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    uploadFileInputEl?.click();
+  }
+});
+
+// File picker change
+uploadFileInputEl?.addEventListener("change", () => {
+  const files = uploadFileInputEl.files;
+  if (files && files.length > 0) {
+    handleFiles(files);
+    uploadFileInputEl.value = ""; // Reset for re-upload of same file
+  }
+});
+
+// Drag and drop
+uploadDropzoneEl?.addEventListener("dragover", (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  uploadDropzoneEl.classList.add("dragover");
+});
+
+uploadDropzoneEl?.addEventListener("dragleave", (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  uploadDropzoneEl.classList.remove("dragover");
+});
+
+uploadDropzoneEl?.addEventListener("drop", (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  uploadDropzoneEl.classList.remove("dragover");
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    handleFiles(files);
+  }
+});
+
+// Track patient ID from context_attached events
+// (Extended in the existing onMessage handler above — patientId flows
+// through context_attached events and updates the upload badge.)

@@ -211,6 +211,11 @@ export const router = {
       case "event":
         return { forwarded: true };
 
+      case "ingest_file":
+        // Handled by the dedicated isIngestFileMessage guard in background/index.ts.
+        // If it reaches the router, it's a no-op.
+        return { forwarded: true };
+
       default: {
         const _exhaustive: never = msg;
         void _exhaustive;

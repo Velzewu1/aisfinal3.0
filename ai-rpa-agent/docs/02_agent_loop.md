@@ -35,8 +35,26 @@ Output: normalized text. (Typed input joins here; see pipeline note above.)
 ## Reasoning
 
 ### Step 5 — Context attach
-Bound context added to the prompt: active patient id, current page id, active
-form id. Raw HTML is never attached; only logical labels allowed by policy.
+The controller sends `extract_page_context` to the content script in the
+active tab, which returns a `PageContext` snapshot (URL slug, logical page id,
+patient state, `[data-field]` descriptors, extraction timestamp). The response
+is validated through `PageContext.safeParse()` — rejecting raw HTML,
+unrestricted DOM snapshots, and structurally invalid payloads. Only the
+normalized, policy-approved `PageContext` is merged into the contextualized
+utterance that reaches the reasoning layer. Raw HTML is never attached; only
+logical labels allowed by policy.
+
+Reasoning input is conceptually three separate channels:
+
+| Channel            | Source                      | Merged here? |
+|--------------------|-----------------------------|--------------|
+| Utterance          | Step 4 normalization        | Yes          |
+| `PageContext`      | Content script (live DOM)   | Yes          |
+| `RetrievedContext` | Knowledge registry (assets) | Placeholder (empty in current patch) |
+
+`PageContext` and `RetrievedContext` are **never merged with each other** — they
+are assembled independently and kept as separate input to the LLM prompt.
+See [`09_knowledge_assets.md`](09_knowledge_assets.md).
 
 ### Step 6 — LLM reasoning (Claude Tool Use / OpenAI structured outputs)
 Model returns **only** a JSON object matching `LlmInterpretation`:

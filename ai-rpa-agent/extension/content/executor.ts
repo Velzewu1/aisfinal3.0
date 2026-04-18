@@ -183,7 +183,17 @@ export const executor = {
 async function dispatch(action: DomAction): Promise<void> {
   switch (action.kind) {
     case "fill": {
-      const el = selectByDataAttr("data-field", action.field);
+      let el: Element | null = selectByDataAttr("data-field", action.field);
+
+      // Fallback resolver — deterministic, no LLM, no arbitrary selectors.
+      // Tries: label text → placeholder match → section heading proximity.
+      if (!el) {
+        el = resolveFieldFallback(action.field);
+        if (el) {
+          log.info("fill_fallback_resolved", { field: action.field, method: "label_or_placeholder" });
+        }
+      }
+
       if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) {
         throw new Error(`dom_target_missing: data-field="${action.field}"`);
       }
@@ -305,4 +315,66 @@ async function dispatch(action: DomAction): Promise<void> {
       throw new Error("unknown_action");
     }
   }
+}
+
+// ------------------------------------------------------------------ //
+// Minimal deterministic fallback resolver (Fix #4)                    //
+//                                                                    //
+// When `data-field` is missing, attempt to find input/textarea by:    //
+//   1. Label text containing the field name (snake_case → words)      //
+//   2. Placeholder containing the field name                          //
+//   3. Element name or id matching the field                          //
+//                                                                    //
+// Constraints:                                                        //
+//   - No LLM-generated selectors                                      //
+//   - No arbitrary DOM access                                         //
+//   - Only matches input/textarea/select elements                     //
+//   - Only alphanumeric field names (same as selectByDataAttr)        //
+// ------------------------------------------------------------------ //
+
+function resolveFieldFallback(field: string): Element | null {
+  // Convert snake_case field name to space-separated words for text matching
+  const words = field.replace(/_/g, " ").toLowerCase();
+
+  // Strategy 1: Find label whose text contains the field words, then find its associated input
+  const labels = document.querySelectorAll("label");
+  for (const label of labels) {
+    const text = (label.textContent ?? "").toLowerCase();
+    if (text.includes(words)) {
+      // Check for[htmlFor] → id
+      if (label.htmlFor) {
+        const target = document.getElementById(label.htmlFor);
+        if (target && isEditableElement(target)) return target;
+      }
+      // Check sibling/child input
+      const sibling = label.parentElement?.querySelector("input, textarea, select");
+      if (sibling && isEditableElement(sibling)) return sibling;
+    }
+  }
+
+  // Strategy 2: Find input/textarea with placeholder containing the field words
+  const inputs = document.querySelectorAll<HTMLElement>("input, textarea, select");
+  for (const el of inputs) {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      const ph = el.placeholder.toLowerCase();
+      if (ph.includes(words)) return el;
+    }
+  }
+
+  // Strategy 3: Match by name or id attribute
+  for (const el of inputs) {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+      if (el.name === field || el.id === field) return el;
+    }
+  }
+
+  return null;
+}
+
+function isEditableElement(el: Element): boolean {
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement
+  );
 }

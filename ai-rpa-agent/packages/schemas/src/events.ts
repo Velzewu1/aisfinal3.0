@@ -190,6 +190,18 @@ export const UserConfirmationRequestedEvent = BaseEvent.extend({
   type: z.literal("user_confirmation_requested"),
   payload: z.object({
     summary: z.string().min(1),
+    /** When present, the confirmation is a draft preview for a fill intent. */
+    draftFields: z
+      .array(
+        z.object({
+          field: z.string().min(1),
+          label: z.string().min(1).optional(),
+          value: z.string(),
+        }),
+      )
+      .optional(),
+    /** Intent kind that produced the draft (e.g. "fill", "set_status"). */
+    intentKind: z.string().min(1).optional(),
   }),
 });
 

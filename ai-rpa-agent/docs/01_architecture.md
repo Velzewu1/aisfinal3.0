@@ -16,7 +16,9 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
                                │ utterance + metadata
                                ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│  CONTEXT               patient / page / form labels for the LLM    │
+│  CONTEXT                                                          │
+│    PageContext ─── live DOM fields from the current page           │
+│    Knowledge  ─── supporting assets (patient + reusable)           │
 └────────────────────────────────────────────────────────────────────┘
                                │ contextualized utterance
                                ▼
@@ -56,6 +58,7 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
 | AI          | `extension/llm`                 | **Untrusted** — output must validate.  |
 | Control     | `packages/schemas`, `extension/controller` | **Trusted** — enforces rules. |
 | Execution   | `extension/content`             | **Trusted** — deterministic DOM.       |
+| Knowledge   | `extension/knowledge`           | **Trusted** — read-only context, no action authority. |
 | Service     | `backend/*`                     | **Trusted** — no DOM knowledge.        |
 | Audit       | `extension/background`, `infra/supabase` | **Trusted** — append-only.    |
 
@@ -83,8 +86,9 @@ All **control-path** effects (approved automation, scheduling) flow
 | `extension/llm/`                   | reasoning | no              | yes (provider)    | no       |
 | `packages/schemas/`                | contract  | no              | no                | no       |
 | `extension/controller/`            | decision  | no              | yes (backend)     | **yes**  |
-| `extension/content/`               | execution | **yes**         | no                | no       |
+| `extension/content/`               | execution + context | **yes** (executor only) | no    | no       |
 | `extension/background/`            | audit     | no              | yes (Supabase)    | no       |
+| `extension/knowledge/`             | context   | no              | no                | no       |
 | `extension/sidepanel/`             | UI orchestrator | its own DOM only | yes (Whisper STT via OpenAI API) — triggered via messages; HTTP runs in `extension/voice`, not in the panel (see §3) | no       |
 | `backend/api/`                     | service   | no              | —                 | no       |
 | `backend/core/scheduler.py`        | service   | no              | —                 | no       |
@@ -147,6 +151,7 @@ schemas and mirrored in `backend/models/` as Pydantic models. The core types:
 
 | Type                 | Owner                 | Consumer                              |
 |----------------------|-----------------------|---------------------------------------|
+| `PageContext`        | Content script (extractor) | Controller (context attach).      |
 | `LlmInterpretation`  | LLM (untrusted input) | Controller (after validation).        |
 | `Intent` (discriminated union) | Controller  | Planner → ActionPlan.                 |
 | `DomAction` (discriminated union) | Planner  | Executor.                             |
@@ -154,6 +159,17 @@ schemas and mirrored in `backend/models/` as Pydantic models. The core types:
 | `ExecutorResult`     | Executor              | Controller (event emission).          |
 | `ScheduleRequest` / `ScheduleResult` | Controller / Backend | Both sides of `/api/schedule`. |
 | `AgentEvent` (discriminated union) | Any trusted layer | Event store.                    |
+| `KnowledgeAsset` (discriminated union) | Knowledge registry | Controller (context attach). |
+| `RetrievedContext`  | Knowledge registry  | Controller → LLM prompt.                |
+
+`PageContext` is derived **strictly from the currently visible page** and never
+contains raw HTML, `innerHTML`, `outerHTML`, or unrestricted DOM snapshots.
+It is validated via `PageContext.safeParse()` at the controller boundary.
+
+`KnowledgeAsset` and `RetrievedContext` are **supporting context only** — they
+never approve actions, mutate DOM, or bypass controller policy. They are
+architecturally separate from `PageContext` and serve different channels of
+reasoning input. See [`09_knowledge_assets.md`](09_knowledge_assets.md).
 
 Contract change = schema version bump + matching Pydantic update. There is no
 other legitimate cross-layer shape.
@@ -173,8 +189,10 @@ other legitimate cross-layer shape.
 ```
 
 - The **service worker** is the message router and event bus host.
-- The **content script** is the executor; it is the only thing running in the
-  page context.
+- The **content script** has a **dual role**: (a) deterministic host-page
+  execution (`execute_plan`) and (b) read-only current-page context extraction
+  (`extract_page_context`). The extraction handler never mutates the DOM; the
+  executor is the only mutation path. Both handlers run in the page's JS realm.
 - The **side panel** is the user surface (push-to-talk, text fallback,
   confirmation buttons, event timeline) and a **UI orchestrator**: it **may**
   trigger the perception pipeline and **indirectly** cause STT (and follow-on

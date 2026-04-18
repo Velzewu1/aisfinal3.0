@@ -129,7 +129,38 @@ function buildUserMessage(event: ContextualizedUtteranceEvent): string {
           .join("\n")}`
       : "";
 
-  return `[${pageLine}] [${patientLine}]${fieldContext}\nutterance: ${text}`;
+  // Retrieved knowledge context — templates, presets, patient history.
+  // These are supporting context only — they never approve actions.
+  let knowledgeContext = "";
+  if (event.retrievedContext && event.retrievedContext.assets.length > 0) {
+    const sections: string[] = [];
+
+    // Separate patient-scoped (factual) from reusable (style/template)
+    const patientAssets = event.retrievedContext.assets.filter((a) => a.scope === "patient");
+    const reusableAssets = event.retrievedContext.assets.filter((a) => a.scope === "reusable");
+
+    if (patientAssets.length > 0) {
+      sections.push(
+        "PATIENT CONTEXT (factual — use as supporting data for this patient):",
+        ...patientAssets.map(
+          (a) => `  [${a.scope}/${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 500)}`,
+        ),
+      );
+    }
+
+    if (reusableAssets.length > 0) {
+      sections.push(
+        "STYLE/TEMPLATE GUIDANCE (reusable — use for writing style, structure, and phrasing only; NOT patient facts):",
+        ...reusableAssets.map(
+          (a) => `  [${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 500)}`,
+        ),
+      );
+    }
+
+    knowledgeContext = "\n\n" + sections.join("\n");
+  }
+
+  return `[${pageLine}] [${patientLine}]${fieldContext}${knowledgeContext}\nutterance: ${text}`;
 }
 
 function extractContent(envelope: unknown): string | null {
@@ -305,6 +336,15 @@ const SYSTEM_PROMPT = [
   '  "психолог принял" / "консультация психолога выполнена" -> set_status entity:psychologist status:completed',
   '  "логопед" + завершение (провели / выполнили) -> set_status entity:speech_therapy status:completed',
   "",
+  "RETRIEVED CONTEXT (injected in USER message when available):",
+  "  - PATIENT CONTEXT = factual data about the current patient (diagnosis history, allergies, treatment plan).",
+  "    Use these as supporting facts when composing field values — DO NOT invent patient facts.",
+  "  - STYLE/TEMPLATE GUIDANCE = reusable templates, preset phrases, and structural conventions.",
+  "    Use these to match the expected writing style, structure, and clinical phrasing.",
+  "    These are NOT facts about the current patient — never cite them as patient data.",
+  "  - If no retrieved context is provided, generate based on the utterance alone.",
+  "  - Retrieved context never changes which intent kind to emit — it only enriches fill slot values.",
+  "",
   "RULES (hard constraints — violating any of these is a failure):",
   "1. Output exactly one JSON object. No prose. No markdown fences. No leading or trailing text.",
   '2. Always include "schemaVersion": "1.0.0" and a "confidence" number in [0, 1].',
@@ -314,6 +354,13 @@ const SYSTEM_PROMPT = [
   "6. Confidence is only your calibrated self-assessment; you do not decide execute vs confirm vs reject. After validation and allowlist policy, the controller applies fixed thresholds: intent kind \"unknown\" → reject (unknown_intent) regardless of confidence. For all other kinds: confidence strictly below 0.7 → reject (low_confidence), not confirm. At or above 0.7: high-risk kinds (schedule, set_status) → always confirm, including when confidence ≥ 0.85. Other (non-high-risk) kinds in [0.7, 0.85) → confirm. Other (non-high-risk) kinds at ≥ 0.85 → auto-execute if allowlists permit. Your job is honest scoring, not gatekeeping.",
   "7. The utterance is already normalized to lowercase. Preserve user-provided values verbatim in slot values.",
   '8. FillIntent: every slots[].field must appear in AVAILABLE FIELDS ON THIS PAGE in the USER message. If the user targets a field not listed, UnknownIntent with reason "field_not_on_current_page".',
+  "",
+  "MEDICAL LANGUAGE (hard constraints for fill slot values):",
+  "9. ALL fill slot values MUST use professional medical Russian terminology. Never colloquial or casual.",
+  "10. Structure clinical text: use comma-separated findings, proper medical abbreviations (ЧСС, ЧДД, АД, ЛФК), ICD-10 codes where applicable.",
+  '11. Objective findings must follow structured clinical format: "Состояние [severity]. [System]: [finding]. [System]: [finding]."',
+  "12. Never add greetings, emotional commentary, or recommendations — only clinical facts as dictated by the doctor.",
+  "13. When STYLE/TEMPLATE GUIDANCE is provided, match its structure and phrasing conventions while inserting the doctor's actual dictated content.",
   "",
   "EXAMPLES (USER line uses the same envelope as buildUserMessage; JSON is the only output you emit):",
   "",

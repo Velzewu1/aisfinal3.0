@@ -2,6 +2,7 @@ import type { DomAction, ExecutorResult } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import { isExtensionMessage } from "../shared/messages.js";
 import { executor } from "./executor.js";
+import { extractCurrentPageContext } from "./page-context-extractor.js";
 import { injectNavigateToScheduleEvent } from "./navigate-bridge.js";
 import { initMicRecorder } from "./recorder.js";
 
@@ -11,7 +12,24 @@ function isNavigateToScheduleMessage(msg: unknown): msg is { type: "navigate_to_
   return typeof msg === "object" && msg !== null && (msg as { type?: unknown }).type === "navigate_to_schedule";
 }
 
+function isExtractPageContextMessage(msg: unknown): msg is { type: "extract_page_context" } {
+  return typeof msg === "object" && msg !== null && (msg as { type?: unknown }).type === "extract_page_context";
+}
+
 chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
+  // ── Read-only: current-page context extraction (dual role) ──────────
+  if (isExtractPageContextMessage(msg)) {
+    try {
+      const context = extractCurrentPageContext();
+      sendResponse({ ok: true, context });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.warn("extract_page_context failed", { error: message });
+      sendResponse({ ok: false, error: message });
+    }
+    return true;
+  }
+
   if (isNavigateToScheduleMessage(msg)) {
     injectNavigateToScheduleEvent();
     sendResponse({ ok: true });
@@ -20,6 +38,7 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   if (!isExtensionMessage(msg)) return false;
   if (msg.type !== "execute_plan") return false;
 
+  // ── Write: deterministic DOM execution ──────────────────────────────
   const { correlationId, actions } = msg;
   log.info("execute_plan received", { count: actions.length }, correlationId);
 

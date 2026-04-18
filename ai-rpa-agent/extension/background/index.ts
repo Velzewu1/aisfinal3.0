@@ -2,6 +2,9 @@ import { createLogger } from "../shared/logger.js";
 import { isExtensionMessage, type ExtensionMessage } from "../shared/messages.js";
 import { eventBus } from "./event-bus.js";
 import { syncEvent } from "./supabase-sync.js";
+import { registerAsset } from "../knowledge/index.js";
+import { seedReusableAssets } from "../knowledge/seed-reusable.js";
+import { newCorrelationId } from "../shared/correlation.js";
 import {
   continuousStartFromSidepanel,
   continuousStopFromSidepanel,
@@ -61,6 +64,9 @@ async function handleNavigateToScheduleFromSidepanel(): Promise<void> {
 
 chrome.runtime.onInstalled.addListener(() => {
   log.info("installed");
+  // Seed built-in reusable assets (templates, presets, exemplars)
+  const seedResult = seedReusableAssets();
+  log.info("seed complete", seedResult);
   void chrome.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch((err: unknown) => log.error("sidePanel.setPanelBehavior failed", String(err)));
@@ -131,6 +137,27 @@ function isAudioComplete(
     typeof m.base64 === "string" &&
     m.base64.length > 0 &&
     (m.sessionId === undefined || typeof m.sessionId === "string")
+  );
+}
+
+function isIngestFileMessage(
+  msg: unknown,
+): msg is {
+  type: "ingest_file";
+  correlationId: string;
+  file: { name: string; mimeType: string; sizeBytes: number };
+  parsedText: string;
+  patientId?: string;
+  contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom";
+} {
+  if (typeof msg !== "object" || msg === null) return false;
+  const m = msg as { type?: unknown; correlationId?: unknown; file?: unknown; parsedText?: unknown };
+  return (
+    m.type === "ingest_file" &&
+    typeof m.correlationId === "string" &&
+    typeof m.file === "object" &&
+    m.file !== null &&
+    typeof m.parsedText === "string"
   );
 }
 
@@ -208,6 +235,38 @@ chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
         sendResponse({ ok: true });
       } catch (err: unknown) {
         log.error("audio_complete forward failed", String(err));
+        sendResponse({ ok: false, error: String(err) });
+      }
+    })();
+    return true;
+  }
+  if (isIngestFileMessage(msg)) {
+    void (async () => {
+      try {
+        const assetId = newCorrelationId();
+        const result = registerAsset({
+          id: assetId,
+          scope: "patient",
+          label: msg.file.name,
+          tags: [msg.file.mimeType.split("/")[1] ?? "file"],
+          createdAt: new Date().toISOString(),
+          patientId: msg.patientId ?? "unknown",
+          contentType: msg.contentType ?? "custom",
+          content: msg.parsedText,
+        });
+        if (result.ok) {
+          log.info("file ingested as asset", {
+            assetId,
+            filename: msg.file.name,
+            patientId: msg.patientId ?? "unknown",
+          });
+          sendResponse({ ok: true, assetId });
+        } else {
+          log.warn("file ingestion failed validation", { error: result.error });
+          sendResponse({ ok: false, error: result.error });
+        }
+      } catch (err: unknown) {
+        log.error("ingest_file handler error", String(err));
         sendResponse({ ok: false, error: String(err) });
       }
     })();

@@ -6,9 +6,10 @@ the Chrome content script and accepts fully-specified, already-approved
 
 Source of truth:
 
-- `extension/content/index.ts` — message listener.
+- `extension/content/index.ts` — message listener (dual role: execution + context).
 - `extension/content/executor.ts` — action dispatch loop.
 - `extension/content/selectors.ts` — approved selector resolver.
+- `extension/content/page-context-extractor.ts` — read-only `PageContext` extraction.
 
 ---
 
@@ -22,6 +23,12 @@ Source of truth:
    defined in `packages/schemas/src/action.ts`.
 4. The executor resolves elements **only** through `selectByDataAttr`, which
    enforces an allowlist of attribute names.
+5. The content script has a **dual role**: `execute_plan` (write, DOM mutation)
+   and `extract_page_context` (read-only, context extraction). The extraction
+   handler (`page-context-extractor.ts`) never mutates the DOM, never reads
+   `innerHTML`/`outerHTML`/`textContent` from arbitrary elements, and returns
+   only policy-approved field descriptors. These two handlers are separate
+   code paths in `index.ts`.
 
 ## 2. Action schema (`DomAction`)
 
