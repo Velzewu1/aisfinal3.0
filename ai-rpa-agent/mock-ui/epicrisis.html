@@ -1,50 +1,151 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mock Damumed · Epicrisis</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <nav class="tabs">
-      <button data-nav="primary_exam">Primary exam</button>
-      <button data-nav="epicrisis" class="active">Epicrisis</button>
-      <button data-nav="schedule">Schedule</button>
-    </nav>
-
-    <main>
-      <h1>Discharge epicrisis</h1>
-
-      <form class="grid" onsubmit="event.preventDefault()">
-        <label>Admission date
-          <input type="date" data-field="admission_date" />
-        </label>
-        <label>Discharge date
-          <input type="date" data-field="discharge_date" />
-        </label>
-        <label>Final diagnosis
-          <input type="text" data-field="final_diagnosis" />
-        </label>
-        <label>Treatment summary
-          <textarea data-field="treatment_summary" rows="5"></textarea>
-        </label>
-        <label>Recommendations
-          <textarea data-field="recommendations" rows="4"></textarea>
-        </label>
-
-        <div class="actions">
-          <button type="button" data-action="save_epicrisis">Save</button>
-          <button type="button" data-action="submit_epicrisis" class="primary">Finalize</button>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Медицинская запись — Выписной эпикриз</title>
+</head>
+<body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
+  <div style="display:flex;min-height:100vh;">
+    <aside style="width:248px;min-width:248px;background:#1a2035;color:#c5cbe4;display:flex;flex-direction:column;border-right:1px solid #121728;">
+      <div style="padding:18px 16px;border-bottom:1px solid #2a3148;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7394;">Dmed / Damumed mock</div>
+        <div style="font-weight:600;font-size:15px;margin-top:4px;color:#fff;">Клиника · Стационар</div>
+      </div>
+      <nav style="flex:1;overflow-y:auto;padding:12px 0;">
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;">Пациент</div>
+        <a href="index.html" data-nav="patient_list" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Список пациентов</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">История болезни</div>
+        <a href="primary_exam.html" data-nav="primary_exam" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Первичный осмотр</a>
+        <a href="epicrisis.html" data-nav="epicrisis" style="display:block;padding:10px 16px;color:#fff;background:rgba(74,127,212,0.25);border-left:3px solid #4a7fd4;text-decoration:none;">Выписной эпикриз</a>
+        <a href="diary.html" data-nav="diary" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Дневниковая запись</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Назначения и расписание</div>
+        <a href="schedule.html" data-nav="schedule" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Расписание консультаций</a>
+        <a href="#" data-nav="assignments_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Назначения (лист)</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Диагностика</div>
+        <a href="#" data-nav="lab_results_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Результаты лаб. исследований</a>
+        <a href="#" data-nav="diagnoses_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Диагнозы</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Документы</div>
+        <a href="#" data-nav="digital_docs_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Цифровые документы</a>
+      </nav>
+      <div style="padding:14px 16px;border-top:1px solid #2a3148;font-size:12px;color:#6b7394;">Версия UI · mock 1.0</div>
+    </aside>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div style="background:linear-gradient(90deg,#1a2035 0%,#252b45 100%);color:#e8eaf2;padding:8px 24px;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+        <span><strong>Пациент:</strong> Иванова М.А. <span style="opacity:0.75;">(mock)</span></span>
+        <span style="opacity:0.6;">|</span>
+        <span><strong>Диагноз:</strong> (G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) …</span>
+        <span style="opacity:0.6;">|</span>
+        <span><strong>Койка:</strong> 14 / Невропатология детская</span>
+      </div>
+      <header style="background:#fff;border-bottom:1px solid #dde1ea;padding:12px 24px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+          <a href="primary_exam.html" data-nav="primary_exam" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Первичный осмотр</a>
+          <a href="epicrisis.html" data-nav="epicrisis" style="padding:8px 14px;background:#4a7fd4;color:#fff;text-decoration:none;border-radius:3px;font-size:13px;font-weight:500;">Выписной эпикриз</a>
+          <a href="schedule.html" data-nav="schedule" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Расписание</a>
+          <a href="diary.html" data-nav="diary" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Дневник</a>
         </div>
-      </form>
-
-      <section class="status">
-        <span>Epicrisis status:</span>
-        <span data-status-entity="epicrisis" data-status="draft">draft</span>
-      </section>
-    </main>
-
-    <script src="./selectors-demo.js"></script>
-  </body>
+        <div style="font-weight:600;font-size:17px;color:#1a2035;">Медицинская запись · (600) Выписной эпикриз</div>
+        <div style="font-size:12px;color:#6b7394;margin-top:4px;">Секции соответствуют боковой навигации выгрузки «Медицинская запись — Стационар7»</div>
+      </header>
+      <main style="flex:1;padding:24px;overflow:auto;">
+        <form style="max-width:920px;background:#fff;border:1px solid #dde1ea;border-radius:4px;padding:24px 28px 32px;box-shadow:0 1px 3px rgba(26,32,53,0.06);">
+          <div style="display:grid;gap:18px;margin-bottom:24px;">
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Дата</label>
+              <input type="text" data-field="dt_reg_date_time" value="17.04.2026 15:05" style="width:100%;max-width:360px;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Форма (cmbMedicalForm)</label>
+              <input type="text" data-field="cmb_medical_form" value="Форма выписного эпикриза (mock)" style="width:100%;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Подтип медицинской записи (cmbMedicalRecordTypeMo)</label>
+              <input type="text" data-field="cmb_medical_record_type_mo" value="—" style="width:100%;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Жалобы при поступлении</label>
+              <textarea data-field="complaints_on_admission" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Анамнез заболевания</label>
+              <textarea data-field="disease_anamnesis" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Анамнез жизни</label>
+              <textarea data-field="life_anamnesis" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Аллергологический анамнез</label>
+              <textarea data-field="allergy_anamnesis" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Объективные данные</label>
+              <textarea data-field="objective_findings" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Лабораторно-диагностические исследования</label>
+              <textarea data-field="epicrisis_lab_diagnostics" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">ОАК, биохимия крови — без патологий (mock). Ликвор — не исследовался.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Инструментальные исследования</label>
+              <textarea data-field="epicrisis_instrumental" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">НМР головного мозга — по плану (mock). ЭЭГ — не проводилась.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Консультации специалистов</label>
+              <textarea data-field="epicrisis_specialist_consults" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Офтальмолог — заключение уточнить (mock). Консультация психолога — по показаниям.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Гемодиализ</label>
+              <textarea data-field="epicrisis_hemodialysis" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Не проводился.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Проведённое лечение</label>
+              <textarea data-field="epicrisis_treatment_performed" rows="4" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Инфузионная терапия по показаниям, симптоматическая терапия, режим. Наблюдение невролога, контроль витальных функций (mock).</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Операции</label>
+              <textarea data-field="epicrisis_operations" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Оперативное лечение не проводилось.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Состояние при выписке</label>
+              <textarea data-field="epicrisis_discharge_condition" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Состояние удовлетворительное. Неврологический статус стабилен. Жалобы минимальны.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Исход лечения</label>
+              <textarea data-field="epicrisis_outcome" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Улучшение. Выписан домой под наблюдение поликлиники.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Лечебные и трудовые рекомендации</label>
+              <textarea data-field="epicrisis_recommendations" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Режим, диета, контроль у невролога через 14 дней. При ухудшении — неотложная помощь.</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Прочее</label>
+              <textarea data-field="epicrisis_other" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Дополнительно</label>
+              <textarea data-field="epicrisis_additional" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Итоговая запись</label>
+              <textarea data-field="epicrisis_final" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">Пациент выписан с рекомендациями. Диагноз подтверждён клинически и инструментально (mock).</textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">Диагноз (МКБ-10, полная формулировка)</label>
+              <textarea data-field="diagnosis" rows="2" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;box-sizing:border-box;">(G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) В личном анамнезе болезни нервной системы и органов чувств</textarea>
+            </div>
+          </div>
+          <div style="margin-top:28px;padding-top:20px;border-top:1px solid #eef0f5;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <div data-status-entity="epicrisis" data-status="draft" style="display:inline-block;padding:4px 12px;border-radius:4px;background:#f0f4ff;color:#4a7fd4;font-size:13px;">Статус: Черновик</div>
+            <button type="button" data-action="save-form" style="padding:10px 22px;background:#4a7fd4;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Сохранить</button>
+            <button type="button" data-action="submit-form" style="padding:10px 22px;background:#1a2035;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Подписать и закрыть эпикриз</button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+</body>
 </html>

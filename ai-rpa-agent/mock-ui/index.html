@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Стационар — Список пациентов</title>
+</head>
+<body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
+  <div style="display:flex;min-height:100vh;">
+    <aside style="width:248px;min-width:248px;background:#1a2035;color:#c5cbe4;display:flex;flex-direction:column;border-right:1px solid #121728;">
+      <div style="padding:18px 16px;border-bottom:1px solid #2a3148;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7394;">Dmed / Damumed mock</div>
+        <div style="font-weight:600;font-size:15px;margin-top:4px;color:#fff;">Клиника · Стационар</div>
+      </div>
+      <nav style="flex:1;overflow-y:auto;padding:12px 0;">
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;">Пациент</div>
+        <a href="index.html" data-nav="patient_list" style="display:block;padding:10px 16px;color:#fff;background:rgba(74,127,212,0.25);border-left:3px solid #4a7fd4;text-decoration:none;">Список пациентов</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">История болезни</div>
+        <a href="primary_exam.html" data-nav="primary_exam" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Первичный осмотр</a>
+        <a href="epicrisis.html" data-nav="epicrisis" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Выписной эпикриз</a>
+        <a href="diary.html" data-nav="diary" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Дневниковая запись</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Назначения и расписание</div>
+        <a href="schedule.html" data-nav="schedule" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Расписание консультаций</a>
+        <a href="#" data-nav="assignments_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Назначения (лист)</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Диагностика</div>
+        <a href="#" data-nav="lab_results_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Результаты лаб. исследований</a>
+        <a href="#" data-nav="diagnoses_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Диагнозы</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Документы</div>
+        <a href="#" data-nav="digital_docs_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Цифровые документы</a>
+      </nav>
+      <div style="padding:14px 16px;border-top:1px solid #2a3148;font-size:12px;color:#6b7394;">Версия UI · mock 1.0</div>
+    </aside>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <header style="background:#fff;border-bottom:1px solid #dde1ea;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(0,0,0,0.04);">
+        <div>
+          <div style="font-size:12px;color:#6b7394;">Отделение · Невропатология детская</div>
+          <div style="font-weight:600;font-size:16px;color:#1a2035;">Список госпитализированных пациентов</div>
+        </div>
+        <div style="text-align:right;font-size:12px;color:#6b7394;">Пользователь: <span style="color:#1a2035;font-weight:500;">Врач стационара (mock)</span></div>
+      </header>
+      <main style="flex:1;padding:24px;overflow:auto;">
+        <div style="background:#fff;border:1px solid #dde1ea;border-radius:4px;overflow:hidden;">
+          <div style="padding:14px 20px;border-bottom:1px solid #eef0f5;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:600;color:#1a2035;">Реестр пациентов</span>
+            <button type="button" data-action="refresh-patient-list" style="padding:8px 16px;background:#4a7fd4;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:13px;">Обновить</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#f7f8fc;color:#5a6178;text-align:left;">
+                  <th style="padding:12px 16px;border-bottom:1px solid #dde1ea;font-weight:600;">ID</th>
+                  <th style="padding:12px 16px;border-bottom:1px solid #dde1ea;font-weight:600;">ФИО</th>
+                  <th style="padding:12px 16px;border-bottom:1px solid #dde1ea;font-weight:600;">Диагноз</th>
+                  <th style="padding:12px 16px;border-bottom:1px solid #dde1ea;font-weight:600;">Дата поступления</th>
+                  <th style="padding:12px 16px;border-bottom:1px solid #dde1ea;font-weight:600;">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-action="open-patient" data-patient-id="MOCK-PED-INPT-001" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-PED-INPT-001</td>
+                  <td style="padding:12px 16px;">Иванова Мария Алексеевна</td>
+                  <td style="padding:12px 16px;max-width:280px;">(G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) …</td>
+                  <td style="padding:12px 16px;">13.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#e8f2ff;color:#2d5aa0;padding:3px 8px;border-radius:3px;font-size:12px;">Госпитализирован</span></td>
+                </tr>
+                <tr data-action="open-patient" data-patient-id="MOCK-PED-INPT-DIARY-001" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-PED-INPT-DIARY-001</td>
+                  <td style="padding:12px 16px;">Петрова Елена Сергеевна</td>
+                  <td style="padding:12px 16px;max-width:280px;">(G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) …</td>
+                  <td style="padding:12px 16px;">14.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#e8f2ff;color:#2d5aa0;padding:3px 8px;border-radius:3px;font-size:12px;">Стационар</span></td>
+                </tr>
+                <tr data-action="open-patient" data-patient-id="MOCK-OUTPAT-SERVICE-001" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-OUTPAT-SERVICE-001</td>
+                  <td style="padding:12px 16px;">Сидоров Игорь Павлович</td>
+                  <td style="padding:12px 16px;max-width:280px;">(A02.005.000) Консультация: Психолог — услуга</td>
+                  <td style="padding:12px 16px;">01.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#eefaf0;color:#2d6a3e;padding:3px 8px;border-radius:3px;font-size:12px;">Амбулаторно</span></td>
+                </tr>
+                <tr data-action="open-patient" data-patient-id="MOCK-GER-INPT-002" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-GER-INPT-002</td>
+                  <td style="padding:12px 16px;">Ким Валентин Дмитриевич</td>
+                  <td style="padding:12px 16px;max-width:280px;">(Z86.6) В личном анамнезе болезни нервной системы…</td>
+                  <td style="padding:12px 16px;">10.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#e8f2ff;color:#2d5aa0;padding:3px 8px;border-radius:3px;font-size:12px;">Госпитализирован</span></td>
+                </tr>
+                <tr data-action="open-patient" data-patient-id="MOCK-CARD-OUT-004" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-CARD-OUT-004</td>
+                  <td style="padding:12px 16px;">Алимов Рустем Кайратович</td>
+                  <td style="padding:12px 16px;max-width:280px;">(G93.2) Доброкачественная внутричерепная гипертензия</td>
+                  <td style="padding:12px 16px;">08.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#f5f5f5;color:#555;padding:3px 8px;border-radius:3px;font-size:12px;">Выписан</span></td>
+                </tr>
+                <tr data-action="open-patient" data-patient-id="MOCK-NEURO-FU-005" style="cursor:pointer;border-bottom:1px solid #eef0f5;" onmouseover="this.style.background='#f3f6fd'" onmouseout="this.style.background=''">
+                  <td style="padding:12px 16px;color:#4a7fd4;font-weight:600;">MOCK-NEURO-FU-005</td>
+                  <td style="padding:12px 16px;">Омарова Ляззат Нурлановна</td>
+                  <td style="padding:12px 16px;max-width:280px;">(G93.2) Доброкачественная внутричерепная гипертензия (Направительный)</td>
+                  <td style="padding:12px 16px;">15.04.2026</td>
+                  <td style="padding:12px 16px;"><span style="background:#fff8e6;color:#8a6d1a;padding:3px 8px;border-radius:3px;font-size:12px;">Дневной стационар</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('[data-action="open-patient"]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        window.location.href = 'primary_exam.html?patient=' + encodeURIComponent(row.getAttribute('data-patient-id'));
+      });
+    });
+  </script>
+</body>
+</html>

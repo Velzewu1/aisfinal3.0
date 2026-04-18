@@ -35,9 +35,10 @@ const SINGLE_WORD_FILLERS: ReadonlySet<string> = new Set(
 // Order matters: entities appear in `possibleEntities` in rule-declaration order
 // so identical inputs always produce identical arrays.
 const HINT_RULES: ReadonlyArray<{ readonly substr: string; readonly entity: string }> = [
-  { substr: "жалоб", entity: "complaints" },
-  { substr: "боль", entity: "symptoms" },
-  { substr: "назнач", entity: "treatment" },
+  { substr: "жалоб", entity: "complaints_on_admission" },
+  { substr: "боль", entity: "complaints_on_admission" },
+  { substr: "анамнез", entity: "disease_anamnesis" },
+  { substr: "назнач", entity: "diary_assignments" },
 ];
 
 export type NormalizedUtteranceEvent = Readonly<{

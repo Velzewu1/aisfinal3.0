@@ -8,6 +8,9 @@ This document is the **canonical runtime execution chain**. It contains the
 Every step below runs under a single `correlationId` that threads the full
 interpret → decide → execute → audit chain.
 
+**Text input path:** Typed utterances enter at Step 4 (normalize), skipping
+Steps 1–3 (voice capture, preprocess, STT).
+
 ---
 
 ## Perception
@@ -25,10 +28,7 @@ Audio → text. Medical-vocabulary-tuned if available.
 
 ### Step 4 — Utterance normalization
 Cleanup: punctuation, terminology, language, and PHI minimization per policy.
-Output: normalized text.
-
-**Text-input path:** Typed utterances enter at Step 4 (normalize), skipping
-Steps 1–3 (voice capture, preprocess, STT).
+Output: normalized text. (Typed input joins here; see pipeline note above.)
 
 ---
 
@@ -50,18 +50,18 @@ control signal.
 ### Step 7 — Schema validation (Zod)
 `LlmInterpretation.safeParse(raw)` on the client. On Zod failure: emit
 `validation_failed` and either retry with a constrained prompt or request
-clarification from the user. After Zod succeeds, the controller applies the
-intent **policy allowlist** (controller-enumerated values, e.g. nav targets,
-fill fields); allowlist failure emits `validation_failed` as well. Only when
-**both** Zod validation and allowlist checks succeed does the controller emit
-`intent_parsed` and then `validation_passed`.
+clarification from the user. The controller then applies the intent **policy
+allowlist** (controller-enumerated values, e.g. nav targets, fill fields);
+allowlist failure emits `validation_failed` as well. Emit
+`intent_parsed`, then **`validation_passed` on Zod + policy allowlist success**.
 
 ---
 
 ## Decision
 
-Steps 8–11 are **Decision** layer only. **Confidence evaluation is not part of
-Validation** (Step 7 is the validation boundary for structured LLM output).
+Steps 8–11 are **Decision** layer only. **Step 8 (confidence evaluation) lives
+here under Decision, not under Validation.** Step 7 is the validation boundary
+for structured LLM output.
 
 ### Step 8 — Confidence evaluation
 Extract `confidence ∈ [0, 1]` and attach risk flags derived from the
@@ -118,8 +118,8 @@ carries `x-correlation-id`. Emits `schedule_requested`.
 
 ### Step 16 — CP-SAT optimization
 Backend solves the constraint problem (doctors × procedures × windows over a
-9-day horizon by default) and returns a `ScheduleResult`. Emits
-`schedule_generated` on receipt.
+9-day horizon by default) and returns a `ScheduleResult`. Controller emits
+`schedule_generated` on HTTP response receipt from backend.
 
 ### Step 17 — Schedule injection back to DOM
 Controller wraps the `ScheduleResult` as an `inject_schedule` `DomAction` and

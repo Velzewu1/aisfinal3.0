@@ -17,7 +17,10 @@ import {
 } from "../voice/index.js";
 import type { TranscribedTextEvent } from "../voice/transcribe.js";
 import type { VoiceCapturedEvent } from "../voice/recorder.js";
-import { tryBuildScheduleRequestFromContext } from "./schedule-request-from-context.js";
+import {
+  tryBuildScheduleRequestFromContext,
+  type ValidatedScheduleContext,
+} from "./schedule-request-from-context.js";
 
 const log = createLogger("controller");
 const backend = new BackendClient();
@@ -27,8 +30,14 @@ const backend = new BackendClient();
 // narrates but cannot itself guarantee. Keep these in sync with
 // `llm/interpret.ts` and `content/selectors.ts`.
 const ALLOWED_NAV_TARGETS: ReadonlySet<string> = new Set([
-  "primary_exam",
+  "assignments_stub",
+  "diagnoses_stub",
+  "diary",
+  "digital_docs_stub",
   "epicrisis",
+  "lab_results_stub",
+  "patient_list",
+  "primary_exam",
   "schedule",
 ]);
 const ALLOWED_STATUS_ENTITIES: ReadonlySet<string> = new Set([
@@ -42,14 +51,40 @@ const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "completed",
 ]);
 const ALLOWED_FILL_FIELDS: ReadonlySet<string> = new Set([
-  "patient_id",
-  "patient_name",
-  "patient_dob",
-  "complaints",
-  "anamnesis",
-  "objective_status",
-  "treatment",
+  "allergy_anamnesis",
+  "cmb_medical_form",
+  "cmb_medical_record_type_mo",
+  "cmb_resuscitation_status",
+  "complaints_on_admission",
   "diagnosis",
+  "diary_assignments",
+  "diary_event_timestamp",
+  "diary_objective",
+  "diary_subjective",
+  "diary_time",
+  "disease_anamnesis",
+  "dt_reg_date_time",
+  "epicrisis_additional",
+  "epicrisis_discharge_condition",
+  "epicrisis_final",
+  "epicrisis_hemodialysis",
+  "epicrisis_instrumental",
+  "epicrisis_lab_diagnostics",
+  "epicrisis_operations",
+  "epicrisis_other",
+  "epicrisis_outcome",
+  "epicrisis_recommendations",
+  "epicrisis_specialist_consults",
+  "epicrisis_treatment_performed",
+  "life_anamnesis",
+  "ntb_bottom_pressure",
+  "ntb_breath",
+  "ntb_pulse",
+  "ntb_saturation",
+  "ntb_temperature",
+  "ntb_top_pressure",
+  "ntb_weight",
+  "objective_findings",
 ]);
 
 function checkIntentPolicy(intent: Intent): string | null {
@@ -241,11 +276,68 @@ async function runFromUtterance(
     return;
   }
 
-  await runWithInterpretation(correlationId, validation.data);
+  await runWithInterpretation(correlationId, validation.data, contextualized.context);
 }
 
-async function runWithInterpretation(correlationId: string, interpretation: LlmInterpretation): Promise<void> {
+async function runWithInterpretation(
+  correlationId: string,
+  interpretation: LlmInterpretation,
+  scheduleContext?: ValidatedScheduleContext,
+): Promise<void> {
   const { intent } = interpretation;
+
+  // Fallback: LLM truthfully reports it cannot construct a ScheduleRequest
+  // (per SCHEDULING AUTHORITY in the prompt). The controller — the only
+  // layer allowed to build `ScheduleRequest` — deterministically assembles
+  // it from validated session/UI context, then re-enters the normal
+  // schedule pipeline (decision gate → backend → executor). The LLM never
+  // sees or constructs the request.
+  if (
+    intent.kind === "unknown" &&
+    intent.reason === "schedule_context_required" &&
+    scheduleContext !== undefined
+  ) {
+    const built = tryBuildScheduleRequestFromContext(scheduleContext);
+    if (!built.ok) {
+      log.warn(
+        "schedule_context_fallback_build_failed",
+        { error: built.error },
+        correlationId,
+      );
+      await emit(
+        makeEvent("validation_failed", correlationId, {
+          errors: [built.error],
+        }),
+      );
+      return;
+    }
+
+    const rebuilt = LlmInterpretation.safeParse({
+      schemaVersion: "1.0.0",
+      intent: { kind: "schedule", request: built.request },
+      confidence: 1,
+    });
+    if (!rebuilt.success) {
+      const issues = rebuilt.error.issues
+        .slice(0, 10)
+        .map((i) => `${i.path.join(".") || "<root>"}:${i.code}`);
+      await emit(
+        makeEvent("validation_failed", correlationId, {
+          errors: issues.length > 0 ? issues : ["interpretation_parse_failed"],
+        }),
+      );
+      return;
+    }
+
+    log.info(
+      "schedule_context_fallback",
+      { reason: "schedule_context_required" },
+      correlationId,
+    );
+
+    await runWithInterpretation(correlationId, rebuilt.data, scheduleContext);
+    return;
+  }
 
   const policyError = checkIntentPolicy(intent);
   if (policyError) {

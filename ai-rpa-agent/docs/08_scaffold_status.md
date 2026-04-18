@@ -3,7 +3,10 @@
 Engineering readiness snapshot for the current build. No architecture, no
 rationale — only: **is this module wired, and what's the next step?**
 
-Last verified: scaffold build on `0.1.0`.
+**Overall status: MVP COMPLETE** (end-to-end voice/text → validation → decision
+→ executor and optional CP-SAT + Supabase audit).
+
+Last verified: `0.1.0` MVP build.
 
 ---
 
@@ -22,86 +25,83 @@ Last verified: scaffold build on `0.1.0`.
 
 | Module                                 | Wired? | Notes                                                      |
 |----------------------------------------|--------|------------------------------------------------------------|
-| `extension/voice/`                     | ✅     | `MediaRecorder` wrapper; start / stop; emits metadata.     |
-| `extension/llm/client.ts`              | ✅     | Validates provider output against `LlmInterpretation`.     |
-| `extension/llm/providers/claude.ts`    | ❌     | Scaffold; throws `llm_not_implemented`.                    |
-| `extension/llm/providers/openai.ts`    | ❌     | Scaffold; throws `llm_not_implemented`.                    |
+| **Stack: Whisper STT + LLM reasoning** | ✅   | **IMPLEMENTED:** OpenAI Whisper STT (`voice/transcribe.ts`) + OpenAI Chat Completions structured JSON (`llm/interpret.ts`, Step 6 Tool Use / JSON-object mode). Alternate vendors: `llm/providers/*` + `LlmClient` pattern. |
+| `extension/voice/`                     | ✅     | Content-tab + content-script mic path; preprocess + Whisper STT. |
+| `extension/llm/interpret.ts`           | ✅     | Primary reasoning path: OpenAI, `response_format: json_object`. |
+| `extension/llm/client.ts`              | ✅     | Validates provider output against `LlmInterpretation`.       |
+| `extension/llm/providers/claude.ts`    | ✅     | Claude Tool Use–shaped provider class (swap-in; live traffic uses `interpret.ts` today). |
+| `extension/llm/providers/openai.ts`    | ✅     | Structured-output provider class (swap-in; live traffic uses `interpret.ts` today). |
 | `extension/controller/confidence.ts`   | ✅     | Threshold (0.7) + risk classifier.                         |
 | `extension/controller/planner.ts`      | ✅     | Pure `Intent → DomAction[]` for all intent kinds.          |
-| `extension/controller/backend-client.ts` | ✅   | `POST /api/schedule`; validates response; no retry yet.    |
-| `extension/controller/index.ts`        | ✅     | Full decision pipeline; confirmation protocol; events.     |
-| `extension/content/executor.ts`        | ✅     | Deterministic dispatch for all five `DomAction` kinds.     |
+| `extension/controller/backend-client.ts` | ✅   | `POST /api/schedule`; validates response with Zod.         |
+| `extension/controller/index.ts`        | ✅     | Full pipeline; **IMPLEMENTED** nav/fill/status allowlists + policy gate. |
+| `extension/content/executor.ts`        | ✅     | Deterministic dispatch for all `DomAction` kinds.          |
 | `extension/content/selectors.ts`       | ✅     | Allowlist enforced; value regex enforced.                  |
+| `extension/content/recorder.ts`        | ✅     | **IMPLEMENTED:** mic capture in page context for demo UI.   |
 | `extension/background/router.ts`       | ✅     | Routes all `ExtensionMessage` variants.                    |
 | `extension/background/event-bus.ts`    | ✅     | In-worker pub/sub with ring buffer.                        |
-| `extension/background/supabase-sync.ts`| 🟡     | Implemented; under reconciliation with the `ai_rpa_events` migration. |
-| `extension/sidepanel/main.ts`          | ✅     | Record / stop / text / confirm buttons.                    |
+| `extension/background/supabase-sync.ts`| ✅     | **IMPLEMENTED:** non-blocking insert to `ai_rpa_events` when URL/key present. |
+| `extension/sidepanel/main.ts`          | ✅     | Record / stop / text / confirm; timeline via events.      |
 | `backend/api/main.py`                  | ✅     | FastAPI app; CORS; health; routers mounted.                |
-| `backend/api/routers/schedule.py`      | ✅     | Contract surface is live; body validated.                  |
+| `backend/api/routers/schedule.py`      | ✅     | Contract surface is live; body validated.                 |
 | `backend/api/routers/events.py`        | ✅     | In-memory append + recent query.                           |
-| `backend/core/scheduler.py`            | 🟡    | OR-Tools imported; constraints are a deterministic stub.   |
-| `backend/core/event_sink.py`           | 🟡    | In-memory ring buffer only; Supabase binding pending.      |
+| `backend/core/scheduler.py`            | ✅     | **IMPLEMENTED:** full OR-Tools CP-SAT model (constraints + objective + timed solve; greedy fallback when infeasible). |
+| `backend/core/event_sink.py`           | ✅     | In-memory ring buffer for `/api/events`.                   |
 | `mock-ui/`                             | ✅     | All three pages with approved `data-*` attributes.         |
-| `infra/supabase/0001_events.sql`       | ✅     | Append-only migration ready; not applied by scaffold.      |
+| `infra/supabase/0001_events.sql`       | ✅     | Append-only migration ready; apply for remote audit.       |
 
-Legend: ✅ wired · 🟡 skeleton (runs, minimal logic) · ❌ not wired.
+Legend: ✅ wired / implemented.
 
-## 3. Explicit non-wiring
-
-The pipeline is **deliberately** broken at one seam so the AI surface can be
-developed in isolation:
+## 3. Live pipeline (MVP)
 
 ```
-voice ─► sidepanel ─► background ─► controller
-                                       │
-                                       │  LLM call is stubbed here:
-                                       │  provider.interpret() throws
-                                       │  llm_not_implemented.
-                                       ▼
-                                  (no-op)
+voice / text ─► sidepanel ─► background ─► controller
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    ▼                         ▼                         ▼
+              preprocess +            LLM interpret            Zod + allowlists
+              Whisper STT             (OpenAI)                  + decision gate
+                    │                         │                         │
+                    └─────────────────────────┴─────────────────────────┘
+                                              │
+                    ┌─────────────────────────┴─────────────────────────┐
+                    ▼                                                   ▼
+             content executor                                 POST /api/schedule
+             (execute_plan)                                   (CP-SAT)
+                    │                                                   │
+                    └─────────────────────────┬─────────────────────────┘
+                                              ▼
+                                    AgentEvent + Supabase sync
 ```
 
-Downstream of the seam — controller → planner → executor, controller →
-backend — is fully wired. That is why the smoke test in
-[`07_dev_setup.md`](07_dev_setup.md) bypasses voice/LLM and dispatches a
-`DomAction[]` directly to the content script.
-
-## 4. Success criteria (frozen)
+## 4. Success criteria (MVP)
 
 | Criterion                                                | Status |
 |----------------------------------------------------------|--------|
 | Extension builds without errors (MV3)                    | ✅     |
 | Modules cleanly separated by layer                       | ✅     |
-| DOM executor exists but is NOT connected to AI yet       | ✅ (by design) |
-| Backend runs a FastAPI server with a CP-SAT endpoint     | ✅     |
-| Schemas are shared and strongly typed (Zod + Pydantic)   | ✅     |
-| Mock UI is usable for testing DOM actions                | ✅     |
+| DOM executor connected to validated intents + plans      | ✅     |
+| Backend runs FastAPI with CP-SAT `/api/schedule`           | ✅     |
+| Schemas shared and strongly typed (Zod + Pydantic)       | ✅     |
+| Mock UI usable for testing DOM actions                   | ✅     |
 | Events carry `correlationId` end-to-end                  | ✅     |
-| Supabase sync is wired                                   | 🟡 implemented; under reconciliation |
-| LLM provider returns validated JSON                      | ❌ pending |
-| CP-SAT solver enforces full constraint set               | 🟡 stub |
+| Supabase sync wired (optional credentials)               | ✅     |
+| LLM + STT paths return structured / text for controller  | ✅     |
+| CP-SAT solver enforces full constraint set (OR-Tools)    | ✅     |
+| Controller allowlists enforced                           | ✅     |
+| Audio pipeline via content-script recorder + STT         | ✅     |
 
-## 5. Next milestones (ordered)
+## 5. Next milestones (post-MVP)
 
-1. **Wire one LLM provider** behind `LlmClient.interpret`. Keep provider calls
-   in the controller only; never move them into content/background hot
-   paths.
-2. **Complete `scheduler.solve`** with the constraint set from
-   [`06_backend.md`](06_backend.md) §4. Add unit tests against pinned inputs.
-3. **Reconcile Supabase sync** in `supabase-sync.ts` against the
-   `ai_rpa_events` migration (table name, column names, row shape). Sink
-   is implemented and non-blocking; remaining work is verifying
-   end-to-end insert parity with `infra/supabase/0001_events.sql`.
-4. **Side-panel event timeline** that subscribes to the background event bus
-   and renders recent events by `correlationId`.
-5. **Alternate-selector fallback** in the controller for
-   `dom_target_missing` (policy-gated).
+1. Hardening: retries, backoff, and clearer failure events for schedule/STT.
+2. Provider wiring: route all LLM traffic through `LlmClient` + chosen provider consistently.
+3. Supabase: verify RLS and production insert paths against deployed project.
+4. **Alternate-selector fallback** in the controller for `dom_target_missing`
+   (policy-gated).
 
-## 6. Explicitly out of scope for the scaffold
+## 6. Explicitly out of scope for this MVP doc
 
-- Authn/authz on the backend.
-- Tenant-scoped RLS `select` policies on `ai_rpa_events`.
-- ASR (Whisper) integration; the voice module stops at audio blob metadata.
-- Retry/backoff on the backend client beyond the single budgeted retry that
-  the controller will own.
-- UI polish on the side panel beyond functional controls.
+- Authn/authz on the backend beyond basic CORS.
+- Tenant-scoped RLS `select` policies on `ai_rpa_events` (migration is ready;
+  policies are deploy-time).
+- UI polish on the side panel beyond functional controls and timeline.

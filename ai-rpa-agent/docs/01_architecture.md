@@ -16,6 +16,11 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
                                │ utterance + metadata
                                ▼
 ┌────────────────────────────────────────────────────────────────────┐
+│  CONTEXT               patient / page / form labels for the LLM    │
+└────────────────────────────────────────────────────────────────────┘
+                               │ contextualized utterance
+                               ▼
+┌────────────────────────────────────────────────────────────────────┐
 │  REASONING (LLM)       untrusted; returns STRUCTURED JSON ONLY     │
 └────────────────────────────────────────────────────────────────────┘
                                │ LlmInterpretation (raw)
@@ -33,7 +38,8 @@ logs.** Those live in [`02_agent_loop.md`](02_agent_loop.md),
                   ▼                                ▼
 ┌──────────────────────────┐       ┌────────────────────────────────┐
 │  EXECUTION               │       │  BACKEND (FastAPI)             │
-│  only DOM mutator        │       │  CP-SAT, no DOM                │
+│  only DOM mutator;       │       │  CP-SAT, no DOM                │
+│  Step 12: selector map   │       │                                │
 └──────────────────────────┘       └────────────────────────────────┘
                   │                                │
                   └──────────────┬─────────────────┘
@@ -79,7 +85,7 @@ All **control-path** effects (approved automation, scheduling) flow
 | `extension/controller/`            | decision  | no              | yes (backend)     | **yes**  |
 | `extension/content/`               | execution | **yes**         | no                | no       |
 | `extension/background/`            | audit     | no              | yes (Supabase)    | no       |
-| `extension/sidepanel/`             | UI orchestrator | its own DOM only | **indirect** — may start perception/STT **via messages**; no direct STT/LLM HTTP in the panel (see §3) | no       |
+| `extension/sidepanel/`             | UI orchestrator | its own DOM only | yes (Whisper STT via OpenAI API) — triggered via messages; HTTP runs in `extension/voice`, not in the panel (see §3) | no       |
 | `backend/api/`                     | service   | no              | —                 | no       |
 | `backend/core/scheduler.py`        | service   | no              | —                 | no       |
 
@@ -121,12 +127,15 @@ Detailed decision logic lives in [`03_controller.md`](03_controller.md).
 - Compliance: a reviewer can demonstrate exactly how automation touches the
   host system.
 
-The executor also **owns selector resolution**: `DomAction`s cross the
-Decision → Execution boundary carrying logical ids only (e.g.
-`field: "complaints"`), and the executor is the single place that maps
-those ids to approved `data-*` attributes. The controller and planner
-never emit CSS or XPath. This keeps the Decision layer DOM-free and
-makes selector policy reviewable in one file.
+### Execution: DOM selector resolution (Step 12)
+
+`DomAction`s cross the Decision → Execution boundary carrying logical ids only
+(e.g. `field: "complaints"`). **Selector resolution** — mapping those ids to
+approved `data-*` attributes — is **Execution-only** (Step 12 in
+[`02_agent_loop.md`](02_agent_loop.md)): the executor is the single place that
+performs it inside `dispatch` for each action. The controller and planner never
+emit CSS or XPath. This keeps the Decision layer DOM-free and makes selector
+policy reviewable in one file (`content/selectors.ts`).
 
 Selector policy, action schema, and missing-element handling live in
 [`04_executor.md`](04_executor.md).

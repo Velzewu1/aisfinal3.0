@@ -1,58 +1,106 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mock Damumed · Primary Exam</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <nav class="tabs">
-      <button data-nav="primary_exam" class="active">Primary exam</button>
-      <button data-nav="epicrisis">Epicrisis</button>
-      <button data-nav="schedule">Schedule</button>
-    </nav>
-
-    <main>
-      <h1>Primary examination</h1>
-
-      <form class="grid" onsubmit="event.preventDefault()">
-        <label>Patient ID
-          <input type="text" data-field="patient_id" />
-        </label>
-        <label>Full name
-          <input type="text" data-field="patient_name" />
-        </label>
-        <label>Date of birth
-          <input type="date" data-field="patient_dob" />
-        </label>
-        <label>Complaint
-          <textarea data-field="complaints" rows="3"></textarea>
-        </label>
-        <label>Anamnesis
-          <textarea data-field="anamnesis" rows="3"></textarea>
-        </label>
-        <textarea data-field="objective_status" rows="3" 
-          placeholder="Объективный статус"></textarea>
-        <label>Диагноз (МКБ-10)
-          <input type="text" data-field="diagnosis" placeholder="Диагноз МКБ-10" />
-        </label>
-        <label>Назначения
-          <textarea data-field="treatment" rows="3" placeholder="Назначения"></textarea>
-        </label>
-
-        <div class="actions">
-          <button type="button" data-action="save_draft">Save draft</button>
-          <button type="button" data-action="submit_exam" class="primary">Submit</button>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Медицинская запись — Первичный осмотр</title>
+</head>
+<body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
+  <div style="display:flex;min-height:100vh;">
+    <aside style="width:248px;min-width:248px;background:#1a2035;color:#c5cbe4;display:flex;flex-direction:column;border-right:1px solid #121728;">
+      <div style="padding:18px 16px;border-bottom:1px solid #2a3148;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7394;">Dmed / Damumed mock</div>
+        <div style="font-weight:600;font-size:15px;margin-top:4px;color:#fff;">Клиника · Стационар</div>
+      </div>
+      <nav style="flex:1;overflow-y:auto;padding:12px 0;">
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;">Пациент</div>
+        <a href="index.html" data-nav="patient_list" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Список пациентов</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">История болезни</div>
+        <a href="primary_exam.html" data-nav="primary_exam" style="display:block;padding:10px 16px;color:#fff;background:rgba(74,127,212,0.25);border-left:3px solid #4a7fd4;text-decoration:none;">Первичный осмотр</a>
+        <a href="epicrisis.html" data-nav="epicrisis" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Выписной эпикриз</a>
+        <a href="diary.html" data-nav="diary" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Дневниковая запись</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Назначения и расписание</div>
+        <a href="schedule.html" data-nav="schedule" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Расписание консультаций</a>
+        <a href="#" data-nav="assignments_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Назначения (лист)</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Диагностика</div>
+        <a href="#" data-nav="lab_results_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Результаты лаб. исследований</a>
+        <a href="#" data-nav="diagnoses_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Диагнозы</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Документы</div>
+        <a href="#" data-nav="digital_docs_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Цифровые документы</a>
+      </nav>
+      <div style="padding:14px 16px;border-top:1px solid #2a3148;font-size:12px;color:#6b7394;">Версия UI · mock 1.0</div>
+    </aside>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div style="background:linear-gradient(90deg,#1a2035 0%,#252b45 100%);color:#e8eaf2;padding:8px 24px;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+        <span><strong>Пациент:</strong> Иванова М.А. <span style="opacity:0.75;">(mock)</span></span>
+        <span style="opacity:0.6;">|</span>
+        <span><strong>Диагноз:</strong> (G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) В личном анамнезе болезни нервной системы и органов чувств</span>
+        <span style="opacity:0.6;">|</span>
+        <span><strong>Койка:</strong> 14 / Невропатология детская</span>
+      </div>
+      <header style="background:#fff;border-bottom:1px solid #dde1ea;padding:12px 24px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+          <a href="primary_exam.html" data-nav="primary_exam" style="padding:8px 14px;background:#4a7fd4;color:#fff;text-decoration:none;border-radius:3px;font-size:13px;font-weight:500;">Первичный осмотр</a>
+          <a href="epicrisis.html" data-nav="epicrisis" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Выписной эпикриз</a>
+          <a href="schedule.html" data-nav="schedule" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Расписание</a>
+          <a href="diary.html" data-nav="diary" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Дневник</a>
         </div>
-      </form>
-
-      <section class="status">
-        <span>Exam status:</span>
-        <span data-status-entity="primary_exam" data-status="draft">draft</span>
-      </section>
-    </main>
-
-    <script src="./selectors-demo.js"></script>
-  </body>
+        <div style="font-weight:600;font-size:17px;color:#1a2035;">Медицинская запись · Обоснование диагноза / первичный осмотр</div>
+        <div style="font-size:12px;color:#6b7394;margin-top:4px;">Поля в порядке разделов карты (как в выгрузке Dmed)</div>
+      </header>
+      <main style="flex:1;padding:24px;overflow:auto;">
+        <form style="max-width:920px;background:#fff;border:1px solid #dde1ea;border-radius:4px;padding:24px 28px 32px;box-shadow:0 1px 3px rgba(26,32,53,0.06);">
+          <div style="display:grid;gap:18px;margin-bottom:28px;">
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Дата регистрации записи</label>
+              <input type="text" data-field="dt_reg_date_time" value="17.04.2026 15:02" style="width:100%;max-width:360px;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;font-size:14px;">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Форма (cmbMedicalForm)</label>
+              <input type="text" data-field="cmb_medical_form" value="Стандартная форма истории болезни" style="width:100%;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;font-size:14px;">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Подтип медицинской записи (cmbMedicalRecordTypeMo)</label>
+              <input type="text" data-field="cmb_medical_record_type_mo" value="—" style="width:100%;padding:10px 12px;border:1px solid #c8ced9;border-radius:3px;box-sizing:border-box;font-size:14px;">
+            </div>
+          </div>
+          <div style="border-top:1px solid #eef0f5;padding-top:22px;margin-top:8px;">
+            <h2 style="margin:0 0 16px;font-size:15px;color:#1a2035;font-weight:600;">Клинические разделы</h2>
+            <div style="display:flex;flex-direction:column;gap:22px;">
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">1. Жалобы при поступлении</label>
+                <textarea data-field="complaints_on_admission" rows="5" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">Ребёнок 11 лет. Жалобы матери на периодические головные боли преимущественно в затылочной области, усиливающиеся при наклонах, утренние головные боли, эпизоды тошноты без рвоты, снижение остроты зрения по данным школы (требует уточнения). Без лихорадки.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">2. Анамнез заболевания</label>
+                <textarea data-field="disease_anamnesis" rows="5" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">Заболевание около 3 месяцев с постепенным нарастанием симптомов. Ранее обследовался амбулаторно: офтальмоскопия — подозрение на отёк дисков зрительных нервов (данные для мок-данных). Аллергии не выявлены. Эпилепсии, травм ЧМТ в анамнезе нет. Прививки по календарю.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">3. Анамнез жизни</label>
+                <textarea data-field="life_anamnesis" rows="4" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">Наследственность без особенностей. Бытовые условия удовлетворительные. Вредные привычки отрицает (возраст). Аллергии не отмечались.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">4. Аллергологический анамнез</label>
+                <textarea data-field="allergy_anamnesis" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">Аллергии не выявлены. Лекарственная непереносимость отрицается.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">5. Объективные данные</label>
+                <textarea data-field="objective_findings" rows="6" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">Сознание ясное. Температура 36,7 °C. ЧСС 88 уд/мин. АД 110/70 мм рт.ст. (возрастная норма). Дыхание везикулярное, хрипов нет. Живот мягкий, без болезненности. Неврологически: менингеальных знаков нет, очаговой симптоматики не выявлено, сухожильные рефлексы живые, симптомы оральных автоматизмов отрицательные. Офтальмологически — уточнить (мок-данные).</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">6. Диагноз (клиническая формулировка / МКБ-10)</label>
+                <textarea data-field="diagnosis" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;">(G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) В личном анамнезе болезни нервной системы и органов чувств</textarea>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:28px;padding-top:20px;border-top:1px solid #eef0f5;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <div data-status-entity="primary_exam" data-status="draft" style="display:inline-block;padding:4px 12px;border-radius:4px;background:#f0f4ff;color:#4a7fd4;font-size:13px;">Статус: Черновик</div>
+            <button type="button" data-action="save-form" style="padding:10px 22px;background:#4a7fd4;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Сохранить</button>
+            <button type="button" data-action="submit-form" style="padding:10px 22px;background:#1a2035;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Подписать и отправить</button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+</body>
 </html>
