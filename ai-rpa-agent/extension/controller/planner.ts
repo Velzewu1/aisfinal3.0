@@ -1,5 +1,5 @@
 import type { AgentEvent, DomAction, Intent, ScheduleInjectPayload, ScheduleResult } from "@ai-rpa/schemas";
-import { newCorrelationId, nowIso } from "../shared/correlation.js";
+import { newCorrelationId } from "../shared/correlation.js";
 
 /**
  * Converts a validated intent into a deterministic DOM action plan.
@@ -23,6 +23,7 @@ function toInjectSchedulePayload(grid: string, result: ScheduleResult): Schedule
   if (result.objective !== undefined) metadata.objective = result.objective;
   return {
     grid,
+    // `a.day` is horizon index 0..8; UI uses the same for data-day-index and data-day = day+1.
     slots: result.assignments.map((a) => ({
       time: `${a.day}:${a.startMinute}-${a.endMinute}`,
       doctorId: a.doctorId,
@@ -79,7 +80,7 @@ function emitActionPlanCreated(
     id: newCorrelationId(),
     type: "action_plan_created",
     correlationId,
-    ts: nowIso(),
+    ts: new Date().toISOString(),
     payload: {
       intentKind,
       actionCount: actions.length,

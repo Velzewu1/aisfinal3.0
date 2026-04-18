@@ -14,6 +14,51 @@ import {
 
 const log = createLogger("background");
 
+function isNavigateToScheduleSidepanel(
+  msg: unknown,
+): msg is { type: "navigate_to_schedule" } {
+  return typeof msg === "object" && msg !== null && (msg as { type?: unknown }).type === "navigate_to_schedule";
+}
+
+/**
+ * Single place for "open schedule" navigation:
+ * - already on `schedule.html` → ask content script to emit `navigate_to_schedule` (page scrolls);
+ * - otherwise → navigate the active tab to `schedule.html` on the same origin.
+ */
+async function handleNavigateToScheduleFromSidepanel(): Promise<void> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = tabs[0];
+  if (!tab?.id) {
+    throw new Error("no_active_tab");
+  }
+  const rawUrl = tab.url ?? "";
+  let pathname = "";
+  try {
+    pathname = new URL(rawUrl).pathname;
+  } catch {
+    pathname = "";
+  }
+  const onSchedulePage = pathname === "/schedule.html" || pathname.endsWith("/schedule.html");
+
+  if (onSchedulePage) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: "navigate_to_schedule" });
+    } catch (e: unknown) {
+      log.warn("navigate_to_schedule forward to tab failed", String(e));
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+    return;
+  }
+
+  let origin = "";
+  try {
+    origin = new URL(rawUrl).origin;
+  } catch {
+    throw new Error("no_origin");
+  }
+  await chrome.tabs.update(tab.id, { url: `${origin}/schedule.html` });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   log.info("installed");
   void chrome.sidePanel
@@ -90,6 +135,18 @@ function isAudioComplete(
 }
 
 chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
+  if (isNavigateToScheduleSidepanel(msg)) {
+    void (async () => {
+      try {
+        await handleNavigateToScheduleFromSidepanel();
+        sendResponse({ ok: true });
+      } catch (err: unknown) {
+        log.error("navigate_to_schedule failed", String(err));
+        sendResponse({ ok: false, error: String(err) });
+      }
+    })();
+    return true;
+  }
   if (isRecordingDispatch(msg)) {
     void (async () => {
       try {

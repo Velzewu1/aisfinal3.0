@@ -3,7 +3,7 @@ import { LlmInterpretation } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import type { ExtensionMessage } from "../shared/messages.js";
 import { controller } from "../controller/index.js";
-import { newCorrelationId, nowIso } from "../shared/correlation.js";
+import { newCorrelationId } from "../shared/correlation.js";
 
 const log = createLogger("router");
 
@@ -176,7 +176,7 @@ export const router = {
             id: newCorrelationId(),
             type: "validation_failed",
             correlationId: msg.correlationId,
-            ts: nowIso(),
+            ts: new Date().toISOString(),
             payload: {
               errors: issues.length > 0 ? issues : ["validation_failed"],
             },

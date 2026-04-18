@@ -1,10 +1,9 @@
-import type { DomAction, ExecutorResult, InjectScheduleSlot, ScheduleInjectPayload } from "@ai-rpa/schemas";
+import type { DomAction, ExecutorResult, ScheduleInjectPayload } from "@ai-rpa/schemas";
+import { publishScheduleBridgeToPage, schedulePayloadToBridgeState } from "./schedule-bridge.js";
 import { selectByDataAttr } from "./selectors.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("executor");
-
-type SpecialistKind = "lfk" | "massage" | "psychologist" | "speech" | "default";
 
 interface ParsedSlotTime {
   readonly day: number;
@@ -13,25 +12,12 @@ interface ParsedSlotTime {
 }
 
 /**
- * Deterministic mapping from doctor/procedure identifiers to visual specialist
- * buckets used by the mock UI stylesheet. The mapping is keyword-based — the
- * planner and backend are free to use any `doctorId` scheme; the executor only
- * derives a presentational class. This is NOT medical classification; it is a
- * UI render hint and never feeds decisions.
+ * Schedule day convention (9-day mock grid):
+ * - Internal / backend / slot string: `day` ∈ 0..8 (horizon index; column "День 1" → 0).
+ * - DOM: `data-day-index` = internal day; `data-day` = internal day + 1 (1..9).
  */
-const SPECIALIST_KIND_PATTERNS: ReadonlyArray<readonly [RegExp, SpecialistKind]> = [
-  [/(лфк|exercise[_-]?therapy|lfk|kineso|kinezo)/i, "lfk"],
-  [/(массаж|massage)/i, "massage"],
-  [/(психолог|psycholog|psychologist)/i, "psychologist"],
-  [/(логопед|speech|logoped)/i, "speech"],
-];
-
-function resolveSpecialistKind(doctorId: string, procedureId: string): SpecialistKind {
-  const probe = `${doctorId} ${procedureId}`;
-  for (const [pattern, kind] of SPECIALIST_KIND_PATTERNS) {
-    if (pattern.test(probe)) return kind;
-  }
-  return "default";
+function uiDataDayFromInternalDay(internalDay: number): number {
+  return internalDay >= 0 ? internalDay + 1 : internalDay;
 }
 
 function parseSlotTime(raw: string): ParsedSlotTime | null {
@@ -46,62 +32,75 @@ function parseSlotTime(raw: string): ParsedSlotTime | null {
   return { day, startMinute, endMinute };
 }
 
-function formatClock(minuteOfDay: number): string {
-  const safe = Math.max(0, Math.min(24 * 60 - 1, Math.round(minuteOfDay)));
-  const hh = Math.floor(safe / 60);
-  const mm = safe % 60;
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-}
-
-/**
- * Presentational label derived from a validated `procedureId`. The executor
- * cannot invent procedure names; it only cleans up identifier punctuation so
- * the mock UI renders something readable when the planner did not attach a
- * richer display label. The LLM is never consulted.
- */
-function humanizeProcedureId(procedureId: string): string {
-  const stripped = procedureId.replace(/^(proc|procedure)[_-]/i, "");
-  const spaced = stripped.replace(/[_-]+/g, " ").trim();
-  if (spaced.length === 0) return procedureId;
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function findScheduleCell(host: HTMLElement, day: number, doctorId: string): HTMLElement | null {
+/** @param uiDataDay `data-day` (1..9), i.e. internalDay + 1 */
+function findScheduleCell(host: HTMLElement, uiDataDay: number, doctorId: string): HTMLElement | null {
   const byExact = host.querySelector<HTMLElement>(
-    `[data-schedule-cell][data-day="${CSS.escape(String(day))}"][data-specialist="${CSS.escape(doctorId)}"]`,
+    `[data-schedule-cell][data-day="${CSS.escape(String(uiDataDay))}"][data-specialist="${CSS.escape(doctorId)}"]`,
   );
   return byExact;
 }
 
-function renderScheduleSlot(host: HTMLElement, slot: InjectScheduleSlot): boolean {
-  const parsed = parseSlotTime(slot.time);
-  if (!parsed) return false;
-  const uiDay = parsed.day >= 0 ? parsed.day + 1 : parsed.day;
-  const cell = findScheduleCell(host, uiDay, slot.doctorId);
-  if (!cell) return false;
+/**
+ * Counts how many slots map to real grid cells. Visual schedule cells are
+ * painted by the mock page (`schedule-renderer.js`) from `window.__SCHEDULE_STATE__`
+ * after {@link publishScheduleBridgeToPage}; the executor only clears the grid
+ * and publishes validated state.
+ */
+function measureScheduleSlots(host: HTMLElement, payload: ScheduleInjectPayload): {
+  rendered: number;
+  dropped: number;
+} {
+  let rendered = 0;
+  let dropped = 0;
+  for (const slot of payload.slots) {
+    const parsed = parseSlotTime(slot.time);
+    if (!parsed) {
+      dropped += 1;
+      continue;
+    }
+    const uiDataDay = uiDataDayFromInternalDay(parsed.day);
+    const cell = findScheduleCell(host, uiDataDay, slot.doctorId);
+    if (cell) rendered += 1;
+    else dropped += 1;
+  }
+  return { rendered, dropped };
+}
 
-  const kind = resolveSpecialistKind(slot.doctorId, slot.procedureId);
-  const label = humanizeProcedureId(slot.procedureId);
-  const startLabel = formatClock(parsed.startMinute);
-  const endLabel = formatClock(parsed.endMinute);
+/** Diary mock-ui procedure entities (`mock-ui/diary.html`) — richer UX on `completed`. */
+const DIARY_SERVICE_ENTITIES: ReadonlySet<string> = new Set([
+  "lfk",
+  "massage",
+  "psychologist",
+  "speech_therapy",
+]);
 
-  cell.setAttribute("data-filled", "true");
-  cell.setAttribute("data-specialist-kind", kind);
+function formatLocalHm(d: Date): string {
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
 
-  const slotContainer = document.createElement("div");
-  slotContainer.className = "slot";
+function applyDiaryServiceCompleted(entity: string, statusEl: HTMLElement, at: Date): void {
+  const hhmm = formatLocalHm(at);
+  statusEl.textContent = `Выполнено ✓ ${hhmm}`;
+  statusEl.style.backgroundColor = "#e8f5e9";
+  statusEl.style.color = "#1b5e20";
+  const card = statusEl.closest(".procedure-card");
+  if (card instanceof HTMLElement) {
+    card.setAttribute("data-status", "completed");
+    card.style.backgroundColor = "#e8f5e9";
+  }
 
-  const timeEl = document.createElement("span");
-  timeEl.className = "time";
-  timeEl.textContent = `${startLabel}–${endLabel}`;
-
-  const procEl = document.createElement("span");
-  procEl.className = "proc";
-  procEl.textContent = label;
-
-  slotContainer.append(timeEl, procEl);
-  cell.replaceChildren(slotContainer);
-  return true;
+  const fieldName = `service_result_${entity}`;
+  const ta = selectByDataAttr("data-field", fieldName);
+  if (ta instanceof HTMLTextAreaElement) {
+    const current = ta.value.trim();
+    if (current.length === 0) {
+      ta.value = `Выполнено. ${hhmm}`;
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      ta.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
 }
 
 function resetScheduleGrid(host: HTMLElement): void {
@@ -111,7 +110,7 @@ function resetScheduleGrid(host: HTMLElement): void {
     cell.setAttribute("data-filled", "false");
     cell.setAttribute("data-specialist-kind", cell.getAttribute("data-specialist-kind-default") ?? cell.getAttribute("data-specialist-kind") ?? "default");
     const slot = document.createElement("div");
-    slot.className = "slot";
+    slot.className = "slot slot--empty";
     slot.textContent = emptyLabel;
     cell.replaceChildren(slot);
   });
@@ -132,12 +131,7 @@ function renderSchedulePayload(host: HTMLElement, payload: ScheduleInjectPayload
   });
   resetScheduleGrid(host);
 
-  let rendered = 0;
-  let dropped = 0;
-  for (const slot of payload.slots) {
-    if (renderScheduleSlot(host, slot)) rendered += 1;
-    else dropped += 1;
-  }
+  const { rendered, dropped } = measureScheduleSlots(host, payload);
   host.setAttribute("data-schedule-rendered", String(rendered));
   host.setAttribute("data-schedule-dropped", String(dropped));
   return { rendered, dropped };
@@ -213,17 +207,59 @@ async function dispatch(action: DomAction): Promise<void> {
         throw new Error(`dom_target_missing: data-status-entity="${action.entity}"`);
       }
       el.setAttribute("data-status", action.status);
-      el.dispatchEvent(new CustomEvent("status-changed", { bubbles: true, detail: { status: action.status } }));
+      const at = new Date();
+      if (action.status === "completed" && DIARY_SERVICE_ENTITIES.has(action.entity)) {
+        applyDiaryServiceCompleted(action.entity, el, at);
+      }
+      el.dispatchEvent(
+        new CustomEvent("status-changed", {
+          bubbles: true,
+          detail: { status: action.status, completedAtIso: at.toISOString() },
+        }),
+      );
       return;
     }
 
     case "inject_schedule": {
+      const slotCount = Array.isArray(action.payload?.slots) ? action.payload.slots.length : 0;
+      log.info("inject_schedule: querying grid", {
+        grid: action.grid,
+        selector: `[data-schedule-grid="${action.grid}"]`,
+        slotCount,
+        url: typeof window !== "undefined" ? window.location?.href : null,
+      });
+
       const host = selectByDataAttr("data-schedule-grid", action.grid);
       if (!(host instanceof HTMLElement)) {
+        log.error("inject_schedule: target element not found", {
+          grid: action.grid,
+          selector: `[data-schedule-grid="${action.grid}"]`,
+          url: typeof window !== "undefined" ? window.location?.href : null,
+        });
         throw new Error(`dom_target_missing: data-schedule-grid="${action.grid}"`);
       }
-      host.setAttribute("data-schedule-payload", JSON.stringify(action.payload));
+
+      log.info("inject_schedule: element found, payload", {
+        grid: action.grid,
+        payload: action.payload,
+      });
+
+      const payloadJson = JSON.stringify(action.payload);
+      // Drop then set so MutationObserver always sees a change (identical JSON string would otherwise skip mutations in some engines).
+      host.removeAttribute("data-schedule-payload");
+      host.setAttribute("data-schedule-payload", payloadJson);
       const { rendered, dropped } = renderSchedulePayload(host, action.payload);
+
+      log.info("inject_schedule: render complete", {
+        grid: action.grid,
+        rendered,
+        dropped,
+        slotCount,
+      });
+
+      publishScheduleBridgeToPage(schedulePayloadToBridgeState(action.payload));
+      log.info("inject_schedule: schedule_updated dispatched via page bridge", { grid: action.grid });
+
       host.dispatchEvent(
         new CustomEvent("schedule-injected", {
           bubbles: true,

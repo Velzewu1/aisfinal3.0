@@ -43,6 +43,10 @@ const ALLOWED_NAV_TARGETS: ReadonlySet<string> = new Set([
 const ALLOWED_STATUS_ENTITIES: ReadonlySet<string> = new Set([
   "primary_exam",
   "epicrisis",
+  "lfk",
+  "massage",
+  "psychologist",
+  "speech_therapy",
 ]);
 const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "draft",
@@ -85,6 +89,10 @@ const ALLOWED_FILL_FIELDS: ReadonlySet<string> = new Set([
   "ntb_top_pressure",
   "ntb_weight",
   "objective_findings",
+  "service_result_lfk",
+  "service_result_massage",
+  "service_result_psychologist",
+  "service_result_speech_therapy",
 ]);
 
 function checkIntentPolicy(intent: Intent): string | null {
@@ -135,7 +143,7 @@ function makeEvent<T extends AgentEvent["type"]>(
     id: newCorrelationId(),
     type,
     correlationId,
-    ts: nowIso(),
+    ts: new Date().toISOString(),
     payload,
   } as Extract<AgentEvent, { type: T }>;
 }

@@ -35,6 +35,9 @@ Objective:
 Contract:
 
   - Pure function. No DOM knowledge, no LLM, no `chrome.*`.
+  - `WorkingWindow.day` / assignment `day` are horizon indices in ``[0, horizon-1]``
+    (for the default 9-day mock UI: 0..8; UI columns map ``data-day-index = day``,
+    ``data-day = day + 1``).
   - Input/output Pydantic shapes are unchanged from
     `backend/models/schedule.py`.
   - `ScheduleResult.status` Literal is unchanged. The spec's

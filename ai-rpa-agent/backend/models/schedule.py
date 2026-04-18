@@ -28,6 +28,7 @@ class Procedure(BaseModel):
 
 class WorkingWindow(BaseModel):
     doctorId: NonEmptyStr
+    # Horizon index 0..8 (aligned with 9-day mock UI: data-day-index = day, data-day = day + 1).
     day: conint(ge=0, le=8)
     startMinute: conint(ge=0, le=24 * 60 - 1)
     endMinute: conint(ge=1, le=24 * 60)
@@ -44,6 +45,7 @@ class ScheduleRequest(BaseModel):
 class ScheduledAssignment(BaseModel):
     procedureId: NonEmptyStr
     doctorId: NonEmptyStr
+    # Same horizon index as the chosen window (typically 0..8).
     day: conint(ge=0, le=30)
     startMinute: conint(ge=0)
     endMinute: conint(ge=1)

@@ -407,18 +407,18 @@ function hideScheduleSummary(): void {
   scheduleCardEl?.classList.add("hidden");
 }
 
-async function openScheduleInActiveTab(): Promise<void> {
+/** Does not navigate directly — background + page handle `navigate_to_schedule` (see `navigate-bridge.ts`). */
+async function emitNavigateToSchedule(): Promise<void> {
   try {
-    const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs[0]));
-    });
-    if (!tab?.id || !tab.url) {
-      pushLocalTimeline("warning", "Расписание", "Нет активной вкладки");
+    const raw = (await chrome.runtime.sendMessage({ type: "navigate_to_schedule" })) as
+      | { ok: true }
+      | { ok: false; error?: string }
+      | undefined;
+    if (raw && typeof raw === "object" && "ok" in raw && raw.ok === false) {
+      pushLocalTimeline("warning", "Расписание", raw.error ?? "не удалось открыть расписание");
       return;
     }
-    const origin = new URL(tab.url).origin;
-    await chrome.tabs.update(tab.id, { url: `${origin}/schedule.html` });
-    pushLocalTimeline("info", "Расписание", "Открытие вкладки");
+    pushLocalTimeline("info", "Расписание", "Расписание");
   } catch (err: unknown) {
     pushLocalTimeline("error", "Расписание", String(err));
   }
@@ -668,7 +668,7 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
 });
 
 openScheduleBtn?.addEventListener("click", () => {
-  void openScheduleInActiveTab();
+  void emitNavigateToSchedule();
 });
 
 scheduleDismissBtn?.addEventListener("click", () => {

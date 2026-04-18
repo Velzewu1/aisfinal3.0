@@ -1,5 +1,5 @@
 import type { AgentEvent } from "@ai-rpa/schemas";
-import { newCorrelationId, nowIso } from "./correlation.js";
+import { newCorrelationId } from "./correlation.js";
 import { createLogger } from "./logger.js";
 
 const log = createLogger("agent-event-publish");
@@ -13,7 +13,7 @@ export function buildAgentEvent<T extends AgentEvent["type"]>(
     id: newCorrelationId(),
     type,
     correlationId,
-    ts: nowIso(),
+    ts: new Date().toISOString(),
     payload,
   } as Extract<AgentEvent, { type: T }>;
 }

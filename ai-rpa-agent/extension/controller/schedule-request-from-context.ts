@@ -32,21 +32,46 @@ export type BuildScheduleRequestResult =
   | { ok: true; request: ScheduleRequest }
   | { ok: false; error: string };
 
-const DEFAULT_DOCTOR: Doctor = Object.freeze({
-  id: "doc_clinic_primary",
-  name: "Primary Clinician",
-  specialty: "general_medicine",
+/** Canonical mock schedule grid ids — must match `mock-ui/schedule.html` SPECIALISTS and `schedule-ui-map.js` DOCTOR_UI_MAP. */
+const MOCK_SCHEDULE_DOCTOR_LFK: Doctor = Object.freeze({
+  id: "lkf_1",
+  name: "Врач ЛФК",
+  specialty: "ЛФК и спорт",
 });
 
-const DEFAULT_WEEKDAYS = [1, 2, 3, 4, 5] as const;
+const MOCK_SCHEDULE_DOCTOR_MASSAGE: Doctor = Object.freeze({
+  id: "massage_1",
+  name: "Массажист",
+  specialty: "Массаж",
+});
 
-function defaultWeekdayWindows(doctorId: string): WorkingWindow[] {
-  return DEFAULT_WEEKDAYS.map((day) => ({
+const DEFAULT_MOCK_SCHEDULE_DOCTORS: readonly Doctor[] = Object.freeze([
+  MOCK_SCHEDULE_DOCTOR_LFK,
+  MOCK_SCHEDULE_DOCTOR_MASSAGE,
+]);
+
+/** Horizon day indices 0..n-1 (internal contract). Mock grid: `data-day-index` = day, `data-day` = day + 1. */
+function horizonDayIndices(horizonDays: number): number[] {
+  const n = Math.min(Math.max(Math.floor(horizonDays), 1), 9);
+  return Array.from({ length: n }, (_, i) => i);
+}
+
+function defaultWeekdayWindows(doctorId: string, horizonDays: number): WorkingWindow[] {
+  return horizonDayIndices(horizonDays).map((day) => ({
     doctorId,
     day,
     startMinute: 9 * 60,
     endMinute: 17 * 60,
   }));
+}
+
+/** Availability for each default mock specialist across the full horizon (only `lkf_1` and `massage_1`). */
+function defaultMockScheduleWindows(horizonDays: number): WorkingWindow[] {
+  const windows: WorkingWindow[] = [];
+  for (const d of DEFAULT_MOCK_SCHEDULE_DOCTORS) {
+    windows.push(...defaultWeekdayWindows(d.id, horizonDays));
+  }
+  return windows;
 }
 
 function sanitizeIdPart(raw: string | undefined): string {
@@ -78,7 +103,8 @@ export function tryBuildScheduleRequestFromContext(
   context: ValidatedScheduleContext,
   input: ScheduleRequestBuildInput = {},
 ): BuildScheduleRequestResult {
-  const doctors: Doctor[] = input.doctors ? [...input.doctors] : [DEFAULT_DOCTOR];
+  const horizonDays = input.horizonDays ?? 9;
+  const doctors: Doctor[] = input.doctors ? [...input.doctors] : [...DEFAULT_MOCK_SCHEDULE_DOCTORS];
   const primaryDoctorId = doctors[0]?.id;
   if (primaryDoctorId === undefined || primaryDoctorId.length === 0) {
     return { ok: false, error: "schedule_builder:no_doctors" };
@@ -102,10 +128,12 @@ export function tryBuildScheduleRequestFromContext(
 
   const windows: WorkingWindow[] = input.windows
     ? [...input.windows]
-    : defaultWeekdayWindows(primaryDoctorId);
+    : input.doctors
+      ? defaultWeekdayWindows(primaryDoctorId, horizonDays)
+      : defaultMockScheduleWindows(horizonDays);
 
   const raw = {
-    horizonDays: input.horizonDays ?? 9,
+    horizonDays,
     doctors,
     procedures,
     windows,

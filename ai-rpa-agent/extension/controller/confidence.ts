@@ -1,5 +1,5 @@
 import type { AgentEvent, LlmInterpretation } from "@ai-rpa/schemas";
-import { newCorrelationId, nowIso } from "../shared/correlation.js";
+import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("controller.confidence");
@@ -94,7 +94,7 @@ function emitConfidenceEvaluated(
     id: newCorrelationId(),
     type: "confidence_evaluated",
     correlationId,
-    ts: nowIso(),
+    ts: new Date().toISOString(),
     payload: { score, level, requiresConfirmation },
   };
   try {

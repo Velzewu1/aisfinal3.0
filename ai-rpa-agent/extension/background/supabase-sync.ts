@@ -14,9 +14,9 @@ const AI_RPA_EVENTS_TABLE = "ai_rpa_events" as const;
  *   - `event.id`           → `id` (UUID string; see `rowPrimaryKey`)
  *   - `event.correlationId` → `correlation_id`
  *   - `event.type`         → `type`  (not `event_type`)
- *   - `event.ts`           → `ts`    (canonical event time; not `created_at`)
+ *   - `event.ts`           → `ts`    (ISO string from `new Date().toISOString()` at event creation in trusted layers — authoritative logical time)
  *   - `event.payload`      → `payload`
- *   - wall-clock insert    → `inserted_at` (distinct from `ts`; DB also has `default now()`)
+ *   - `inserted_at`        → `new Date().toISOString()` at sync time (transport/persistence instant; distinct from `ts`)
  */
 type AiRpaEventInsertRow = {
   id: string;
@@ -49,13 +49,14 @@ function rowPrimaryKey(eventId: string): string {
 }
 
 function buildInsertRow(event: AgentEvent): AiRpaEventInsertRow {
+  const insertedAt = new Date().toISOString();
   return {
     id: rowPrimaryKey(event.id),
     correlation_id: event.correlationId,
     type: event.type,
     ts: event.ts,
     payload: event.payload,
-    inserted_at: new Date().toISOString(),
+    inserted_at: insertedAt,
   };
 }
 

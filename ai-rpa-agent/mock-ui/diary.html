@@ -4,6 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Дневниковая запись</title>
+  <style>
+    .procedure-card {
+      border: 1px solid #dde1ea;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #fafbfd;
+    }
+    .procedure-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      margin-bottom: 10px;
+    }
+    .procedure-name { font-weight: 600; color: #1a2035; }
+    .procedure-time { font-size: 12px; color: #5a6178; }
+    .procedure-status {
+      margin-left: auto;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: #eef0f5;
+      color: #5a6178;
+    }
+    .procedure-card textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #c8ced9;
+      border-radius: 3px;
+      resize: vertical;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .procedure-card button[data-action="complete-service"] {
+      margin-top: 10px;
+      padding: 8px 14px;
+      background: #eef2fa;
+      color: #1a2035;
+      border: 1px solid #c8ced9;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
   <div style="display:flex;min-height:100vh;">
@@ -114,10 +160,45 @@
           </div>
           <div style="margin-top:24px;padding-top:18px;border-top:1px solid #eef0f5;">
             <div style="font-weight:600;font-size:13px;color:#1a2035;margin-bottom:12px;">Выполнение услуг (демо)</div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;">
-              <button type="button" data-action="complete-service" data-service="Консультация: Психолог" style="padding:8px 14px;background:#eef2fa;color:#1a2035;border:1px solid #c8ced9;border-radius:3px;cursor:pointer;font-size:13px;">Отметить: Консультация: Психолог</button>
-              <button type="button" data-action="complete-service" data-service="Массаж воротниковой зоны" style="padding:8px 14px;background:#eef2fa;color:#1a2035;border:1px solid #c8ced9;border-radius:3px;cursor:pointer;font-size:13px;">Отметить: Массаж воротниковой зоны</button>
-              <button type="button" data-action="complete-service" data-service="Аскорбиновая кислота 50 мг, Драже (0.5 мг Орально)" style="padding:8px 14px;background:#eef2fa;color:#1a2035;border:1px solid #c8ced9;border-radius:3px;cursor:pointer;font-size:13px;">Отметить: Аскорбиновая кислота…</button>
+
+            <div class="procedure-card" data-service="lfk" data-status="pending">
+              <div class="procedure-header">
+                <span class="procedure-name">ЛФК</span>
+                <span class="procedure-time">10:00</span>
+                <span class="procedure-status" data-status-entity="lfk" data-status="pending">Ожидает выполнения</span>
+              </div>
+              <textarea data-field="service_result_lfk" placeholder="Результат процедуры..." rows="2"></textarea>
+              <button type="button" data-action="complete-service" data-service="lfk">Отметить выполненным</button>
+            </div>
+
+            <div class="procedure-card" data-service="massage" data-status="pending">
+              <div class="procedure-header">
+                <span class="procedure-name">Массаж</span>
+                <span class="procedure-time">11:30</span>
+                <span class="procedure-status" data-status-entity="massage" data-status="pending">Ожидает выполнения</span>
+              </div>
+              <textarea data-field="service_result_massage" placeholder="Результат процедуры..." rows="2"></textarea>
+              <button type="button" data-action="complete-service" data-service="massage">Отметить выполненным</button>
+            </div>
+
+            <div class="procedure-card" data-service="psychologist" data-status="pending">
+              <div class="procedure-header">
+                <span class="procedure-name">Консультация психолога</span>
+                <span class="procedure-time">14:00</span>
+                <span class="procedure-status" data-status-entity="psychologist" data-status="pending">Ожидает выполнения</span>
+              </div>
+              <textarea data-field="service_result_psychologist" placeholder="Результат процедуры..." rows="2"></textarea>
+              <button type="button" data-action="complete-service" data-service="psychologist">Отметить выполненным</button>
+            </div>
+
+            <div class="procedure-card" data-service="speech_therapy" data-status="pending">
+              <div class="procedure-header">
+                <span class="procedure-name">Логопед</span>
+                <span class="procedure-time">15:30</span>
+                <span class="procedure-status" data-status-entity="speech_therapy" data-status="pending">Ожидает выполнения</span>
+              </div>
+              <textarea data-field="service_result_speech_therapy" placeholder="Результат процедуры..." rows="2"></textarea>
+              <button type="button" data-action="complete-service" data-service="speech_therapy">Отметить выполненным</button>
             </div>
           </div>
           <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">

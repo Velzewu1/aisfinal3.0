@@ -17,6 +17,7 @@ export const Procedure = z.object({
 });
 export type Procedure = z.infer<typeof Procedure>;
 
+/** `day`: horizon index 0..8 (day 0 = first column in 9-day UI; UI uses data-day-index = day, data-day = day + 1). */
 export const WorkingWindow = z.object({
   doctorId: z.string().min(1),
   day: z.number().int().min(0).max(8),
@@ -34,6 +35,7 @@ export const ScheduleRequest = z.object({
 });
 export type ScheduleRequest = z.infer<typeof ScheduleRequest>;
 
+/** `day`: same horizon index as working windows (typically 0..8 for a 9-day grid). */
 export const ScheduledAssignment = z.object({
   procedureId: z.string().min(1),
   doctorId: z.string().min(1),

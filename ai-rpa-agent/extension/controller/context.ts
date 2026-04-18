@@ -1,6 +1,6 @@
 import type { AgentEvent } from "@ai-rpa/schemas";
 import type { NormalizedUtteranceEvent } from "../voice/normalize.js";
-import { newCorrelationId, nowIso } from "../shared/correlation.js";
+import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 
 const log = createLogger("controller.context");
@@ -108,7 +108,7 @@ function emitContextAttached(
     id: newCorrelationId(),
     type: "context_attached",
     correlationId,
-    ts: nowIso(),
+    ts: new Date().toISOString(),
     payload,
   };
   try {
