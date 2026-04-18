@@ -69,6 +69,10 @@
 
   window.__PATIENTS__ = PATIENTS;
   window.__CURRENT_PATIENT__ = Object.assign({ id: patientId }, patient);
+  
+  // Bridge for content script (MV3 isolated world cannot read window properties)
+  document.documentElement.dataset.patientId = patientId;
+  document.documentElement.dataset.patientName = patient.shortName || patient.name;
 
   function setText(selector, text) {
     var nodes = document.querySelectorAll(selector);

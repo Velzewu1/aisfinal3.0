@@ -1245,6 +1245,30 @@
         font-size: 13px;
         line-height: 1;
       }
+
+      .upload-fallback {
+        background: var(--surface-hover);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        border: 1px dashed var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .upload-fallback-text {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .upload-fallback-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
     </style>
   </head>
   <body>
@@ -1362,12 +1386,12 @@
         </div>
       </section>
 
-      <section class="upload-section" aria-labelledby="upload-heading">
+      <section id="patientUploadSection" class="upload-section" aria-labelledby="patient-upload-heading">
         <div class="upload-header">
-          <h2 id="upload-heading" class="section-label" style="margin:0">Файлы пациента</h2>
+          <h2 id="patient-upload-heading" class="section-label" style="margin:0">Файлы пациента</h2>
           <span id="uploadPatientBadge" class="upload-patient-badge">не указан</span>
         </div>
-        <div id="uploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить файл">
+        <div id="patientUploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить файл">
           <svg class="upload-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1377,8 +1401,34 @@
           </div>
           <div class="upload-dropzone-hint">PDF, TXT · до 5 МБ</div>
         </div>
-        <input type="file" id="uploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
-        <div id="uploadFileList" class="upload-file-list"></div>
+
+        <div id="patientUploadFallback" class="upload-fallback hidden" aria-live="polite">
+          <p class="upload-fallback-text">Пациент не определён. Вы можете открыть профиль пациента или загрузить файл как глобальный шаблон.</p>
+          <div class="upload-fallback-actions">
+            <button type="button" id="btnOpenPatient" class="btn btn-primary btn-sm">Открыть профиль</button>
+            <button type="button" id="btnUploadAsTemplate" class="btn btn-ghost btn-sm">Как шаблон</button>
+          </div>
+        </div>
+        <input type="file" id="patientUploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
+        <div id="patientUploadFileList" class="upload-file-list"></div>
+      </section>
+
+      <section id="reusableUploadSection" class="upload-section" aria-labelledby="reusable-upload-heading" style="margin-top: 1rem;">
+        <div class="upload-header">
+          <h2 id="reusable-upload-heading" class="section-label" style="margin:0">Шаблоны и примеры</h2>
+        </div>
+        <div id="reusableUploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить шаблон">
+          <svg class="upload-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="upload-dropzone-text">
+            Перетащите или <strong>нажмите</strong>
+          </div>
+          <div class="upload-dropzone-hint">PDF, TXT · до 5 МБ</div>
+        </div>
+        <input type="file" id="reusableUploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
+        <div id="reusableUploadFileList" class="upload-file-list"></div>
       </section>
 
       <section

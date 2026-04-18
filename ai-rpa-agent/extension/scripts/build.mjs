@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { rm, mkdir } from "node:fs/promises";
+import { rm, mkdir, copyFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -37,5 +37,10 @@ await build({
   entryPoints: [resolve(root, "sidepanel/main.ts")],
   outfile: resolve(dist, "sidepanel.js"),
 });
+
+const workerSrc = resolve(root, "..", "node_modules", "pdfjs-dist", "build", "pdf.worker.min.mjs");
+const workerDest = resolve(dist, "pdf.worker.min.mjs");
+await copyFile(workerSrc, workerDest);
+console.log("[ai-rpa] copied pdf.worker.min.mjs →", workerDest);
 
 console.log("[ai-rpa] extension build complete →", dist);

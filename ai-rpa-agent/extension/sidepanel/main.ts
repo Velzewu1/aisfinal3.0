@@ -192,14 +192,21 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
         title: "Нормализация",
         description: `${ev.payload.normalizedChars} симв.`,
       };
-    case "context_attached":
+    case "context_attached": {
+      const parts = [];
+      if (ev.payload.activeForm) parts.push(`${ev.payload.currentPage} · ${ev.payload.activeForm}`);
+      else parts.push(ev.payload.currentPage);
+      
+      if (ev.payload.reusableAssetsUsed && ev.payload.reusableAssetsUsed.length > 0) {
+        parts.push(`Шаблоны: ${ev.payload.reusableAssetsUsed.join(", ")}`);
+      }
+      
       return {
         dot: "info",
         title: "Контекст",
-        description: ev.payload.activeForm
-          ? `${ev.payload.currentPage} · ${ev.payload.activeForm}`
-          : ev.payload.currentPage,
+        description: parts.join(" | "),
       };
+    }
     case "intent_parsed":
       return {
         dot: "info",
@@ -267,14 +274,16 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
     case "dom_action_executed":
       return {
         dot: "success",
-        title: "Выполнено",
-        description: ev.payload.action.kind,
+        title: "Применено",
+        description: ev.payload.action.kind === "fill" ? ev.payload.action.field : ev.payload.action.kind,
       };
     case "dom_action_failed":
       return {
         dot: "error",
-        title: "Сбой DOM",
-        description: ev.payload.error,
+        title: "Не заполнено",
+        description: ev.payload.action && ev.payload.action.kind === "fill" 
+          ? `Отсутствует поле: ${ev.payload.action.field}`
+          : ev.payload.error,
       };
     case "schedule_requested":
       return {
@@ -890,22 +899,32 @@ renderAssistantMode();
 refreshTimelineEmpty();
 
 // ------------------------------------------------------------------ //
-// File upload — patient-scoped asset ingestion                       //
+// File upload — UI separation for Patient vs Reusable scopes          //
 // ------------------------------------------------------------------ //
 
-const uploadDropzoneEl = document.getElementById("uploadDropzone") as HTMLDivElement | null;
-const uploadFileInputEl = document.getElementById("uploadFileInput") as HTMLInputElement | null;
-const uploadFileListEl = document.getElementById("uploadFileList") as HTMLDivElement | null;
+const patientUploadDropzoneEl = document.getElementById("patientUploadDropzone") as HTMLDivElement | null;
+const patientUploadFileInputEl = document.getElementById("patientUploadFileInput") as HTMLInputElement | null;
+const patientUploadFileListEl = document.getElementById("patientUploadFileList") as HTMLDivElement | null;
+
+const reusableUploadDropzoneEl = document.getElementById("reusableUploadDropzone") as HTMLDivElement | null;
+const reusableUploadFileInputEl = document.getElementById("reusableUploadFileInput") as HTMLInputElement | null;
+const reusableUploadFileListEl = document.getElementById("reusableUploadFileList") as HTMLDivElement | null;
+
 const uploadPatientBadgeEl = document.getElementById("uploadPatientBadge") as HTMLSpanElement | null;
+const patientUploadFallbackEl = document.getElementById("patientUploadFallback") as HTMLDivElement | null;
+const btnOpenPatientEl = document.getElementById("btnOpenPatient") as HTMLButtonElement | null;
+const btnUploadAsTemplateEl = document.getElementById("btnUploadAsTemplate") as HTMLButtonElement | null;
 
 let uploadPatientId: string | undefined;
 let uploadedFileCount = 0;
+let pendingFallbackFiles: File[] | null = null;
 
 type FileChipState = {
   id: string;
   name: string;
   sizeBytes: number;
   mimeType: string;
+  scope: "patient" | "reusable";
   status: "parsing" | "done" | "error";
   errorMsg?: string;
   assetId?: string;
@@ -916,7 +935,92 @@ const fileChips = new Map<string, FileChipState>();
 function updatePatientBadge(): void {
   if (!uploadPatientBadgeEl) return;
   uploadPatientBadgeEl.textContent = uploadPatientId ?? "не указан";
+  
+  // Provide visual cue if dropzone should be blocked
+  if (patientUploadDropzoneEl) {
+    if (!uploadPatientId) {
+      patientUploadDropzoneEl.style.opacity = "0.7";
+      patientUploadDropzoneEl.style.borderStyle = "dashed";
+    } else {
+      patientUploadDropzoneEl.style.opacity = "1";
+    }
+  }
 }
+
+async function attemptFetchFreshPatientContext(): Promise<string | undefined> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return undefined;
+    const res = await chrome.tabs.sendMessage(tab.id, { type: "extract_page_context" }) as { ok?: boolean; context?: { patientId?: string } };
+    if (res?.ok && res.context?.patientId) {
+      uploadPatientId = res.context.patientId;
+      updatePatientBadge();
+      return uploadPatientId;
+    }
+  } catch {
+    // Ignore error (e.g. content script not injected)
+  }
+  return undefined;
+}
+
+function showPatientUploadFallback(files?: FileList | File[]) {
+  if (files) pendingFallbackFiles = Array.from(files);
+  else pendingFallbackFiles = null;
+
+  if (patientUploadDropzoneEl && patientUploadFallbackEl) {
+    patientUploadDropzoneEl.classList.add("hidden");
+    patientUploadFallbackEl.classList.remove("hidden");
+  }
+}
+
+function hidePatientUploadFallback() {
+  pendingFallbackFiles = null;
+  if (patientUploadDropzoneEl && patientUploadFallbackEl) {
+    patientUploadFallbackEl.classList.add("hidden");
+    patientUploadDropzoneEl.classList.remove("hidden");
+  }
+}
+
+btnOpenPatientEl?.addEventListener("click", () => {
+  void (async () => {
+    hidePatientUploadFallback();
+    // Extract saved files before hiding clears them
+    const files = pendingFallbackFiles;
+    pendingFallbackFiles = null;
+
+    const res = await chrome.runtime.sendMessage({ type: "navigate_to_diary" }) as { ok?: boolean };
+    if (!res?.ok) return;
+
+    // Wait slightly for navigation to settle
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Request fresh context 
+    const id = await attemptFetchFreshPatientContext();
+
+    if (id && id !== "unknown") {
+      pushLocalTimeline("success", "Файлы пациента", "Найдена карточка пациента. Доступ открыт.");
+      if (files && files.length > 0) {
+        for (const file of files) {
+          void handleFileUpload(file, "patient");
+        }
+      }
+    } else {
+      pushLocalTimeline("error", "Файлы пациента", "Patient context not detected on diary page. Upload remains disabled.");
+    }
+  })();
+});
+
+btnUploadAsTemplateEl?.addEventListener("click", () => {
+  const files = pendingFallbackFiles;
+  hidePatientUploadFallback();
+  if (files && files.length > 0) {
+    for (const file of files) {
+      void handleFileUpload(file, "reusable");
+    }
+  } else {
+    reusableUploadFileInputEl?.click();
+  }
+});
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} Б`;
@@ -987,7 +1091,8 @@ function updateFileChipStatus(chipId: string, status: FileChipState["status"], e
   chip.errorMsg = errorMsg;
   chip.assetId = assetId;
 
-  const chipEl = uploadFileListEl?.querySelector(`[data-chip-id="${chipId}"]`);
+  const listEl = chip.scope === "patient" ? patientUploadFileListEl : reusableUploadFileListEl;
+  const chipEl = listEl?.querySelector(`[data-chip-id="${chipId}"]`);
   if (!chipEl) return;
 
   const statusEl = chipEl.querySelector(".file-chip-status");
@@ -1006,7 +1111,18 @@ function inferMimeType(file: File): string {
   return "application/octet-stream";
 }
 
-async function handleFileUpload(file: File): Promise<void> {
+async function handleFileUpload(file: File, scope: "patient" | "reusable"): Promise<void> {
+  const isPatient = scope === "patient";
+
+  if (isPatient) {
+    const id = uploadPatientId || (await attemptFetchFreshPatientContext());
+    if (!id || id === "unknown") {
+      pushLocalTimeline("error", "Файл пациента", "Нет активного пациента. Перейдите в карточку клиента.");
+      showPatientUploadFallback([file]);
+      return;
+    }
+  }
+
   const mimeType = inferMimeType(file);
   const normalizedMime = mimeType.toLowerCase().split(";")[0].trim();
 
@@ -1035,11 +1151,17 @@ async function handleFileUpload(file: File): Promise<void> {
     name: file.name,
     sizeBytes: file.size,
     mimeType: normalizedMime,
+    scope,
     status: "parsing",
   };
   fileChips.set(chipId, chip);
   const chipEl = renderFileChip(chip);
-  uploadFileListEl?.prepend(chipEl);
+  
+  if (isPatient) {
+    patientUploadFileListEl?.prepend(chipEl);
+  } else {
+    reusableUploadFileListEl?.prepend(chipEl);
+  }
   pushLocalTimeline("info", "Файл", `Обработка: ${file.name}`);
 
   try {
@@ -1057,17 +1179,24 @@ async function handleFileUpload(file: File): Promise<void> {
 
     // Send parsed text to background for asset registration
     const correlationId = newCorrelationId();
-    const response = (await chrome.runtime.sendMessage({
-      type: "ingest_file",
-      correlationId,
-      file: {
-        name: file.name,
-        mimeType: normalizedMime,
-        sizeBytes: file.size,
-      },
-      parsedText: parseResult.text,
-      patientId: uploadPatientId,
-    })) as { ok: boolean; assetId?: string; error?: string } | undefined;
+    const payload = isPatient 
+      ? {
+          type: "ingest_file" as const,
+          correlationId,
+          file: { name: file.name, mimeType: normalizedMime, sizeBytes: file.size },
+          parsedText: parseResult.text,
+          scope: "patient" as const,
+          patientId: uploadPatientId,
+        }
+      : {
+          type: "ingest_file" as const,
+          correlationId,
+          file: { name: file.name, mimeType: normalizedMime, sizeBytes: file.size },
+          parsedText: parseResult.text,
+          scope: "reusable" as const,
+        };
+        
+    const response = (await chrome.runtime.sendMessage(payload)) as { ok: boolean; assetId?: string; error?: string } | undefined;
 
     if (response?.ok && response.assetId) {
       updateFileChipStatus(chipId, "done", undefined, response.assetId);
@@ -1075,13 +1204,13 @@ async function handleFileUpload(file: File): Promise<void> {
       const pageNote = parseResult.pageCount ? ` · ${parseResult.pageCount} стр.` : "";
       pushLocalTimeline(
         "success",
-        "Файл",
+        isPatient ? "Файл пациента" : "Шаблон",
         `${file.name}${pageNote}${truncNote} → актив ${response.assetId.slice(0, 8)}…`,
       );
     } else {
       const errorMsg = response?.error ?? "unknown_error";
       updateFileChipStatus(chipId, "error", errorMsg);
-      pushLocalTimeline("error", "Файл", `Ошибка регистрации: ${errorMsg}`);
+      pushLocalTimeline("error", isPatient ? "Файл пациента" : "Шаблон", `Ошибка регистрации: ${errorMsg}`);
     }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -1090,55 +1219,93 @@ async function handleFileUpload(file: File): Promise<void> {
   }
 }
 
-function handleFiles(files: FileList | File[]): void {
-  for (const file of files) {
-    void handleFileUpload(file);
-  }
+function setupDropzone(
+  dropzoneEl: HTMLElement | null,
+  inputEl: HTMLInputElement | null,
+  scope: "patient" | "reusable",
+) {
+  if (!dropzoneEl || !inputEl) return;
+
+  // Drop zone: click to open file picker
+  dropzoneEl.addEventListener("click", (e) => {
+    e.preventDefault();
+    void (async () => {
+      if (scope === "patient") {
+        const id = uploadPatientId || (await attemptFetchFreshPatientContext());
+        if (!id || id === "unknown") {
+          showPatientUploadFallback();
+          return;
+        }
+      }
+      inputEl.click();
+    })();
+  });
+
+  dropzoneEl.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      void (async () => {
+        if (scope === "patient") {
+          const id = uploadPatientId || (await attemptFetchFreshPatientContext());
+          if (!id || id === "unknown") {
+            showPatientUploadFallback();
+            return;
+          }
+        }
+        inputEl.click();
+      })();
+    }
+  });
+
+  // File picker change
+  inputEl.addEventListener("change", () => {
+    const files = inputEl.files;
+    if (files && files.length > 0) {
+      for (const file of files) {
+        void handleFileUpload(file, scope);
+      }
+      inputEl.value = ""; // Reset for re-upload of same file
+    }
+  });
+
+  // Drag and drop
+  dropzoneEl.addEventListener("dragover", (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneEl.classList.add("dragover");
+  });
+
+  dropzoneEl.addEventListener("dragleave", (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneEl.classList.remove("dragover");
+  });
+
+  dropzoneEl.addEventListener("drop", (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneEl.classList.remove("dragover");
+    
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    void (async () => {
+      if (scope === "patient") {
+        const id = uploadPatientId || (await attemptFetchFreshPatientContext());
+        if (!id || id === "unknown") {
+          showPatientUploadFallback(files);
+          return;
+        }
+      }
+      for (const file of files) {
+        void handleFileUpload(file, scope);
+      }
+    })();
+  });
 }
 
-// Drop zone: click to open file picker
-uploadDropzoneEl?.addEventListener("click", () => {
-  uploadFileInputEl?.click();
-});
-
-uploadDropzoneEl?.addEventListener("keydown", (e: KeyboardEvent) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    uploadFileInputEl?.click();
-  }
-});
-
-// File picker change
-uploadFileInputEl?.addEventListener("change", () => {
-  const files = uploadFileInputEl.files;
-  if (files && files.length > 0) {
-    handleFiles(files);
-    uploadFileInputEl.value = ""; // Reset for re-upload of same file
-  }
-});
-
-// Drag and drop
-uploadDropzoneEl?.addEventListener("dragover", (e: DragEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
-  uploadDropzoneEl.classList.add("dragover");
-});
-
-uploadDropzoneEl?.addEventListener("dragleave", (e: DragEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
-  uploadDropzoneEl.classList.remove("dragover");
-});
-
-uploadDropzoneEl?.addEventListener("drop", (e: DragEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
-  uploadDropzoneEl.classList.remove("dragover");
-  const files = e.dataTransfer?.files;
-  if (files && files.length > 0) {
-    handleFiles(files);
-  }
-});
+setupDropzone(patientUploadDropzoneEl, patientUploadFileInputEl, "patient");
+setupDropzone(reusableUploadDropzoneEl, reusableUploadFileInputEl, "reusable");
 
 // Track patient ID from context_attached events
 // (Extended in the existing onMessage handler above — patientId flows

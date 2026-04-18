@@ -95,9 +95,9 @@ export const PatientContextAsset = AssetMetadata.extend({
 
   /**
    * Plain-text content — never raw HTML, never unrestricted DOM.
-   * Capped at 4000 characters to bound prompt budget.
+   * Capped at 8000 characters to bound prompt budget.
    */
-  content: z.string().max(4000),
+  content: z.string().max(8000),
 });
 export type PatientContextAsset = z.infer<typeof PatientContextAsset>;
 
@@ -139,9 +139,9 @@ export const ReusableAsset = AssetMetadata.extend({
 
   /**
    * Plain-text content — never raw HTML, never unrestricted DOM.
-   * Capped at 4000 characters to bound prompt budget.
+   * Capped at 8000 characters to bound prompt budget.
    */
-  content: z.string().max(4000),
+  content: z.string().max(8000),
 });
 export type ReusableAsset = z.infer<typeof ReusableAsset>;
 

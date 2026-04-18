@@ -14,7 +14,7 @@ const log = createLogger("knowledge.file-parser");
 // ------------------------------------------------------------------ //
 
 /** Maximum content length (matches PatientContextAsset.content cap). */
-const MAX_CONTENT_LENGTH = 4000;
+const MAX_CONTENT_LENGTH = 8000;
 
 /** Maximum file size in bytes (5 MB). */
 export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -84,6 +84,16 @@ export function parsePlainText(buffer: ArrayBuffer, filename: string): ParseResu
   }
 }
 
+let pdfWorkerConfigured = false;
+
+function ensurePdfWorkerConfigured(pdfjsLib: typeof import("pdfjs-dist")): void {
+  if (pdfWorkerConfigured) return;
+  // Initialize worker correctly for Chrome extension environment.
+  // The build script copies this file to the /dist folder.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("dist/pdf.worker.min.mjs");
+  pdfWorkerConfigured = true;
+}
+
 /**
  * Parse a PDF file using pdf.js (pdfjs-dist).
  *
@@ -103,8 +113,7 @@ export async function parsePdf(buffer: ArrayBuffer, filename: string): Promise<P
       return parsePdfFallback(buffer, filename);
     }
 
-    // Disable worker to avoid cross-origin issues in extension context.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    ensurePdfWorkerConfigured(pdfjsLib);
 
     const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(buffer),

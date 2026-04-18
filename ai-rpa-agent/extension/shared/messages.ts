@@ -52,9 +52,15 @@ export type ExtensionMessage =
       };
       /** Pre-parsed text content (parsing happens in sidepanel context where pdf.js is available). */
       parsedText: string;
+      scope: "patient" | "reusable";
+      /** Required context ID if scope is patient */
       patientId?: string;
+      /** Optional template label if scope is reusable */
+      label?: string;
+      /** Set of template topic tags if scope is reusable */
+      tags?: string[];
       /** Asset content type override. */
-      contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom";
+      contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom" | "primary_exam" | "epicrisis" | "diary";
     }
   | { type: "event"; event: AgentEvent };
 

@@ -23,6 +23,12 @@ function isNavigateToScheduleSidepanel(
   return typeof msg === "object" && msg !== null && (msg as { type?: unknown }).type === "navigate_to_schedule";
 }
 
+function isNavigateToDiarySidepanel(
+  msg: unknown,
+): msg is { type: "navigate_to_diary" } {
+  return typeof msg === "object" && msg !== null && (msg as { type?: unknown }).type === "navigate_to_diary";
+}
+
 /**
  * Single place for "open schedule" navigation:
  * - already on `schedule.html` → ask content script to emit `navigate_to_schedule` (page scrolls);
@@ -60,6 +66,24 @@ async function handleNavigateToScheduleFromSidepanel(): Promise<void> {
     throw new Error("no_origin");
   }
   await chrome.tabs.update(tab.id, { url: `${origin}/schedule.html` });
+}
+
+async function handleNavigateToDiaryFromSidepanel(): Promise<void> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = tabs[0];
+  if (!tab?.id) {
+    throw new Error("no_active_tab");
+  }
+  const rawUrl = tab.url ?? "";
+  
+  let origin = "";
+  try {
+    origin = new URL(rawUrl).origin;
+  } catch {
+    throw new Error("no_origin");
+  }
+
+  await chrome.tabs.update(tab.id, { url: `${origin}/diary.html` });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -147,17 +171,21 @@ function isIngestFileMessage(
   correlationId: string;
   file: { name: string; mimeType: string; sizeBytes: number };
   parsedText: string;
+  scope: "patient" | "reusable";
   patientId?: string;
-  contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom";
+  label?: string;
+  tags?: string[];
+  contentType?: string;
 } {
   if (typeof msg !== "object" || msg === null) return false;
-  const m = msg as { type?: unknown; correlationId?: unknown; file?: unknown; parsedText?: unknown };
+  const m = msg as { type?: unknown; correlationId?: unknown; file?: unknown; parsedText?: unknown; scope?: unknown };
   return (
     m.type === "ingest_file" &&
     typeof m.correlationId === "string" &&
     typeof m.file === "object" &&
     m.file !== null &&
-    typeof m.parsedText === "string"
+    typeof m.parsedText === "string" &&
+    (m.scope === "patient" || m.scope === "reusable")
   );
 }
 
@@ -169,6 +197,18 @@ chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
         sendResponse({ ok: true });
       } catch (err: unknown) {
         log.error("navigate_to_schedule failed", String(err));
+        sendResponse({ ok: false, error: String(err) });
+      }
+    })();
+    return true;
+  }
+  if (isNavigateToDiarySidepanel(msg)) {
+    void (async () => {
+      try {
+        await handleNavigateToDiaryFromSidepanel();
+        sendResponse({ ok: true });
+      } catch (err: unknown) {
+        log.error("navigate_to_diary failed", String(err));
         sendResponse({ ok: false, error: String(err) });
       }
     })();
@@ -244,21 +284,44 @@ chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
     void (async () => {
       try {
         const assetId = newCorrelationId();
-        const result = registerAsset({
-          id: assetId,
-          scope: "patient",
-          label: msg.file.name,
-          tags: [msg.file.mimeType.split("/")[1] ?? "file"],
-          createdAt: new Date().toISOString(),
-          patientId: msg.patientId ?? "unknown",
-          contentType: msg.contentType ?? "custom",
-          content: msg.parsedText,
-        });
+        
+        // Construct asset payload based on scope
+        let assetPayload: Record<string, unknown>;
+        if (msg.scope === "patient") {
+          if (!msg.patientId) {
+            log.warn("file ingestion failed: missing patientId for patient scope");
+            sendResponse({ ok: false, error: "missing_patient_id" });
+            return;
+          }
+          assetPayload = {
+            id: assetId,
+            scope: "patient",
+            label: msg.file.name,
+            tags: [msg.file.mimeType.split("/")[1] ?? "file"],
+            createdAt: new Date().toISOString(),
+            patientId: msg.patientId,
+            contentType: (msg.contentType as "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom") ?? "custom",
+            content: msg.parsedText,
+          };
+        } else {
+          assetPayload = {
+            id: assetId,
+            scope: "reusable",
+            label: msg.label ?? msg.file.name.replace(/\.[^/.]+$/, ""),
+            tags: msg.tags ?? ["template"],
+            createdAt: new Date().toISOString(),
+            contentType: (msg.contentType as "primary_exam" | "epicrisis" | "diary" | "custom") ?? "custom",
+            content: msg.parsedText,
+          };
+        }
+
+        const result = registerAsset(assetPayload);
         if (result.ok) {
           log.info("file ingested as asset", {
             assetId,
+            scope: msg.scope,
             filename: msg.file.name,
-            patientId: msg.patientId ?? "unknown",
+            patientId: msg.patientId,
           });
           sendResponse({ ok: true, assetId });
         } else {

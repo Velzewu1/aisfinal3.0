@@ -140,19 +140,21 @@ function buildUserMessage(event: ContextualizedUtteranceEvent): string {
     const reusableAssets = event.retrievedContext.assets.filter((a) => a.scope === "reusable");
 
     if (patientAssets.length > 0) {
+      log.info("prompt builder: patient assets included", { count: patientAssets.length, labels: patientAssets.map(a => a.label) });
       sections.push(
         "PATIENT CONTEXT (factual — use as supporting data for this patient):",
         ...patientAssets.map(
-          (a) => `  [${a.scope}/${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 500)}`,
+          (a) => `  [${a.scope}/${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 8000)}`,
         ),
       );
     }
 
     if (reusableAssets.length > 0) {
+      log.info("prompt builder: reusable assets included", { count: reusableAssets.length, labels: reusableAssets.map(a => a.label) });
       sections.push(
         "STYLE/TEMPLATE GUIDANCE (reusable — use for writing style, structure, and phrasing only; NOT patient facts):",
         ...reusableAssets.map(
-          (a) => `  [${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 500)}`,
+          (a) => `  [${("contentType" in a ? a.contentType : "custom")}] ${a.label}:\n    ${a.content.slice(0, 8000)}`,
         ),
       );
     }
@@ -337,11 +339,9 @@ const SYSTEM_PROMPT = [
   '  "логопед" + завершение (провели / выполнили) -> set_status entity:speech_therapy status:completed',
   "",
   "RETRIEVED CONTEXT (injected in USER message when available):",
-  "  - PATIENT CONTEXT = factual data about the current patient (diagnosis history, allergies, treatment plan).",
-  "    Use these as supporting facts when composing field values — DO NOT invent patient facts.",
-  "  - STYLE/TEMPLATE GUIDANCE = reusable templates, preset phrases, and structural conventions.",
-  "    Use these to match the expected writing style, structure, and clinical phrasing.",
-  "    These are NOT facts about the current patient — never cite them as patient data.",
+  "  - PATIENT CONTEXT = Use PATIENT FACTS as the source of truth. Factual data about the current patient (diagnosis history, allergies, treatment plan). DO NOT invent patient facts.",
+  "  - STYLE/TEMPLATE GUIDANCE = Use TEMPLATE GUIDANCE only for style, structure, and phrasing. These are NOT facts about the current patient - never cite them as patient data. Do NOT invent new clinical facts from templates.",
+  "  - STRICT VERBOSITY REQUIREMENT = Strictly follow the length, verbosity, and paragraph structure of the template. If a template is short, produce concise output. If a template is expanded, produce longer structured output mapping exactly to its structure.",
   "  - If no retrieved context is provided, generate based on the utterance alone.",
   "  - Retrieved context never changes which intent kind to emit — it only enriches fill slot values.",
   "",

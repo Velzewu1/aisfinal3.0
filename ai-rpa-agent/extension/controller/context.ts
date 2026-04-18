@@ -126,6 +126,10 @@ export async function attachContext(
     durationMs: input.durationMs,
   });
 
+  const reusableAssetsUsed = retrievedContext?.assets
+    .filter((a) => a.scope === "reusable")
+    .map((a) => a.label);
+
   log.info(
     "context attached",
     {
@@ -134,22 +138,25 @@ export async function attachContext(
       patientName,
       patientId: patientId ?? null,
       retrievedAssetCount: retrievedContext?.assets.length ?? 0,
+      reusableAssetsCount: reusableAssetsUsed?.length ?? 0,
     },
     input.correlationId,
   );
-  emitContextAttached(input.correlationId, context);
+  emitContextAttached(input.correlationId, context, reusableAssetsUsed);
   return event;
 }
 
 function emitContextAttached(
   correlationId: string,
   context: ContextualizedUtteranceEvent["context"],
+  reusableAssetsUsed?: string[],
 ): void {
   const payload: Extract<AgentEvent, { type: "context_attached" }>["payload"] = {
     currentPage: context.currentPage,
     ...(context.activeForm ? { activeForm: context.activeForm } : {}),
     ...(context.patientId ? { patientId: context.patientId } : {}),
     ...(context.patientName ? { patientName: context.patientName } : {}),
+    ...(reusableAssetsUsed && reusableAssetsUsed.length > 0 ? { reusableAssetsUsed } : {}),
   };
   const event: Extract<AgentEvent, { type: "context_attached" }> = {
     id: newCorrelationId(),

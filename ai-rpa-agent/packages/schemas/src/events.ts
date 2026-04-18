@@ -104,6 +104,7 @@ export const ContextAttachedEvent = BaseEvent.extend({
     activeForm: z.string().min(1).optional(),
     patientId: z.string().min(1).optional(),
     patientName: z.string().min(1).optional(),
+    reusableAssetsUsed: z.array(z.string()).optional(),
   }),
 });
 

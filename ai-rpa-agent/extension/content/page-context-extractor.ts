@@ -57,25 +57,16 @@ export function extractCurrentPageContext(): {
   // 2. Logical page id.
   const currentPage = PAGE_BY_FILE[filename] ?? filename;
 
-  // 3. Patient snapshot (read from host-page's exported state).
-  const hostWindow = window as unknown as {
-    __CURRENT_PATIENT__?: {
-      id?: string;
-      name?: string;
-      shortName?: string;
-    };
-  };
-  const patient = hostWindow.__CURRENT_PATIENT__;
-  const patientId =
-    typeof patient?.id === "string" && patient.id.length > 0
-      ? patient.id
-      : undefined;
-  const patientName =
-    typeof patient?.shortName === "string" && patient.shortName.length > 0
-      ? patient.shortName
-      : typeof patient?.name === "string" && patient.name.length > 0
-        ? patient.name
-        : undefined;
+  // 3. Patient snapshot (read from Document dataset as bridge).
+  let patientId = document.documentElement.dataset.patientId;
+  let patientName = document.documentElement.dataset.patientName;
+
+  if (!patientId || patientId.trim() === "") {
+    patientId = undefined;
+  }
+  if (!patientName || patientName.trim() === "") {
+    patientName = undefined;
+  }
 
   // 4. Available [data-field] elements (deduped, capped).
   const seen = new Set<string>();
