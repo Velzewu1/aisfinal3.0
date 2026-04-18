@@ -4,6 +4,217 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Расписание консультаций</title>
+  <style>
+    .sched-wrap {
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 6px;
+      padding: 18px 22px 26px;
+      box-shadow: 0 1px 3px rgba(26, 32, 53, 0.05);
+    }
+    .sched-toolbar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .sched-toolbar .title {
+      font-weight: 600;
+      color: #1a2035;
+      font-size: 14px;
+    }
+    .sched-toolbar .btn {
+      padding: 8px 14px;
+      background: #4a7fd4;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .sched-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      color: #5a6178;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .sched-legend .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sched-legend .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(26, 32, 53, 0.12);
+    }
+    .sched-meta {
+      font-size: 12px;
+      color: #6b7394;
+      margin-bottom: 14px;
+    }
+    .sched-meta .badge {
+      display: none;
+      margin-left: 10px;
+      padding: 2px 10px;
+      background: #e8f5e9;
+      color: #1f7a3b;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .sched-meta.has-payload .badge {
+      display: inline-block;
+    }
+
+    .sched-grid {
+      border: 1px solid #dde1ea;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .sched-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      min-width: 940px;
+      font-size: 12px;
+    }
+    .sched-table thead th {
+      background: #f7f8fc;
+      padding: 10px 8px;
+      border-bottom: 1px solid #dde1ea;
+      border-right: 1px solid #eef0f5;
+      text-align: center;
+      color: #4a7fd4;
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .sched-table thead th:last-child {
+      border-right: none;
+    }
+    .sched-table thead th.row-label {
+      text-align: left;
+      color: #5a6178;
+      min-width: 160px;
+      background: #f2f4fa;
+    }
+    .sched-table thead th .dh-day {
+      display: block;
+      font-size: 12px;
+      color: #4a7fd4;
+      line-height: 1.1;
+    }
+    .sched-table thead th .dh-date {
+      display: block;
+      font-size: 10px;
+      color: #8a92b0;
+      font-weight: 500;
+      margin-top: 2px;
+      text-transform: lowercase;
+    }
+
+    .sched-table tbody td {
+      border-bottom: 1px solid #eef0f5;
+      border-right: 1px solid #eef0f5;
+      padding: 0;
+      vertical-align: middle;
+      height: 52px;
+    }
+    .sched-table tbody td:last-child {
+      border-right: none;
+    }
+    .sched-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .sched-table .spec-cell {
+      padding: 8px 12px;
+      background: #fafbfd;
+      font-weight: 500;
+      color: #1a2035;
+      border-right: 1px solid #dde1ea;
+      white-space: nowrap;
+    }
+    .sched-table .spec-cell .spec-name {
+      display: block;
+    }
+    .sched-table .spec-cell .spec-role {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      color: #8a92b0;
+      margin-top: 2px;
+    }
+
+    [data-schedule-cell] {
+      padding: 0;
+      text-align: center;
+    }
+    [data-schedule-cell] .slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 6px 8px;
+      color: #8a92b0;
+      background: #fafbfd;
+      font-size: 11px;
+      transition: background 160ms ease;
+    }
+    [data-schedule-cell][data-filled="true"] .slot {
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      gap: 2px;
+      color: #1a2035;
+      font-weight: 500;
+      text-align: left;
+      padding: 6px 9px;
+      border-left: 3px solid rgba(26, 32, 53, 0.25);
+    }
+    [data-schedule-cell][data-filled="true"] .slot .time {
+      font-size: 11px;
+      font-weight: 600;
+      color: #1a2035;
+      letter-spacing: 0.01em;
+    }
+    [data-schedule-cell][data-filled="true"] .slot .proc {
+      font-size: 11px;
+      line-height: 1.3;
+      color: #2f3a55;
+      font-weight: 500;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    [data-schedule-cell][data-specialist-kind="lfk"][data-filled="true"] .slot {
+      background: #e3f2fd;
+      border-left-color: #4a7fd4;
+    }
+    [data-schedule-cell][data-specialist-kind="massage"][data-filled="true"] .slot {
+      background: #f3e5f5;
+      border-left-color: #9c27b0;
+    }
+    [data-schedule-cell][data-specialist-kind="psychologist"][data-filled="true"] .slot {
+      background: #e8f5e9;
+      border-left-color: #2e7d32;
+    }
+    [data-schedule-cell][data-specialist-kind="speech"][data-filled="true"] .slot {
+      background: #fff3e0;
+      border-left-color: #ef6c00;
+    }
+    [data-schedule-cell][data-specialist-kind="default"][data-filled="true"] .slot {
+      background: #f5f5f5;
+      border-left-color: #6b7394;
+    }
+  </style>
 </head>
 <body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
   <div style="display:flex;min-height:100vh;">
@@ -49,118 +260,141 @@
         <div style="font-size:12px;color:#6b7394;margin-top:4px;">Строки — специальности из medical-context; ячейки: <code style="background:#f0f2f7;padding:2px 6px;border-radius:2px;">data-schedule-cell</code></div>
       </header>
       <main style="flex:1;padding:24px;overflow:auto;">
-        <div style="background:#fff;border:1px solid #dde1ea;border-radius:4px;padding:16px 20px 24px;">
-          <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-            <span style="font-weight:600;color:#1a2035;">Осмотр по записи</span>
-            <button type="button" data-action="schedule-refresh" style="padding:8px 14px;background:#4a7fd4;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:13px;">Обновить сетку</button>
+        <div class="sched-wrap">
+          <div class="sched-toolbar">
+            <span class="title">Осмотр по записи</span>
+            <button type="button" data-action="schedule-refresh" class="btn">Обновить сетку</button>
+            <div class="sched-legend" aria-hidden="true">
+              <span class="chip"><span class="swatch" style="background:#e3f2fd;"></span>ЛФК</span>
+              <span class="chip"><span class="swatch" style="background:#f3e5f5;"></span>Массаж</span>
+              <span class="chip"><span class="swatch" style="background:#e8f5e9;"></span>Психолог</span>
+              <span class="chip"><span class="swatch" style="background:#fff3e0;"></span>Логопед</span>
+              <span class="chip"><span class="swatch" style="background:#f5f5f5;"></span>Другое</span>
+            </div>
           </div>
-          <div class="schedule-grid" data-schedule-container data-schedule-grid="primary" style="overflow-x:auto;border:1px solid #dde1ea;border-radius:3px;">
-            <table style="border-collapse:collapse;width:100%;min-width:720px;font-size:12px;">
+          <div id="schedMeta" class="sched-meta">
+            Пустые слоты отмечены как «Свободно». После генерации расписания ассистент заполнит ячейки автоматически.
+            <span class="badge" data-sched-summary>Расписание сформировано</span>
+          </div>
+          <div
+            class="sched-grid"
+            data-schedule-container
+            data-schedule-grid="primary"
+            data-schedule-empty-label="Свободно"
+          >
+            <table class="sched-table">
               <thead>
-                <tr style="background:#f7f8fc;">
-                  <th style="padding:10px 8px;border:1px solid #dde1ea;text-align:left;min-width:140px;color:#5a6178;">Специалист</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 1</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 2</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 3</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 4</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 5</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 6</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 7</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 8</th>
-                  <th style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;color:#4a7fd4;font-weight:600;">День 9</th>
+                <tr>
+                  <th class="row-label">Специалист</th>
+                  <th data-day-header="1"><span class="dh-day">День 1</span><span class="dh-date"></span></th>
+                  <th data-day-header="2"><span class="dh-day">День 2</span><span class="dh-date"></span></th>
+                  <th data-day-header="3"><span class="dh-day">День 3</span><span class="dh-date"></span></th>
+                  <th data-day-header="4"><span class="dh-day">День 4</span><span class="dh-date"></span></th>
+                  <th data-day-header="5"><span class="dh-day">День 5</span><span class="dh-date"></span></th>
+                  <th data-day-header="6"><span class="dh-day">День 6</span><span class="dh-date"></span></th>
+                  <th data-day-header="7"><span class="dh-day">День 7</span><span class="dh-date"></span></th>
+                  <th data-day-header="8"><span class="dh-day">День 8</span><span class="dh-date"></span></th>
+                  <th data-day-header="9"><span class="dh-day">День 9</span><span class="dh-date"></span></th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Анестезиолог</td>
-                  <td data-schedule-cell data-day="1" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="anesthesiologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Врач ЛФК</td>
-                  <td data-schedule-cell data-day="1" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="exercise_therapy_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Логопед</td>
-                  <td data-schedule-cell data-day="1" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="speech_therapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Лечащий врач</td>
-                  <td data-schedule-cell data-day="1" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="attending_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Психолог</td>
-                  <td data-schedule-cell data-day="1" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#e8f4ff;color:#1a2035;">10:30 · 30 мин</td>
-                  <td data-schedule-cell data-day="2" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="psychologist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Реабилитолог</td>
-                  <td data-schedule-cell data-day="1" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="rehabilitation_physician" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px;border:1px solid #dde1ea;font-weight:500;">Физиотерапевт</td>
-                  <td data-schedule-cell data-day="1" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="2" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="3" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="4" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="5" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="6" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="7" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="8" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                  <td data-schedule-cell data-day="9" data-specialist="physiotherapist" style="padding:10px 6px;border:1px solid #dde1ea;text-align:center;background:#fafbfd;color:#8a92b0;">Свободно</td>
-                </tr>
-              </tbody>
+              <tbody data-schedule-body></tbody>
             </table>
           </div>
         </div>
       </main>
     </div>
   </div>
+
+  <script>
+    (function () {
+      var DAYS = 9;
+      var SPECIALISTS = [
+        { id: "exercise_therapy_physician", name: "Врач ЛФК", role: "ЛФК и спорт", kind: "lfk" },
+        { id: "massage_therapist",          name: "Массажист",   role: "Массаж",     kind: "massage" },
+        { id: "psychologist",               name: "Психолог",    role: "Консультация", kind: "psychologist" },
+        { id: "speech_therapist",           name: "Логопед",     role: "Речевая терапия", kind: "speech" },
+        { id: "physiotherapist",            name: "Физиотерапевт", role: "Физиотерапия", kind: "default" },
+        { id: "rehabilitation_physician",   name: "Реабилитолог", role: "Реабилитация", kind: "default" },
+        { id: "anesthesiologist",           name: "Анестезиолог", role: "Анестезиология", kind: "default" },
+        { id: "attending_physician",        name: "Лечащий врач", role: "Стационар", kind: "default" }
+      ];
+
+      function formatShortDate(d) {
+        try {
+          return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
+        } catch (e) {
+          var dd = String(d.getDate()).padStart(2, "0");
+          var mm = String(d.getMonth() + 1).padStart(2, "0");
+          return dd + "." + mm;
+        }
+      }
+
+      function renderDateHeaders() {
+        var today = new Date();
+        var headers = document.querySelectorAll("[data-day-header]");
+        headers.forEach(function (th) {
+          var offset = parseInt(th.getAttribute("data-day-header"), 10) - 1;
+          if (isNaN(offset)) return;
+          var d = new Date(today);
+          d.setDate(today.getDate() + offset);
+          var dateEl = th.querySelector(".dh-date");
+          if (dateEl) dateEl.textContent = formatShortDate(d);
+        });
+      }
+
+      function buildCell(day, spec) {
+        var td = document.createElement("td");
+        td.setAttribute("data-schedule-cell", "");
+        td.setAttribute("data-day", String(day));
+        td.setAttribute("data-specialist", spec.id);
+        td.setAttribute("data-specialist-kind", spec.kind);
+        td.setAttribute("data-filled", "false");
+        var slot = document.createElement("div");
+        slot.className = "slot";
+        slot.textContent = "Свободно";
+        td.appendChild(slot);
+        return td;
+      }
+
+      function renderBody() {
+        var tbody = document.querySelector("[data-schedule-body]");
+        if (!tbody) return;
+        tbody.replaceChildren();
+        SPECIALISTS.forEach(function (spec) {
+          var tr = document.createElement("tr");
+          var label = document.createElement("td");
+          label.className = "spec-cell";
+          label.setAttribute("data-specialist-row", spec.id);
+          var nameEl = document.createElement("span");
+          nameEl.className = "spec-name";
+          nameEl.textContent = spec.name;
+          var roleEl = document.createElement("span");
+          roleEl.className = "spec-role";
+          roleEl.textContent = spec.role;
+          label.appendChild(nameEl);
+          label.appendChild(roleEl);
+          tr.appendChild(label);
+          for (var d = 1; d <= DAYS; d += 1) {
+            tr.appendChild(buildCell(d, spec));
+          }
+          tbody.appendChild(tr);
+        });
+      }
+
+      function onScheduleInjected() {
+        var meta = document.getElementById("schedMeta");
+        if (meta) meta.classList.add("has-payload");
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        renderDateHeaders();
+        renderBody();
+        var host = document.querySelector("[data-schedule-grid=\"primary\"]");
+        if (host) {
+          host.addEventListener("schedule-injected", onScheduleInjected);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

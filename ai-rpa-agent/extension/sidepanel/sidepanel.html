@@ -633,6 +633,120 @@
         background: rgba(148, 163, 184, 0.14);
       }
 
+      /* Schedule summary card */
+      .schedule-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--success);
+        border-radius: var(--radius-xl);
+        padding: 14px 14px 14px 16px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        animation: fade-in 220ms var(--ease);
+      }
+
+      .schedule-card.hidden {
+        display: none;
+      }
+
+      .schedule-card-header {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .schedule-card-icon {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-lg);
+        background: rgba(52, 211, 153, 0.14);
+        color: var(--success);
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .schedule-card-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.35;
+      }
+
+      .schedule-card-status {
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--success);
+        text-transform: uppercase;
+      }
+
+      .schedule-card-status[data-status="infeasible"],
+      .schedule-card-status[data-status="unknown"] {
+        background: rgba(248, 113, 113, 0.14);
+        color: var(--error);
+      }
+
+      .schedule-card-summary {
+        font-size: 11px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      .schedule-card-summary strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .schedule-card-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .schedule-stat {
+        flex: 1 1 0;
+        min-width: 80px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .schedule-stat .stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+
+      .schedule-stat .stat-label {
+        font-size: 10px;
+        color: var(--text-secondary);
+        letter-spacing: 0.02em;
+      }
+
+      .schedule-card-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
       /* Timeline */
       .timeline-section {
         flex: 1;
@@ -883,6 +997,43 @@
         <div class="proactive-actions">
           <button type="button" id="accept" class="btn btn-primary">Да</button>
           <button type="button" id="reject" class="btn btn-ghost">Пропустить</button>
+        </div>
+      </section>
+
+      <section
+        id="scheduleCard"
+        class="schedule-card hidden"
+        aria-live="polite"
+        aria-label="Результат расписания"
+      >
+        <div class="schedule-card-header">
+          <div class="schedule-card-icon" aria-hidden="true">✓</div>
+          <div id="scheduleCardTitle" class="schedule-card-title">Расписание составлено</div>
+          <span id="scheduleCardStatus" class="schedule-card-status" data-status="optimal">Готово</span>
+        </div>
+        <p id="scheduleCardSummary" class="schedule-card-summary">
+          Назначено <strong><span id="scheduleCount">0</span></strong> процедур для
+          <strong><span id="scheduleSpecialists">0</span></strong> специалистов.
+        </p>
+        <div class="schedule-card-stats">
+          <div class="schedule-stat">
+            <span class="stat-value" id="scheduleDaysValue">9</span>
+            <span class="stat-label">Дней</span>
+          </div>
+          <div class="schedule-stat">
+            <span class="stat-value" id="scheduleProceduresValue">0</span>
+            <span class="stat-label">Процедур</span>
+          </div>
+          <div class="schedule-stat">
+            <span class="stat-value" id="scheduleSpecialistsValue">0</span>
+            <span class="stat-label">Специалистов</span>
+          </div>
+        </div>
+        <div class="schedule-card-actions">
+          <button type="button" id="openSchedule" class="btn btn-primary">
+            Открыть расписание
+          </button>
+          <button type="button" id="scheduleDismiss" class="btn btn-ghost">Скрыть</button>
         </div>
       </section>
 

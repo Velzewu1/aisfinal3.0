@@ -30,6 +30,16 @@ const statusDotEl = document.getElementById("statusDot") as HTMLSpanElement | nu
 const statusLabelEl = document.getElementById("statusLabel") as HTMLSpanElement | null;
 const waveformEl = document.getElementById("waveform") as HTMLDivElement | null;
 const pttLabelEl = document.getElementById("pttLabel") as HTMLParagraphElement | null;
+const scheduleCardEl = document.getElementById("scheduleCard") as HTMLElement | null;
+const scheduleCardTitleEl = document.getElementById("scheduleCardTitle") as HTMLDivElement | null;
+const scheduleCardStatusEl = document.getElementById("scheduleCardStatus") as HTMLSpanElement | null;
+const scheduleCountEl = document.getElementById("scheduleCount") as HTMLSpanElement | null;
+const scheduleSpecialistsCountEl = document.getElementById("scheduleSpecialists") as HTMLSpanElement | null;
+const scheduleDaysValueEl = document.getElementById("scheduleDaysValue") as HTMLSpanElement | null;
+const scheduleProceduresValueEl = document.getElementById("scheduleProceduresValue") as HTMLSpanElement | null;
+const scheduleSpecialistsValueEl = document.getElementById("scheduleSpecialistsValue") as HTMLSpanElement | null;
+const openScheduleBtn = document.getElementById("openSchedule") as HTMLButtonElement | null;
+const scheduleDismissBtn = document.getElementById("scheduleDismiss") as HTMLButtonElement | null;
 
 type DotKind = "success" | "info" | "warning" | "error";
 
@@ -353,6 +363,67 @@ function showProactiveConfirm(correlationId: string, message: string): void {
   proactiveCardEl.classList.remove("hidden");
 }
 
+type ScheduleGeneratedPayload = Extract<AgentEvent, { type: "schedule_generated" }>["payload"];
+
+const SCHEDULE_STATUS_LABEL: Readonly<Record<ScheduleGeneratedPayload["result"]["status"], string>> =
+  Object.freeze({
+    optimal: "Оптимум",
+    feasible: "Готово",
+    infeasible: "Не найдено",
+    unknown: "Неизвестно",
+  });
+
+function showScheduleSummary(payload: ScheduleGeneratedPayload): void {
+  if (!scheduleCardEl) return;
+  const result = payload.result;
+  const assignments = Array.isArray(result.assignments) ? result.assignments : [];
+  const assigned = assignments.length;
+  const uniqueDoctors = new Set<string>();
+  let maxDay = 0;
+  for (const a of assignments) {
+    if (typeof a.doctorId === "string" && a.doctorId.length > 0) uniqueDoctors.add(a.doctorId);
+    if (typeof a.day === "number" && a.day + 1 > maxDay) maxDay = a.day + 1;
+  }
+  const days = maxDay > 0 ? maxDay : 9;
+  const specialists = uniqueDoctors.size;
+
+  if (scheduleCardTitleEl) {
+    scheduleCardTitleEl.textContent = `✓ Расписание составлено на ${days} дней`;
+  }
+  if (scheduleCardStatusEl) {
+    scheduleCardStatusEl.textContent = SCHEDULE_STATUS_LABEL[result.status] ?? result.status;
+    scheduleCardStatusEl.setAttribute("data-status", result.status);
+  }
+  if (scheduleCountEl) scheduleCountEl.textContent = String(assigned);
+  if (scheduleSpecialistsCountEl) scheduleSpecialistsCountEl.textContent = String(specialists);
+  if (scheduleDaysValueEl) scheduleDaysValueEl.textContent = String(days);
+  if (scheduleProceduresValueEl) scheduleProceduresValueEl.textContent = String(assigned);
+  if (scheduleSpecialistsValueEl) scheduleSpecialistsValueEl.textContent = String(specialists);
+
+  scheduleCardEl.classList.remove("hidden");
+}
+
+function hideScheduleSummary(): void {
+  scheduleCardEl?.classList.add("hidden");
+}
+
+async function openScheduleInActiveTab(): Promise<void> {
+  try {
+    const tab = await new Promise<chrome.tabs.Tab | undefined>((resolve) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs[0]));
+    });
+    if (!tab?.id || !tab.url) {
+      pushLocalTimeline("warning", "Расписание", "Нет активной вкладки");
+      return;
+    }
+    const origin = new URL(tab.url).origin;
+    await chrome.tabs.update(tab.id, { url: `${origin}/schedule.html` });
+    pushLocalTimeline("info", "Расписание", "Открытие вкладки");
+  } catch (err: unknown) {
+    pushLocalTimeline("error", "Расписание", String(err));
+  }
+}
+
 async function dispatchVoiceSegment(capture: VoiceCapturedEvent): Promise<void> {
   processingSegmentCount += 1;
   if (assistantMode === "listening") {
@@ -586,9 +657,22 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
     return;
   }
 
+  if (ev.type === "schedule_generated") {
+    showScheduleSummary(ev.payload);
+    return;
+  }
+
   if (ev.type === "user_confirmation_requested") {
     showProactiveConfirm(ev.correlationId, ev.payload.summary);
   }
+});
+
+openScheduleBtn?.addEventListener("click", () => {
+  void openScheduleInActiveTab();
+});
+
+scheduleDismissBtn?.addEventListener("click", () => {
+  hideScheduleSummary();
 });
 
 renderAssistantMode();
