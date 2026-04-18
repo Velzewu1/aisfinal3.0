@@ -54,8 +54,6 @@ async function handleStop(correlationId: string): Promise<void> {
       "stop",
       () => {
         const blob = new Blob(chunks, { type: mimeType });
-        console.log("[DEBUG recorder] blob created", blob.size, blob.type);
-        console.log("final blob size:", blob.size);
 
         stream?.getTracks().forEach((t) => t.stop());
 
@@ -67,8 +65,6 @@ async function handleStop(correlationId: string): Promise<void> {
             reject(new Error("no_base64_data"));
             return;
           }
-          console.log("[DEBUG recorder] base64 length", base64.length);
-          console.log("[DEBUG recorder] sending audio_complete, base64 length:", base64.length);
           chrome.runtime.sendMessage(
             {
               type: "audio_complete",

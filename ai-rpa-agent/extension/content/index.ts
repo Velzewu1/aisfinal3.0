@@ -13,12 +13,18 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
   const { correlationId, actions } = msg;
   log.info("execute_plan received", { count: actions.length }, correlationId);
 
-  void executor.run(actions, correlationId).then((result: ExecutorResult) => {
-    chrome.runtime
-      .sendMessage({ type: "executor_finished", correlationId, result })
-      .catch((err: unknown) => log.error("reply failed", String(err), correlationId));
-    sendResponse({ ok: true, result });
-  });
+  void executor
+    .run(actions, correlationId)
+    .then((result: ExecutorResult) => {
+      chrome.runtime
+        .sendMessage({ type: "executor_finished", correlationId, result })
+        .catch((err: unknown) => log.error("reply failed", String(err), correlationId));
+      sendResponse({ ok: true, result });
+    })
+    .catch((err: Error) => {
+      log.error("executor run failed", err.message);
+      sendResponse({ ok: false, error: err.message });
+    });
 
   return true;
 });
