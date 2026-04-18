@@ -25,6 +25,44 @@ import {
 const log = createLogger("controller");
 const backend = new BackendClient();
 
+/** Mock UI dev server (Vite); must match `npm run dev` for mock-ui. */
+const MOCK_SCHEDULE_PAGE_URL = "http://localhost:5173/schedule.html";
+const SCHEDULE_INJECTION_SETTLE_MS = 1500;
+
+async function navigateActiveTabToScheduleForInjection(correlationId: string): Promise<void> {
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!activeTab?.id) {
+    log.warn("navigate_schedule: no active tab", undefined, correlationId);
+    return;
+  }
+  try {
+    await chrome.tabs.update(activeTab.id, { url: MOCK_SCHEDULE_PAGE_URL });
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, SCHEDULE_INJECTION_SETTLE_MS);
+    });
+  } catch (err: unknown) {
+    log.warn("navigate_schedule: tabs.update failed", String(err), correlationId);
+  }
+}
+
+async function executeScheduleBackendAndInject(
+  correlationId: string,
+  intent: Extract<Intent, { kind: "schedule" }>,
+): Promise<void> {
+  await emit(makeEvent("schedule_requested", correlationId, { request: intent.request }));
+  try {
+    const result = await backend.schedule(intent.request, correlationId);
+    if (result === null) {
+      log.warn("schedule unavailable; skipping injection", undefined, correlationId);
+      return;
+    }
+    await emit(makeEvent("schedule_generated", correlationId, { result }));
+    await dispatchExecution(correlationId, intent, result);
+  } catch (err: unknown) {
+    log.error("schedule failed", String(err), correlationId);
+  }
+}
+
 // Policy allowlists. Zod enforces structural shape (non-empty strings);
 // these enums enforce the controller-side allowlist that the LLM prompt
 // narrates but cannot itself guarantee. Keep these in sync with
@@ -180,6 +218,10 @@ async function dispatchExecution(correlationId: string, intent: Intent, schedule
     return;
   }
 
+  if (intent.kind === "schedule" && scheduleResult !== undefined) {
+    await navigateActiveTabToScheduleForInjection(correlationId);
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
     log.warn("no active tab", undefined, correlationId);
@@ -305,7 +347,9 @@ async function runWithInterpretation(
     intent.reason === "schedule_context_required" &&
     scheduleContext !== undefined
   ) {
-    const built = tryBuildScheduleRequestFromContext(scheduleContext);
+    const built = tryBuildScheduleRequestFromContext(scheduleContext, {
+      rationale: interpretation.rationale,
+    });
     if (!built.ok) {
       log.warn(
         "schedule_context_fallback_build_failed",
@@ -398,18 +442,7 @@ async function runWithInterpretation(
   }
 
   if (intent.kind === "schedule") {
-    await emit(makeEvent("schedule_requested", correlationId, { request: intent.request }));
-    try {
-      const result = await backend.schedule(intent.request, correlationId);
-      if (result === null) {
-        log.warn("schedule unavailable; skipping injection", undefined, correlationId);
-        return;
-      }
-      await emit(makeEvent("schedule_generated", correlationId, { result }));
-      await dispatchExecution(correlationId, intent, result);
-    } catch (err: unknown) {
-      log.error("schedule failed", String(err), correlationId);
-    }
+    await executeScheduleBackendAndInject(correlationId, intent);
     return;
   }
 
@@ -554,7 +587,22 @@ export const controller = {
     }
 
     try {
-      await runWithInterpretation(msg.correlationId, interpretation.data);
+      const interp = interpretation.data;
+      await emit(makeEvent("intent_parsed", msg.correlationId, { interpretation: interp }));
+      await emit(
+        makeEvent("validation_passed", msg.correlationId, { schemaVersion: interp.schemaVersion }),
+      );
+      await emit(
+        makeEvent("decision_made", msg.correlationId, {
+          decision: "execute",
+          confidence: interp.confidence,
+          reason: "schedule_from_context",
+        }),
+      );
+      await executeScheduleBackendAndInject(
+        msg.correlationId,
+        interp.intent as Extract<Intent, { kind: "schedule" }>,
+      );
     } catch (err: unknown) {
       log.error("schedule_from_context pipeline failed", String(err), msg.correlationId);
       return { ok: false, error: String(err) };
@@ -574,22 +622,7 @@ export const controller = {
 
     const { intent } = pending.interpretation;
     if (intent.kind === "schedule") {
-      await emit(makeEvent("schedule_requested", msg.correlationId, { request: intent.request }));
-      try {
-        const result = await backend.schedule(intent.request, msg.correlationId);
-        if (result === null) {
-          log.warn(
-            "confirmed schedule unavailable; skipping injection",
-            undefined,
-            msg.correlationId,
-          );
-        } else {
-          await emit(makeEvent("schedule_generated", msg.correlationId, { result }));
-          await dispatchExecution(msg.correlationId, intent, result);
-        }
-      } catch (err: unknown) {
-        log.error("confirmed schedule failed", String(err), msg.correlationId);
-      }
+      await executeScheduleBackendAndInject(msg.correlationId, intent);
     } else {
       await dispatchExecution(msg.correlationId, intent);
     }

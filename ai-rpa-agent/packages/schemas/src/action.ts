@@ -34,6 +34,8 @@ export const InjectScheduleSlot = z.object({
   time: z.string().min(1),
   doctorId: z.string().min(1),
   procedureId: z.string().min(1),
+  /** Base procedure display name (omit instance suffix like `lfk_d3`). */
+  procedureName: z.string().min(1).optional(),
 });
 export type InjectScheduleSlot = z.infer<typeof InjectScheduleSlot>;
 

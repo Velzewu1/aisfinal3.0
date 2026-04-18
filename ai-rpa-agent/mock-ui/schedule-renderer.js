@@ -26,6 +26,15 @@
   var OPEN_BUTTON_SELECTOR = '[data-action="schedule-open"]';
   var PAYLOAD_ATTR = "data-schedule-payload";
 
+  /** Base procedure id → Russian label (instance ids are `lfk_d3`, etc.). */
+  var PROCEDURE_DISPLAY_NAMES = {
+    lfk: "Лечебная физкультура",
+    massage: "Массаж лечебный",
+    psychology: "Консультация психолога",
+    speech: "Логопедия",
+    physio: "Физиотерапия"
+  };
+
   var KIND_FALLBACK_PATTERNS = [
     [/(лфк|exercise[_-]?therapy|lfk|kineso|kinezo)/i, "lfk"],
     [/(массаж|massage)/i, "massage"],
@@ -65,11 +74,29 @@
     return humanizeProcedureId(doctorId);
   }
 
+  /** Strip solver instance suffix `*_dN` / `*_dayN` for display / map lookup. */
+  function canonicalProcedureIdForDisplay(procedureId) {
+    return String(procedureId).replace(/_d\d+$|_day\d+$/g, "");
+  }
+
   function humanizeProcedureId(procedureId) {
-    var stripped = String(procedureId).replace(/^(proc|procedure)[_-]/i, "");
+    var stripped = canonicalProcedureIdForDisplay(procedureId).replace(/^(proc|procedure)[_-]/i, "");
     var spaced = stripped.replace(/[_-]+/g, " ").trim();
     if (spaced.length === 0) return String(procedureId);
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }
+
+  /**
+   * @param {number} minutes minutes since midnight (0..1440)
+   * @returns {string} "HH:MM"
+   */
+  function minutesToTime(minutes) {
+    if (typeof minutes !== "number" || !isFinite(minutes)) return "—";
+    var h = Math.floor(minutes / 60);
+    var m = Math.round(minutes % 60);
+    var hs = String(h).padStart(2, "0");
+    var ms = String(m).padStart(2, "0");
+    return hs + ":" + ms;
   }
 
   function escapeCss(val) {
@@ -171,6 +198,10 @@
     if (!raw || typeof raw !== "object") return null;
     var doctorId = stringOrEmpty(raw.doctorId != null ? raw.doctorId : raw.doctor);
     var procedureId = stringOrEmpty(raw.procedureId != null ? raw.procedureId : raw.procedure);
+    var procedureNameFromPayload =
+      typeof raw.procedureName === "string" && raw.procedureName.trim().length > 0
+        ? raw.procedureName.trim()
+        : "";
 
     var dayIndex = null;
     var startMinute = null;
@@ -194,16 +225,24 @@
 
     if (dayIndex === null || !isFinite(dayIndex) || doctorId.length === 0) return null;
 
+    var baseId = canonicalProcedureIdForDisplay(procedureId);
+    var procedureLabel = procedureNameFromPayload;
+    if (procedureLabel.length === 0) {
+      procedureLabel = PROCEDURE_DISPLAY_NAMES[baseId] || "";
+    }
     var procedureUi = resolveProcedureVisual(procedureId, doctorId, {
       dayIndex: dayIndex,
       startMinute: startMinute,
       endMinute: endMinute
     });
+    if (procedureLabel.length === 0) {
+      procedureLabel = procedureUi.label;
+    }
     return {
       doctorId: doctorId,
       procedureId: procedureId,
       doctorLabel: resolveDoctorVisual(doctorId),
-      procedureLabel: procedureUi.label,
+      procedureLabel: procedureLabel,
       procedureUi: procedureUi,
       dayIndex: dayIndex,
       startMinute: startMinute,
@@ -227,6 +266,7 @@
         return {
           doctorId: stringOrEmpty(s.doctorId),
           procedureId: stringOrEmpty(s.procedureId),
+          procedureName: typeof s.procedureName === "string" ? s.procedureName : "",
           time: typeof s.time === "string" ? s.time : ""
         };
       });
@@ -243,16 +283,12 @@
     return typeof v === "number" && isFinite(v) ? v : null;
   }
 
+  /** Time-of-day only (no day index); uses normalized start/end minutes. */
   function formatTime(a) {
-    if (
-      typeof a.dayIndex !== "number" ||
-      !isFinite(a.dayIndex) ||
-      a.startMinute === null ||
-      a.endMinute === null
-    ) {
+    if (a.startMinute === null || a.endMinute === null) {
       return "—";
     }
-    return a.dayIndex + ":" + a.startMinute + "-" + a.endMinute;
+    return minutesToTime(a.startMinute) + "–" + minutesToTime(a.endMinute);
   }
 
   function sortAssignments(list) {
@@ -333,10 +369,12 @@
         cell.style.borderLeft = "3px solid " + dominantUi.inline.border;
       }
 
-      var labels = items.map(function (a) {
-        return a.procedureLabel || a.procedureId;
+      var lines = items.map(function (a) {
+        var lab = a.procedureLabel || a.procedureId;
+        var range = formatTime(a);
+        return range + " · " + lab;
       }).filter(Boolean);
-      cell.textContent = labels.length > 0 ? labels.join(", ") : "—";
+      cell.textContent = lines.length > 0 ? lines.join(" · ") : "—";
     });
   }
 

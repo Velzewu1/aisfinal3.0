@@ -1,5 +1,23 @@
 import type { AgentEvent, DomAction, Intent, ScheduleInjectPayload, ScheduleResult } from "@ai-rpa/schemas";
 import { newCorrelationId } from "../shared/correlation.js";
+import { createLogger } from "../shared/logger.js";
+
+const log = createLogger("planner");
+
+/** Base id from instance ids like `lfk_d3` → `lfk`; used for Russian labels in inject payload. */
+const PROCEDURE_DISPLAY_NAMES: Readonly<Record<string, string>> = {
+  lfk: "Лечебная физкультура",
+  massage: "Массаж лечебный",
+  psychology: "Консультация психолога",
+  speech: "Логопедия",
+  physio: "Физиотерапия",
+};
+
+function baseProcedureIdFromInstanceId(procedureId: string): string {
+  const idx = procedureId.indexOf("_d");
+  if (idx <= 0) return procedureId;
+  return procedureId.slice(0, idx);
+}
 
 /**
  * Converts a validated intent into a deterministic DOM action plan.
@@ -21,14 +39,25 @@ export function planActions(
 function toInjectSchedulePayload(grid: string, result: ScheduleResult): ScheduleInjectPayload {
   const metadata: Record<string, unknown> = { status: result.status };
   if (result.objective !== undefined) metadata.objective = result.objective;
-  return {
-    grid,
-    // `a.day` is horizon index 0..8; UI uses the same for data-day-index and data-day = day+1.
-    slots: result.assignments.map((a) => ({
+  const slots = result.assignments.map((a) => {
+    const baseProcId = baseProcedureIdFromInstanceId(a.procedureId);
+    const procedureName = PROCEDURE_DISPLAY_NAMES[baseProcId] ?? baseProcId;
+    return {
       time: `${a.day}:${a.startMinute}-${a.endMinute}`,
       doctorId: a.doctorId,
       procedureId: a.procedureId,
-    })),
+      procedureName,
+    };
+  });
+  log.info("schedule_inject_payload", {
+    horizonDays: result.horizonDays,
+    slotsCount: slots.length,
+    slots,
+  });
+  return {
+    grid,
+    // `a.day` is horizon index 0..8; UI uses the same for data-day-index and data-day = day+1.
+    slots,
     metadata,
   };
 }

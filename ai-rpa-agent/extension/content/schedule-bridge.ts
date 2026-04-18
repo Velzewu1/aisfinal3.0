@@ -8,6 +8,8 @@ export type ScheduleBridgeStatus = "idle" | "generated";
 export interface ScheduleBridgeAssignment {
   readonly doctorId: string;
   readonly procedureId: string;
+  /** Base label for UI when present (from planner `procedureName`). */
+  readonly procedureName?: string;
   /** Horizon index 0..8 (matches slot time prefix and `data-day-index`). */
   readonly day: number;
   readonly startMinute: number;
@@ -40,6 +42,7 @@ export function schedulePayloadToBridgeAssignments(payload: ScheduleInjectPayloa
     out.push({
       doctorId: slot.doctorId,
       procedureId: slot.procedureId,
+      procedureName: slot.procedureName,
       day: parsed.day,
       startMinute: parsed.startMinute,
       endMinute: parsed.endMinute,
@@ -59,72 +62,34 @@ export function schedulePayloadToBridgeState(payload: ScheduleInjectPayload): Sc
 /**
  * Publishes schedule state to the **page** `window` and dispatches `schedule_updated`.
  *
- * Content scripts run in an isolated world; page scripts (`schedule-renderer.js`, etc.)
- * only see globals set via injection into the page JS context.
+ * Content scripts run in an isolated world; the mock page loads `schedule-bridge-listener.js`,
+ * which listens on `document.documentElement` for `ai-rpa-schedule-state` and sets `window.__SCHEDULE_STATE__`
+ * in the main world (CSP-safe — no inline script or script.textContent injection).
  */
-function injectPageScript(textContent: string): void {
-  const script = document.createElement("script");
-  script.setAttribute("data-ai-rpa-schedule-bridge", "");
-  script.textContent = textContent;
-  const root = document.head ?? document.documentElement;
-  root.appendChild(script);
-  script.remove();
-}
-
-/** Always ends with a page-context `schedule_updated` so mock `schedule-renderer.js` can sync (isolated-world safe). */
 export function publishScheduleBridgeToPage(state: ScheduleBridgeState): void {
-  let payloadJson: string;
   try {
-    payloadJson = JSON.stringify(state);
+    // documentElement is shared across isolated + page worlds; avoids inline <script> injection (CSP).
+    document.documentElement.dispatchEvent(
+      new CustomEvent("ai-rpa-schedule-state", { bubbles: true, detail: { state } }),
+    );
   } catch (err: unknown) {
-    log.error("schedule bridge JSON.stringify failed", err instanceof Error ? err.message : String(err));
-    injectPageScript(`
-(function () {
-  try {
-    window.dispatchEvent(
-      new CustomEvent("schedule_updated", {
-        bubbles: true,
-        detail: { source: "bridge_stringify_failed", state: null },
-      }),
-    );
-  } catch (e) {
-    console.error("[ai-rpa] schedule bridge fallback event failed", e);
-  }
-})();
-`);
-    return;
-  }
-
-  injectPageScript(`
-(function () {
-  try {
-    window.__SCHEDULE_STATE__ = ${payloadJson};
-    window.dispatchEvent(
-      new CustomEvent("schedule_updated", {
-        bubbles: true,
-        detail: { state: window.__SCHEDULE_STATE__, source: "bridge" },
-      }),
-    );
-  } catch (e) {
-    console.error("[ai-rpa] schedule bridge publish failed", e);
+    log.error("schedule bridge dispatch failed", err instanceof Error ? err.message : String(err));
     try {
       window.dispatchEvent(
         new CustomEvent("schedule_updated", {
           bubbles: true,
-          detail: { source: "bridge_runtime_error", state: null },
+          detail: { source: "bridge_stringify_failed", state: null },
         }),
       );
-    } catch (e2) {
-      console.error("[ai-rpa] schedule bridge recovery event failed", e2);
+    } catch (e2: unknown) {
+      log.error("schedule bridge fallback event failed", e2 instanceof Error ? e2.message : String(e2));
     }
   }
-})();
-`);
 }
 
 declare global {
   interface Window {
-    /** Page-context global; set via {@link publishScheduleBridgeToPage}. */
+    /** Page-context global; set via mock-ui `schedule-bridge-listener.js`. */
     __SCHEDULE_STATE__?: ScheduleBridgeState;
   }
 }

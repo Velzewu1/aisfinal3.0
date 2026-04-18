@@ -379,12 +379,11 @@ function showScheduleSummary(payload: ScheduleGeneratedPayload): void {
   const assignments = Array.isArray(result.assignments) ? result.assignments : [];
   const assigned = assignments.length;
   const uniqueDoctors = new Set<string>();
-  let maxDay = 0;
   for (const a of assignments) {
     if (typeof a.doctorId === "string" && a.doctorId.length > 0) uniqueDoctors.add(a.doctorId);
-    if (typeof a.day === "number" && a.day + 1 > maxDay) maxDay = a.day + 1;
   }
-  const days = maxDay > 0 ? maxDay : 9;
+  const days =
+    typeof result.horizonDays === "number" && result.horizonDays > 0 ? result.horizonDays : 9;
   const specialists = uniqueDoctors.size;
 
   if (scheduleCardTitleEl) {
@@ -593,6 +592,29 @@ async function sendConfirmation(accepted: boolean): Promise<void> {
 }
 
 async function acceptProactiveSuggestion(suggestion: ProactiveSuggestion): Promise<void> {
+  if (suggestion === "suggest_schedule") {
+    beginAsync();
+    try {
+      const correlationId = newCorrelationId();
+      lastCorrelationId = correlationId;
+      await chrome.runtime.sendMessage({
+        type: "schedule_from_context",
+        correlationId,
+        context: {
+          currentPage: "primary_exam",
+          activeForm: "primary_exam_form",
+        },
+      });
+      pushLocalTimeline("info", "Расписание", "Запрос из контекста (без LLM)");
+      hideProactiveCard();
+    } catch (err: unknown) {
+      pushLocalTimeline("error", "Расписание", String(err));
+    } finally {
+      endAsync();
+    }
+    return;
+  }
+
   const text = SUGGESTION_ACCEPT_UTTERANCE[suggestion];
   beginAsync();
   try {

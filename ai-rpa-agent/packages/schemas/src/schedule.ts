@@ -31,7 +31,7 @@ export const ScheduleRequest = z.object({
   doctors: z.array(Doctor).min(1),
   procedures: z.array(Procedure).min(1),
   windows: z.array(WorkingWindow).min(1),
-  slotMinutes: SlotMinutes.default(15),
+  slotMinutes: SlotMinutes.default(30),
 });
 export type ScheduleRequest = z.infer<typeof ScheduleRequest>;
 
@@ -49,5 +49,7 @@ export const ScheduleResult = z.object({
   status: z.enum(["optimal", "feasible", "infeasible", "unknown"]),
   assignments: z.array(ScheduledAssignment),
   objective: z.number().optional(),
+  /** Planning horizon in days (matches request); for side panel / UI when assignments only span early days. */
+  horizonDays: z.number().int().positive().max(30).optional(),
 });
 export type ScheduleResult = z.infer<typeof ScheduleResult>;

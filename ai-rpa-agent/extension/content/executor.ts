@@ -56,12 +56,22 @@ function measureScheduleSlots(host: HTMLElement, payload: ScheduleInjectPayload)
     const parsed = parseSlotTime(slot.time);
     if (!parsed) {
       dropped += 1;
+      log.warn("schedule_slot_parse_failed", { time: slot.time });
       continue;
     }
     const uiDataDay = uiDataDayFromInternalDay(parsed.day);
     const cell = findScheduleCell(host, uiDataDay, slot.doctorId);
-    if (cell) rendered += 1;
-    else dropped += 1;
+    if (cell) {
+      rendered += 1;
+    } else {
+      dropped += 1;
+      log.warn("schedule_cell_lookup", {
+        internalDay: parsed.day,
+        dataDay: uiDataDay,
+        specialist: slot.doctorId,
+        found: false,
+      });
+    }
   }
   return { rendered, dropped };
 }

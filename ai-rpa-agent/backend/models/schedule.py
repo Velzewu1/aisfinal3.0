@@ -39,7 +39,7 @@ class ScheduleRequest(BaseModel):
     doctors: List[Doctor] = Field(..., min_length=1)
     procedures: List[Procedure] = Field(..., min_length=1)
     windows: List[WorkingWindow] = Field(..., min_length=1)
-    slotMinutes: SlotMinutes = 15
+    slotMinutes: SlotMinutes = 30
 
 
 class ScheduledAssignment(BaseModel):
@@ -55,3 +55,4 @@ class ScheduleResult(BaseModel):
     status: Literal["optimal", "feasible", "infeasible", "unknown"]
     assignments: List[ScheduledAssignment]
     objective: Optional[float] = None
+    horizonDays: Optional[int] = Field(default=None, ge=1, le=30)

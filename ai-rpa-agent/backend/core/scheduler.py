@@ -17,20 +17,28 @@ Model (per-patient schedule):
 Constraints:
 
   C1. ExactlyOne(x[p, w] for w in compat(p))            per procedure p
-  C2. NoOverlap on intervals grouped by (specialist, day)
-  C3. NoOverlap on intervals grouped by (day)           - patient has
-                                                          a single body
-  C4. Encoded implicitly via compat(p):
+  C2. NoOverlap on intervals grouped by (calendar day)   - patient cannot be in
+                                                          two procedures at the
+                                                          same time; multiple
+                                                          procedures the same day
+                                                          are allowed if times do
+                                                          not overlap (different
+                                                          specialists or
+                                                          back-to-back). This is
+                                                          temporal overlap only,
+                                                          not a cap on count per day.
+  C3. Encoded implicitly via compat(p):
         - only allowed specialists
         - only within working windows
         - window big enough for the procedure duration
 
 Objective:
 
-  Minimize the latest day used (max over all selected windows). This
-  spreads load evenly across the 9-day horizon. We still use a single
-  time-limited solve; the greedy fallback takes over on
-  INFEASIBLE / UNKNOWN.
+  Minimize the sum of procedure start times (within each window). Procedure
+  instances with ids ending in ``_d{day}`` only match windows on that calendar
+  day, so assignments spread across the horizon (not packed into the first days).
+
+  Greedy fallback still applies on INFEASIBLE / UNKNOWN.
 
 Contract:
 
@@ -46,8 +54,9 @@ Contract:
 """
 from __future__ import annotations
 
+import re
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ortools.sat.python import cp_model
 
@@ -62,13 +71,23 @@ from backend.models.schedule import (
 _TIME_LIMIT_SECONDS = 10.0
 _MAX_HORIZON_DAYS = 9
 
+_PROCEDURE_DAY_SUFFIX = re.compile(r"_d(\d+)$")
+
+
+def _intended_day_from_procedure_id(proc_id: str) -> Optional[int]:
+    """Instance ids like ``lfk_d3`` are fixed to horizon day 3; unrelated windows are excluded."""
+    m = _PROCEDURE_DAY_SUFFIX.search(proc_id)
+    if not m:
+        return None
+    return int(m.group(1))
+
 
 def solve(request: ScheduleRequest) -> ScheduleResult:
     horizon = min(request.horizonDays, _MAX_HORIZON_DAYS)
 
     compat = _build_compatibility(request, horizon)
     if any(len(entries) == 0 for entries in compat.values()):
-        return _fallback(request)
+        return _fallback(request, horizon)
 
     model = cp_model.CpModel()
 
@@ -102,38 +121,31 @@ def solve(request: ScheduleRequest) -> ScheduleResult:
     for p in request.procedures:
         model.AddExactlyOne(x[(p.id, w_idx)] for w_idx, _ in compat[p.id])
 
-    # C2/C3. No-overlap buckets.
-    by_doctor_day: Dict[Tuple[str, int], List[cp_model.IntervalVar]] = defaultdict(list)
+    # Patient temporal feasibility: no two procedures overlap in time on the same
+    # calendar day (single body). Multiple procedures per day are allowed if
+    # scheduled sequentially; per-doctor overlap is implied and not modeled twice.
     by_day: Dict[int, List[cp_model.IntervalVar]] = defaultdict(list)
     for (pid, w_idx), iv in intervals.items():
         w = request.windows[w_idx]
-        by_doctor_day[(w.doctorId, int(w.day))].append(iv)
         by_day[int(w.day)].append(iv)
 
-    for ivs in by_doctor_day.values():
-        if len(ivs) > 1:
-            model.AddNoOverlap(ivs)
     for ivs in by_day.values():
         if len(ivs) > 1:
             model.AddNoOverlap(ivs)
 
-    # Objective: minimize the latest day used.
-    max_day = model.NewIntVar(0, max(horizon - 1, 0), "max_day")
-    for (pid, w_idx), present in x.items():
-        day = int(request.windows[w_idx].day)
-        model.Add(max_day >= day).OnlyEnforceIf(present)
-    model.Minimize(max_day)
+    # Prefer earlier starts within each window (sum over all scheduled procedures).
+    model.Minimize(sum(starts[key] for key in x))
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = _TIME_LIMIT_SECONDS
     status = solver.Solve(model)
 
     if status == cp_model.OPTIMAL:
-        return _build_result("optimal", request, x, starts, solver)
+        return _build_result("optimal", request, horizon, x, starts, solver)
     if status == cp_model.FEASIBLE:
-        return _build_result("feasible", request, x, starts, solver)
+        return _build_result("feasible", request, horizon, x, starts, solver)
 
-    return _fallback(request)
+    return _fallback(request, horizon)
 
 
 def _build_compatibility(
@@ -142,6 +154,7 @@ def _build_compatibility(
     compat: Dict[str, List[Tuple[int, WorkingWindow]]] = {}
     for p in request.procedures:
         allowed = set(p.allowedDoctorIds)
+        intended = _intended_day_from_procedure_id(p.id)
         entries: List[Tuple[int, WorkingWindow]] = []
         for w_idx, w in enumerate(request.windows):
             if w.doctorId not in allowed:
@@ -149,6 +162,8 @@ def _build_compatibility(
             if int(w.day) >= horizon:
                 continue
             if int(w.endMinute) - int(w.startMinute) < int(p.durationMinutes):
+                continue
+            if intended is not None and int(w.day) != intended:
                 continue
             entries.append((w_idx, w))
         compat[p.id] = entries
@@ -158,6 +173,7 @@ def _build_compatibility(
 def _build_result(
     status: str,
     request: ScheduleRequest,
+    horizon: int,
     x: Dict[Tuple[str, int], cp_model.IntVar],
     starts: Dict[Tuple[str, int], cp_model.IntVar],
     solver: cp_model.CpSolver,
@@ -183,21 +199,30 @@ def _build_result(
             )
         )
 
+    _days_used = sorted({a.day for a in assignments})
+    print(f"[scheduler] assignments count: {len(assignments)}, days used: {_days_used}")
+
     return ScheduleResult(
         status=status,
         assignments=assignments,
         objective=float(solver.ObjectiveValue()),
+        horizonDays=horizon,
     )
 
 
-def _fallback(request: ScheduleRequest) -> ScheduleResult:
+def _fallback(request: ScheduleRequest, horizon: int) -> ScheduleResult:
     # Spec calls this "degraded"; the Pydantic Literal only permits
     # "unknown" (the other non-success bucket), so we use "unknown"
     # to keep the existing contract stable.
+    assignments = _greedy_stub(request)
+    _days_used = sorted({a.day for a in assignments})
+    print(f"[scheduler] fallback assignments count: {len(assignments)}, days used: {_days_used}")
+
     return ScheduleResult(
         status="unknown",
-        assignments=_greedy_stub(request),
+        assignments=assignments,
         objective=None,
+        horizonDays=horizon,
     )
 
 
@@ -210,7 +235,8 @@ def _greedy_stub(request: ScheduleRequest) -> List[ScheduledAssignment]:
     assignments: List[ScheduledAssignment] = []
     for i, proc in enumerate(request.procedures):
         doctor_id = proc.allowedDoctorIds[0]
-        start = i * request.slotMinutes
+        # TZ: stagger fallback placements by 30 minutes (independent of slot grid).
+        start = i * 30
         assignments.append(
             ScheduledAssignment(
                 procedureId=proc.id,

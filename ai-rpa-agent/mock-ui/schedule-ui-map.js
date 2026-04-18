@@ -29,14 +29,24 @@
   var DOC_PROC_UI_MAP = /** @type {Record<string, ProcedureUiEntry>} */ ({
     "psychologist\u0001proc_psy": { label: "Консультация: Психолог", color: "psychologist" },
     "lkf_1\u0001proc_lfk": { label: "ЛФК", color: "lfk" },
+    "lkf_1\u0001lfk": { label: "Лечебная физкультура", color: "lfk" },
     "massage_1\u0001proc_mass": { label: "Массаж воротниковой зоны", color: "massage" },
-    "speech_therapist\u0001proc_l": { label: "Консультация: Логопед", color: "speech" }
+    "massage_1\u0001massage": { label: "Массаж лечебный", color: "massage" },
+    "speech_therapist\u0001proc_l": { label: "Консультация: Логопед", color: "speech" },
+    "speech_1\u0001speech": { label: "Логопедия", color: "speech" },
+    "psych_1\u0001psychology": { label: "Консультация психолога", color: "psychologist" },
+    "physio_1\u0001physio": { label: "Физиотерапия", color: "default" }
   });
 
   /**
    * Exact procedureId only (global default when no composite / doc+proc hit).
    */
   var PROCEDURE_UI_MAP = /** @type {Record<string, ProcedureUiEntry>} */ ({
+    lfk: { label: "Лечебная физкультура", color: "lfk" },
+    massage: { label: "Массаж лечебный", color: "massage" },
+    psychology: { label: "Консультация психолога", color: "psychologist" },
+    speech: { label: "Логопедия", color: "speech" },
+    physio: { label: "Физиотерапия", color: "default" },
     proc_lfk: { label: "ЛФК", color: "lfk" },
     proc_kinezo: { label: "Кинезотерапия", color: "lfk" },
     proc_hydro: { label: "Гидрокинезотерапия", color: "lfk" },
@@ -51,8 +61,11 @@
 
   /** @type {Record<string, string>} */
   var DOCTOR_UI_MAP = {
-    lkf_1: "Врач ЛФК",
+    lkf_1: "Инструктор ЛФК",
     massage_1: "Массажист",
+    psych_1: "Психолог",
+    speech_1: "Логопед",
+    physio_1: "Физиотерапевт",
     psychologist: "Психолог",
     speech_therapist: "Логопед",
     physiotherapist: "Физиотерапевт",
@@ -119,9 +132,15 @@
     );
   }
 
+  function canonicalProcedureId(procedureId) {
+    return String(procedureId).replace(/_day\d+$/, "");
+  }
+
   function exactProcedureRow(procedureId) {
     var p = String(procedureId);
+    var pCanon = canonicalProcedureId(p);
     if (PROCEDURE_UI_MAP[p]) return PROCEDURE_UI_MAP[p];
+    if (pCanon !== p && PROCEDURE_UI_MAP[pCanon]) return PROCEDURE_UI_MAP[pCanon];
     var pl = p.toLowerCase();
     for (var pk in PROCEDURE_UI_MAP) {
       if (Object.prototype.hasOwnProperty.call(PROCEDURE_UI_MAP, pk) && pk.toLowerCase() === pl) {
@@ -156,6 +175,9 @@
 
     var dp = d + "\u0001" + p;
     if (DOC_PROC_UI_MAP[dp]) return DOC_PROC_UI_MAP[dp];
+    var pCanon = canonicalProcedureId(p);
+    var dpCanon = d + "\u0001" + pCanon;
+    if (pCanon !== p && DOC_PROC_UI_MAP[dpCanon]) return DOC_PROC_UI_MAP[dpCanon];
 
     return exactProcedureRow(p);
   }
