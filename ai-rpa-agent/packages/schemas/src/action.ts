@@ -62,12 +62,25 @@ export const InjectScheduleAction = z.object({
   payload: ScheduleInjectPayload,
 });
 
+/**
+ * Patient-row click on the patient-list page. Matches a row by fuzzy
+ * (case-insensitive substring) search over the row's `data-patient-name`
+ * and `data-patient-id` dataset values, then fires a native click so the
+ * page's own click handler performs the navigation (preserves auditability:
+ * AI never constructs the destination URL directly).
+ */
+export const OpenPatientAction = z.object({
+  kind: z.literal("open_patient"),
+  patientQuery: z.string().min(1),
+});
+
 export const DomAction = z.discriminatedUnion("kind", [
   FillAction,
   ClickAction,
   NavigateAction,
   SetStatusAction,
   InjectScheduleAction,
+  OpenPatientAction,
 ]);
 export type DomAction = z.infer<typeof DomAction>;
 

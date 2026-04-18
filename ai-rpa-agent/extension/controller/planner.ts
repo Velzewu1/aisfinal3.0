@@ -72,6 +72,13 @@ function buildActions(intent: Intent, scheduleResult?: ScheduleResult): DomActio
       }));
 
     case "navigate":
+      if (intent.patientQuery) {
+        // Patient selection from a list: delegate to `open_patient`, which
+        // fires a native click on the matching row. The mock-ui's own
+        // handler performs the URL change, keeping the AI out of the
+        // DOM-mutation path.
+        return [{ kind: "open_patient", patientQuery: intent.patientQuery }];
+      }
       return [{ kind: "navigate", nav: intent.target }];
 
     case "set_status":

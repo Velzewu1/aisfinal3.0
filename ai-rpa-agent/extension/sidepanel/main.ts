@@ -2,8 +2,15 @@ import { ContentTabVoiceRecorder } from "../voice/index.js";
 import type { VoiceCapturedEvent } from "../voice/index.js";
 import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
-import { suggestNext, SUGGESTION_TEXT, type ProactiveSuggestion } from "../controller/proactivity.js";
-import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
+import {
+  afterPrimaryExamFillExecuted,
+  clearPrimaryExamFillProgressOnAgentNavigate,
+  onContextAttachedForExamProgress,
+  suggestNext,
+  SUGGESTION_TEXT,
+  type ProactiveSuggestion,
+} from "../controller/proactivity.js";
+import type { AgentEvent, IntentKind, LlmInterpretation } from "@ai-rpa/schemas";
 
 const log = createLogger("sidepanel");
 const recorder = new ContentTabVoiceRecorder();
@@ -53,10 +60,14 @@ let cardState: CardState = { mode: "hidden" };
 let headerAsyncOps = 0;
 let activeConfirmationId: string | null = null;
 
-const intentByCorrelation = new Map<string, IntentKind>();
+const interpretationByCorrelation = new Map<string, LlmInterpretation>();
+
+/** Latest page from `context_attached` (Step 5); used for primary-exam fill hints. */
+let lastAttachedContextPage = "primary_exam";
 
 const SUGGESTION_ACCEPT_UTTERANCE: Readonly<Record<ProactiveSuggestion, string>> = Object.freeze({
   suggest_schedule: "Да, сформируйте расписание.",
+  suggest_exam_progress: "",
   suggest_next_form: "Да, заполните форму голосом.",
   suggest_finish_visit: "Да, завершите визит.",
 });
@@ -592,26 +603,22 @@ async function sendConfirmation(accepted: boolean): Promise<void> {
 }
 
 async function acceptProactiveSuggestion(suggestion: ProactiveSuggestion): Promise<void> {
+  if (suggestion === "suggest_exam_progress") {
+    hideProactiveCard();
+    return;
+  }
   if (suggestion === "suggest_schedule") {
-    beginAsync();
-    try {
-      const correlationId = newCorrelationId();
-      lastCorrelationId = correlationId;
-      await chrome.runtime.sendMessage({
-        type: "schedule_from_context",
-        correlationId,
-        context: {
-          currentPage: "primary_exam",
-          activeForm: "primary_exam_form",
-        },
+    const correlationId = newCorrelationId();
+    lastCorrelationId = correlationId;
+    void chrome.runtime
+      .sendMessage({ type: "auto_schedule", correlationId })
+      .then(() => {
+        pushLocalTimeline("info", "Расписание", "Авто-расписание (контекст по умолчанию)");
+      })
+      .catch((err: unknown) => {
+        pushLocalTimeline("error", "Расписание", String(err));
       });
-      pushLocalTimeline("info", "Расписание", "Запрос из контекста (без LLM)");
-      hideProactiveCard();
-    } catch (err: unknown) {
-      pushLocalTimeline("error", "Расписание", String(err));
-    } finally {
-      endAsync();
-    }
+    hideProactiveCard();
     return;
   }
 
@@ -655,25 +662,54 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
   const ev = msg.event;
   appendAgentTimeline(ev);
 
+  if (ev.type === "context_attached") {
+    lastAttachedContextPage = ev.payload.currentPage;
+    onContextAttachedForExamProgress(ev.payload);
+    return;
+  }
+
   if (ev.type === "intent_parsed") {
-    intentByCorrelation.set(ev.correlationId, ev.payload.interpretation.intent.kind);
+    interpretationByCorrelation.set(ev.correlationId, ev.payload.interpretation);
     return;
   }
 
   if (ev.type === "confidence_evaluated") {
-    const kind = intentByCorrelation.get(ev.correlationId);
-    showConfidenceBar(kind, ev.payload.score);
+    const interp = interpretationByCorrelation.get(ev.correlationId);
+    showConfidenceBar(interp?.intent.kind, ev.payload.score);
     return;
   }
 
   if (ev.type === "decision_made") {
     hideConfidenceBar();
-    const kind = intentByCorrelation.get(ev.correlationId);
-    intentByCorrelation.delete(ev.correlationId);
-    if (ev.payload.decision === "execute" && kind === "fill") {
-      const suggestion = suggestNext(kind);
+    const interp = interpretationByCorrelation.get(ev.correlationId);
+    interpretationByCorrelation.delete(ev.correlationId);
+    if (ev.payload.decision !== "execute" || !interp) {
+      return;
+    }
+
+    if (interp.intent.kind === "navigate") {
+      clearPrimaryExamFillProgressOnAgentNavigate();
+      const suggestion = suggestNext("navigate");
       if (suggestion) {
-        showProactiveSuggestion(suggestion, `✓ ${SUGGESTION_TEXT[suggestion]}`);
+        showProactiveSuggestion(suggestion, `\u2713 ${SUGGESTION_TEXT[suggestion]}`);
+      }
+      return;
+    }
+
+    if (interp.intent.kind === "schedule") {
+      const suggestion = suggestNext("schedule");
+      if (suggestion) {
+        showProactiveSuggestion(suggestion, `\u2713 ${SUGGESTION_TEXT[suggestion]}`);
+      }
+      return;
+    }
+
+    if (interp.intent.kind === "fill") {
+      const hint = afterPrimaryExamFillExecuted(interp.intent.slots, lastAttachedContextPage);
+      if (hint.kind === "schedule") {
+        showProactiveSuggestion(hint.suggestion, `\u2713 ${SUGGESTION_TEXT[hint.suggestion]}`);
+      } else if (hint.kind === "progress") {
+        showProactiveSuggestion(hint.suggestion, `\u2713 ${hint.displayMessage}`);
       }
     }
     return;

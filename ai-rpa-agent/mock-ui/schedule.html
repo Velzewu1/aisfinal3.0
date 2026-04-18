@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Расписание консультаций</title>
+  <script src="patient-loader.js"></script>
   <style>
     .sched-wrap {
       background: #fff;
@@ -298,11 +299,13 @@
     </aside>
     <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
       <div style="background:linear-gradient(90deg,#1a2035 0%,#252b45 100%);color:#e8eaf2;padding:8px 24px;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
-        <span><strong>Пациент:</strong> Иванова М.А. <span style="opacity:0.75;">(mock)</span></span>
+        <span><strong>Пациент:</strong> <span data-patient-display-name>—</span> <span style="opacity:0.75;">(mock)</span></span>
         <span style="opacity:0.6;">|</span>
-        <span><strong>Диагноз:</strong> (G93.2) Доброкачественная внутричерепная гипертензия; (Z86.6) …</span>
+        <span><strong>Диагноз:</strong> <span data-patient-display-diagnosis>—</span></span>
         <span style="opacity:0.6;">|</span>
-        <span><strong>Койка:</strong> 14 / Невропатология детская</span>
+        <span data-patient-display-bed>Койка: —</span>
+        <span style="opacity:0.6;">|</span>
+        <span data-patient-display-doctor>Врач: —</span>
       </div>
       <header style="background:#fff;border-bottom:1px solid #dde1ea;padding:12px 24px;">
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">

@@ -19,6 +19,13 @@ const log = createLogger("schedule-request");
 
 export type ValidatedScheduleContext = ContextualizedUtteranceEvent["context"];
 
+/** Default UI/session slice for proactive «Сформировать расписание?» (no LLM). */
+export const DEFAULT_SCHEDULE_CONTEXT: ValidatedScheduleContext = Object.freeze({
+  currentPage: "primary_exam",
+  activeForm: "primary_exam_form",
+  availableFields: [],
+});
+
 export type ScheduleRequestBuildInput = {
   readonly doctors?: readonly Doctor[];
   readonly procedures?: readonly Procedure[];

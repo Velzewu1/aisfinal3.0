@@ -19,6 +19,7 @@ import type { TranscribedTextEvent } from "../voice/transcribe.js";
 import type { VoiceCapturedEvent } from "../voice/recorder.js";
 import {
   tryBuildScheduleRequestFromContext,
+  DEFAULT_SCHEDULE_CONTEXT,
   type ValidatedScheduleContext,
 } from "./schedule-request-from-context.js";
 
@@ -64,9 +65,10 @@ async function executeScheduleBackendAndInject(
 }
 
 // Policy allowlists. Zod enforces structural shape (non-empty strings);
-// these enums enforce the controller-side allowlist that the LLM prompt
-// narrates but cannot itself guarantee. Keep these in sync with
-// `llm/interpret.ts` and `content/selectors.ts`.
+// these enums enforce the controller-side allowlist. Fill slot fields are
+// validated against `context.availableFields` from live DOM discovery
+// (`attachContext`). Keep navigate/status lists aligned with mock-ui `data-nav`
+// / status entities.
 const ALLOWED_NAV_TARGETS: ReadonlySet<string> = new Set([
   "assignments_stub",
   "diagnoses_stub",
@@ -92,48 +94,11 @@ const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "final",
   "completed",
 ]);
-const ALLOWED_FILL_FIELDS: ReadonlySet<string> = new Set([
-  "allergy_anamnesis",
-  "cmb_medical_form",
-  "cmb_medical_record_type_mo",
-  "cmb_resuscitation_status",
-  "complaints_on_admission",
-  "diagnosis",
-  "diary_assignments",
-  "diary_event_timestamp",
-  "diary_objective",
-  "diary_subjective",
-  "diary_time",
-  "disease_anamnesis",
-  "dt_reg_date_time",
-  "epicrisis_additional",
-  "epicrisis_discharge_condition",
-  "epicrisis_final",
-  "epicrisis_hemodialysis",
-  "epicrisis_instrumental",
-  "epicrisis_lab_diagnostics",
-  "epicrisis_operations",
-  "epicrisis_other",
-  "epicrisis_outcome",
-  "epicrisis_recommendations",
-  "epicrisis_specialist_consults",
-  "epicrisis_treatment_performed",
-  "life_anamnesis",
-  "ntb_bottom_pressure",
-  "ntb_breath",
-  "ntb_pulse",
-  "ntb_saturation",
-  "ntb_temperature",
-  "ntb_top_pressure",
-  "ntb_weight",
-  "objective_findings",
-  "service_result_lfk",
-  "service_result_massage",
-  "service_result_psychologist",
-  "service_result_speech_therapy",
-]);
 
-function checkIntentPolicy(intent: Intent): string | null {
+function checkIntentPolicy(
+  intent: Intent,
+  context?: ValidatedScheduleContext,
+): string | null {
   if (intent.kind === "navigate") {
     if (!ALLOWED_NAV_TARGETS.has(intent.target)) {
       return `navigate_target:${intent.target}`;
@@ -148,10 +113,13 @@ function checkIntentPolicy(intent: Intent): string | null {
     }
   }
   if (intent.kind === "fill") {
-    for (const slot of intent.slots) {
-      if (!ALLOWED_FILL_FIELDS.has(slot.field)) {
-        return `fill_field:${slot.field}`;
-      }
+    const available = context?.availableFields?.map((f) => f.field) ?? [];
+    if (available.length === 0) {
+      return null;
+    }
+    const bad = intent.slots.find((s) => !available.includes(s.field));
+    if (bad) {
+      return `fill_field:${bad.field}`;
     }
   }
   return null;
@@ -287,7 +255,7 @@ async function runFromUtterance(
     return;
   }
 
-  const contextualized = attachContext(normalized);
+  const contextualized = await attachContext(normalized);
 
   const apiKey = await readApiKey();
   if (!apiKey) {
@@ -391,7 +359,7 @@ async function runWithInterpretation(
     return;
   }
 
-  const policyError = checkIntentPolicy(intent);
+  const policyError = checkIntentPolicy(intent, scheduleContext);
   if (policyError) {
     log.warn("intent rejected by policy", { policyError, intentKind: intent.kind }, correlationId);
     await emit(
@@ -552,13 +520,28 @@ export const controller = {
   },
 
   /**
+   * Proactive UI path: CP-SAT from {@link DEFAULT_SCHEDULE_CONTEXT} without voice/LLM.
+   */
+  async autoGenerateSchedule(correlationId: string): Promise<{ ok: boolean; error?: string }> {
+    return controller.onScheduleFromContext({
+      type: "schedule_from_context",
+      correlationId,
+      context: DEFAULT_SCHEDULE_CONTEXT,
+    });
+  },
+
+  /**
    * System path: validated UI/session context → deterministic `ScheduleRequest`
    * → same decision + backend + executor chain as LLM-produced schedule intents.
    */
   async onScheduleFromContext(
     msg: MessageOf<"schedule_from_context">,
   ): Promise<{ ok: boolean; error?: string }> {
-    const built = tryBuildScheduleRequestFromContext(msg.context, msg.build);
+    const scheduleCtx: ValidatedScheduleContext = {
+      ...msg.context,
+      availableFields: msg.context.availableFields ?? [],
+    };
+    const built = tryBuildScheduleRequestFromContext(scheduleCtx, msg.build);
     if (!built.ok) {
       await emit(
         makeEvent("validation_failed", msg.correlationId, {

@@ -196,6 +196,9 @@ export const router = {
       case "schedule_from_context":
         return controller.onScheduleFromContext(msg);
 
+      case "auto_schedule":
+        return controller.autoGenerateSchedule(msg.correlationId);
+
       case "executor_finished":
         return controller.onExecutorFinished(msg);
 

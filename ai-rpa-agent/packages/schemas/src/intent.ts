@@ -25,6 +25,13 @@ export const FillIntent = z.object({
 export const NavigateIntent = z.object({
   kind: z.literal("navigate"),
   target: z.string().min(1),
+  /**
+   * Optional patient selector. When present, the planner emits an
+   * `open_patient` DomAction (fuzzy match on the patient-list page)
+   * instead of a `navigate` action; the page's own row click handler
+   * performs the URL change, preserving the deterministic boundary.
+   */
+  patientQuery: z.string().min(1).optional(),
 });
 
 export const ScheduleIntent = z.object({

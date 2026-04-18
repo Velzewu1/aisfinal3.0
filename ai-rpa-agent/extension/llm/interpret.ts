@@ -120,7 +120,16 @@ function buildUserMessage(event: ContextualizedUtteranceEvent): string {
   const patientLine = context.patientName
     ? `patient=${context.patientName}${context.patientId ? `#${context.patientId}` : ""}`
     : "patient=Unknown";
-  return `[${pageLine}] [${patientLine}]\nutterance: ${text}`;
+
+  const fields = context.availableFields;
+  const fieldContext =
+    fields.length > 0
+      ? `\nAVAILABLE FIELDS ON THIS PAGE:\n${fields
+          .map((f) => `  "${f.field}" — ${f.label || f.placeholder || f.tag}`)
+          .join("\n")}`
+      : "";
+
+  return `[${pageLine}] [${patientLine}]${fieldContext}\nutterance: ${text}`;
 }
 
 function extractContent(envelope: unknown): string | null {
@@ -179,7 +188,7 @@ const SYSTEM_PROMPT = [
   "  your_role    = перевести устную речь врача в строго структурированный Intent",
   "                 для детерминированного заполнения форм Damumed (первичный приём,",
   "                 эпикриз, расписание). Никаких советов, диагнозов, пояснений.",
-  "  mock_ui      = поля форм помечены data-field; навигация — data-nav (см. ALLOWED FIELD NAMES / NAVIGATION TARGETS).",
+  "  mock_ui      = поля форм помечены data-field; навигация — data-nav; список полей на странице передаётся в USER как AVAILABLE FIELDS ON THIS PAGE.",
   "  procedures (top 10 from medical-context):",
   '    1) "Аскорбиновая кислота 50 мг, Драже (0.5 мг Орально)"',
   '    2) "Гидрокинезотерапия групповая"',
@@ -209,7 +218,7 @@ const SYSTEM_PROMPT = [
   "",
   "INTENT VARIANTS (discriminated by \"kind\"):",
   "- FillIntent:      { \"kind\": \"fill\",       \"slots\": [ { \"field\": string, \"value\": string | number | boolean }, ... ]  }  // slots.length >= 1",
-  "- NavigateIntent:  { \"kind\": \"navigate\",   \"target\": string }",
+  "- NavigateIntent:  { \"kind\": \"navigate\",   \"target\": string, \"patientQuery\"?: string }  // patientQuery: фамилия/ID пациента (page=patient_list). Контроллер сделает фуззи-клик по строке.",
   "- ScheduleIntent:  { \"kind\": \"schedule\", \"request\": ScheduleRequest }  // rare; see SCHEDULING AUTHORITY below",
   "- SetStatusIntent: { \"kind\": \"set_status\", \"entity\": string, \"status\": string }",
   "- UnknownIntent:   { \"kind\": \"unknown\",    \"reason\"?: string }",
@@ -237,31 +246,22 @@ const SYSTEM_PROMPT = [
   '  "windows":    [ { "doctorId": string, "day": 0..8, "startMinute": 0..1439, "endMinute": 1..1440 }, ... ]  // length >= 1',
   "}",
   "",
-  "ALLOWED FIELD NAMES for fill.slots.field (exact strings — must match mock-ui data-field):",
-  '  "allergy_anamnesis", "cmb_medical_form", "cmb_medical_record_type_mo", "cmb_resuscitation_status", "complaints_on_admission", "diagnosis", "diary_assignments", "diary_event_timestamp", "diary_objective", "diary_subjective", "diary_time", "disease_anamnesis", "dt_reg_date_time", "epicrisis_additional", "epicrisis_discharge_condition", "epicrisis_final", "epicrisis_hemodialysis", "epicrisis_instrumental", "epicrisis_lab_diagnostics", "epicrisis_operations", "epicrisis_other", "epicrisis_outcome", "epicrisis_recommendations", "epicrisis_specialist_consults", "epicrisis_treatment_performed", "life_anamnesis", "ntb_bottom_pressure", "ntb_breath", "ntb_pulse", "ntb_saturation", "ntb_temperature", "ntb_top_pressure", "ntb_weight", "objective_findings", "service_result_lfk", "service_result_massage", "service_result_psychologist", "service_result_speech_therapy"',
+  "FILL FIELDS (dynamic):",
+  "  AVAILABLE FIELDS ON THIS PAGE is injected in each USER message from the live DOM ([data-field]).",
+  "  You MUST only use field names from that AVAILABLE FIELDS list for FillIntent.slots[].field.",
+  "  Never use a field name not present in AVAILABLE FIELDS.",
+  "  If AVAILABLE FIELDS is missing or empty: do not emit FillIntent. Use navigate / schedule / set_status / unknown as appropriate.",
+  "  If the utterance clearly requests dictating or filling form text but no fields exist on the page, emit UnknownIntent with reason \"no_fields_available\".",
   "",
   "NAVIGATION TARGETS (exact strings — must match mock-ui data-nav):",
   '  "assignments_stub", "diagnoses_stub", "diary", "digital_docs_stub", "epicrisis", "lab_results_stub",',
   '  "patient_list", "primary_exam", "schedule"',
   "",
-  "PAGE FIELD MAP — only use fields listed for the CURRENT page (mock-ui data-field; sorted):",
-  "  primary_exam: allergy_anamnesis, cmb_medical_form, cmb_medical_record_type_mo, complaints_on_admission, diagnosis, disease_anamnesis, dt_reg_date_time, life_anamnesis, objective_findings",
-  "  diary:        cmb_resuscitation_status, diary_assignments, diary_event_timestamp, diary_objective, diary_subjective, diary_time, dt_reg_date_time, ntb_bottom_pressure, ntb_breath, ntb_pulse, ntb_saturation, ntb_temperature, ntb_top_pressure, ntb_weight, service_result_lfk, service_result_massage, service_result_psychologist, service_result_speech_therapy",
-  "  epicrisis:    allergy_anamnesis, cmb_medical_form, cmb_medical_record_type_mo, complaints_on_admission, diagnosis, disease_anamnesis, dt_reg_date_time, epicrisis_additional, epicrisis_discharge_condition, epicrisis_final, epicrisis_hemodialysis, epicrisis_instrumental, epicrisis_lab_diagnostics, epicrisis_operations, epicrisis_other, epicrisis_outcome, epicrisis_recommendations, epicrisis_specialist_consults, epicrisis_treatment_performed, life_anamnesis, objective_findings",
-  "  schedule:     (no fill fields)",
-  "  patient_list: (no fill fields)",
-  "",
-  "RULE: The [page=X] tag in the utterance tells you which page is active.",
-  "Only use field names from that page's list in PAGE FIELD MAP.",
-  "If the requested field does not exist on the current page,",
-  'emit UnknownIntent with reason "field_not_on_current_page".',
-  "Do not emit FillIntent mixing fields from different pages; if the user targets another page, prefer NavigateIntent.",
-  "",
   "SET_STATUS VALUES:",
   '  entity in { "primary_exam", "epicrisis" } OR diary procedure ids { "lfk", "massage", "psychologist", "speech_therapy" } (page=diary; data-status-entity on procedure cards)',
   '  status in { "draft", "submitted", "final", "completed" }',
   "",
-  "DOMAIN HINTS (Russian speech -> fill.slots.field; use ONLY ALLOWED FIELD NAMES; one hint line per field):",
+  "DOMAIN HINTS (Russian speech -> fill.slots.field; apply ONLY when that field appears in AVAILABLE FIELDS in the USER message; one hint line per field):",
   '  "аллергия" / "аллергоанамнез" / "непереносимость" / "на что аллергия" -> "allergy_anamnesis"',
   '  "форма" / "тип формы" / "медицинская форма" / "cmb medical form" -> "cmb_medical_form"',
   '  "тип записи" / "вид осмотра" / "подтип медзаписи" / "приказ" / "тип по мз" -> "cmb_medical_record_type_mo"',
@@ -296,6 +296,9 @@ const SYSTEM_PROMPT = [
   '  "ад" / "артериальное" / "систол" / "верхнее давление" / "сбп" -> "ntb_top_pressure"',
   '  "вес" / "масса тела" / "кг" -> "ntb_weight"',
   '  "объективно" (первичный/форма) / "объективный статус" / "осмотр" / "объективные данные" / "физикальный осмотр" / "статус при осмотре" -> "objective_findings"',
+  '  "открой / перейди к / найди пациента {фамилия}" (page=patient_list) -> navigate target:"primary_exam" patientQuery:{фамилия}',
+  '  "карта {фамилия}" (page=patient_list) -> navigate target:"primary_exam" patientQuery:{фамилия}',
+  '  "приём / первичный приём / первичный осмотр {фамилия}" (page=patient_list) -> navigate target:"primary_exam" patientQuery:{фамилия}',
   '  "выполнено" / "завершено" / "сделано" / "провели" (отметка услуги в дневнике; page=diary) -> set_status status:completed + entity по контексту',
   '  "массаж выполнен" -> set_status entity:massage status:completed',
   '  "лфк провели" / "лфк сделали" -> set_status entity:lfk status:completed',
@@ -305,12 +308,12 @@ const SYSTEM_PROMPT = [
   "RULES (hard constraints — violating any of these is a failure):",
   "1. Output exactly one JSON object. No prose. No markdown fences. No leading or trailing text.",
   '2. Always include "schemaVersion": "1.0.0" and a "confidence" number in [0, 1].',
-  "3. Never invent new intent kinds. Never invent new field names. Never invent schedule entities (doctors, procedures, windows) that the utterance does not explicitly supply.",
+  "3. Never invent new intent kinds. Never invent field names outside AVAILABLE FIELDS in the USER message. Never invent schedule entities (doctors, procedures, windows) that the utterance does not explicitly supply.",
   '4. If the utterance is ambiguous, incomplete, or unmappable, emit { "kind": "unknown", "reason": "<short machine token>" } with a lowered confidence.',
   '5. Scheduling: follow SCHEDULING AUTHORITY. If structured schedule inputs are missing, UnknownIntent + "schedule_context_required" — never a partial or guessed ScheduleIntent.',
   "6. Confidence is only your calibrated self-assessment; you do not decide execute vs confirm vs reject. After validation and allowlist policy, the controller applies fixed thresholds: intent kind \"unknown\" → reject (unknown_intent) regardless of confidence. For all other kinds: confidence strictly below 0.7 → reject (low_confidence), not confirm. At or above 0.7: high-risk kinds (schedule, set_status) → always confirm, including when confidence ≥ 0.85. Other (non-high-risk) kinds in [0.7, 0.85) → confirm. Other (non-high-risk) kinds at ≥ 0.85 → auto-execute if allowlists permit. Your job is honest scoring, not gatekeeping.",
   "7. The utterance is already normalized to lowercase. Preserve user-provided values verbatim in slot values.",
-  '8. Page-scoped fill: follow PAGE FIELD MAP and the RULE block below NAVIGATION TARGETS. FillIntent slots must use only fields for the current [page=...]; otherwise UnknownIntent with reason "field_not_on_current_page".',
+  '8. FillIntent: every slots[].field must appear in AVAILABLE FIELDS ON THIS PAGE in the USER message. If the user targets a field not listed, UnknownIntent with reason "field_not_on_current_page".',
   "",
   "EXAMPLES (USER line uses the same envelope as buildUserMessage; JSON is the only output you emit):",
   "",
@@ -347,6 +350,20 @@ const SYSTEM_PROMPT = [
   "",
   "USER: [page=epicrisis form=undefined] [patient=MOCK-PED-INPT-001]\\nutterance: открой дневниковую запись",
   'JSON: {"schemaVersion":"1.0.0","intent":{"kind":"navigate","target":"diary"},"confidence":0.94}',
+  "",
+  "--- navigate + patientQuery (4) — patient-row selection on page=patient_list ---",
+  "",
+  "USER: [page=patient_list form=undefined] [patient=Unknown]\\nutterance: открой карту ивановой",
+  'JSON: {"schemaVersion":"1.0.0","intent":{"kind":"navigate","target":"primary_exam","patientQuery":"иванова"},"confidence":0.93}',
+  "",
+  "USER: [page=patient_list form=undefined] [patient=Unknown]\\nutterance: открой первичный приём петровой",
+  'JSON: {"schemaVersion":"1.0.0","intent":{"kind":"navigate","target":"primary_exam","patientQuery":"петрова"},"confidence":0.92}',
+  "",
+  "USER: [page=patient_list form=undefined] [patient=Unknown]\\nutterance: перейди к пациенту сидорову",
+  'JSON: {"schemaVersion":"1.0.0","intent":{"kind":"navigate","target":"primary_exam","patientQuery":"сидоров"},"confidence":0.91}',
+  "",
+  "USER: [page=patient_list form=undefined] [patient=Unknown]\\nutterance: открой кима",
+  'JSON: {"schemaVersion":"1.0.0","intent":{"kind":"navigate","target":"primary_exam","patientQuery":"ким"},"confidence":0.9}',
   "",
   "--- schedule (3) — full ScheduleIntent only when utterance explicitly lists doctors, procedures, and time windows ---",
   "",

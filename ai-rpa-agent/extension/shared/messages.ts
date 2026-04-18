@@ -1,4 +1,5 @@
 import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation } from "@ai-rpa/schemas";
+import type { PageFieldDescriptor } from "../controller/context.js";
 import type { ScheduleRequestBuildInput } from "../controller/schedule-request-from-context.js";
 
 /**
@@ -37,9 +38,11 @@ export type ExtensionMessage =
         activeForm?: string;
         patientId?: string;
         patientName?: string;
+        availableFields?: readonly PageFieldDescriptor[];
       };
       build?: ScheduleRequestBuildInput;
     }
+  | { type: "auto_schedule"; correlationId: string }
   | { type: "event"; event: AgentEvent };
 
 export type MessageOf<T extends ExtensionMessage["type"]> = Extract<ExtensionMessage, { type: T }>;

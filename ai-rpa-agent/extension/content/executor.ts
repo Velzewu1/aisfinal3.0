@@ -211,6 +211,26 @@ async function dispatch(action: DomAction): Promise<void> {
       return;
     }
 
+    case "open_patient": {
+      const patientQuery = action.patientQuery.toLowerCase();
+      const rows = document.querySelectorAll<HTMLElement>('[data-action="open-patient"]');
+      let found = false;
+      for (const row of rows) {
+        const name = (row.dataset.patientName ?? "").toLowerCase();
+        const id = (row.dataset.patientId ?? "").toLowerCase();
+        if (name.includes(patientQuery) || id.includes(patientQuery)) {
+          row.click();
+          found = true;
+          log.info("open_patient: clicked row", { patientQuery, name, id });
+          break;
+        }
+      }
+      if (!found) {
+        throw new Error(`patient_not_found: "${action.patientQuery}"`);
+      }
+      return;
+    }
+
     case "set_status": {
       const el = selectByDataAttr("data-status-entity", action.entity);
       if (!(el instanceof HTMLElement)) {

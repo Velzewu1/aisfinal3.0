@@ -45,10 +45,19 @@ async function handleStart(correlationId: string): Promise<void> {
     throw new Error("already_recording");
   }
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    log.error("mic_error", { kind: "media_devices_unavailable" }, correlationId);
     throw new Error("media_devices_unavailable");
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error("mic_error", { kind: "getUserMedia", name: err instanceof Error ? err.name : "", message }, correlationId);
+    throw err instanceof Error ? err : new Error(message);
+  }
+  log.info("mic_start", { mode: "ptt", url: location.href }, correlationId);
   const recorder = new MediaRecorder(stream);
   chunks = [];
   activeCorrelationId = correlationId;
@@ -154,6 +163,9 @@ interface ContinuousState {
 
 let continuousState: ContinuousState | null = null;
 
+/** Tear down when continuous session ends (visibility / AudioContext state listeners). */
+let continuousLifecycleCleanup: (() => void) | null = null;
+
 function computeAudioLevel(state: ContinuousState): number {
   state.analyser.getByteFrequencyData(state.levelBuffer);
   let sum = 0;
@@ -165,6 +177,8 @@ function computeAudioLevel(state: ContinuousState): number {
 
 function startSegmentRecorder(state: ContinuousState): void {
   if (state.recorder && state.recorder.state !== "inactive") return;
+
+  log.info("mic_restart_attempt", { sessionId: state.sessionId }, state.sessionId);
 
   const mime = pickSupportedMime();
   const recorder = mime.length > 0
@@ -207,6 +221,7 @@ function finalizeSegmentRecorder(state: ContinuousState, publish: boolean): void
   recorder.addEventListener(
     "stop",
     () => {
+      log.info("mic_end", { sessionId, correlationId: cid, publish, chunkCount: segChunks.length }, cid);
       if (!publish || segChunks.length === 0) return;
       const blob = new Blob(segChunks, { type: mimeType });
       const reader = new FileReader();
@@ -214,6 +229,7 @@ function finalizeSegmentRecorder(state: ContinuousState, publish: boolean): void
         const dataUrl = reader.result as string;
         const base64 = dataUrl.split(",")[1];
         if (!base64) return;
+        log.info("mic_result", { sessionId, correlationId: cid, mimeType, bytes: blob.size }, cid);
         chrome.runtime.sendMessage({
           type: "audio_complete",
           correlationId: cid,
@@ -264,24 +280,69 @@ async function handleStartContinuous(sessionId: string): Promise<void> {
     throw new Error("already_continuous");
   }
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    log.error("mic_error", { kind: "media_devices_unavailable" }, sessionId);
     throw new Error("media_devices_unavailable");
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error("mic_error", { kind: "getUserMedia", name: err instanceof Error ? err.name : "", message }, sessionId);
+    throw err instanceof Error ? err : new Error(message);
+  }
   const AudioCtxCtor: typeof AudioContext =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!;
   if (!AudioCtxCtor) {
     stream.getTracks().forEach((t) => t.stop());
+    log.error("mic_error", { kind: "audio_context_unavailable" }, sessionId);
     throw new Error("audio_context_unavailable");
   }
 
   const audioCtx = new AudioCtxCtor();
+  try {
+    await audioCtx.resume();
+  } catch (err: unknown) {
+    log.error(
+      "mic_error",
+      { kind: "audio_ctx_resume", message: err instanceof Error ? err.message : String(err) },
+      sessionId,
+    );
+  }
+
+  const onCtxState = (): void => {
+    if (audioCtx.state === "suspended") {
+      log.error("mic_error", { kind: "audio_context_suspended" }, sessionId);
+    }
+  };
+  audioCtx.addEventListener("statechange", onCtxState);
+
+  const onVisibility = (): void => {
+    if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+    void audioCtx.resume().catch((err: unknown) => {
+      log.error("mic_error", { kind: "visibility_resume_failed", message: String(err) }, sessionId);
+    });
+  };
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", onVisibility);
+  }
+
+  continuousLifecycleCleanup = () => {
+    audioCtx.removeEventListener("statechange", onCtxState);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", onVisibility);
+    }
+  };
+
   const source = audioCtx.createMediaStreamSource(stream);
   const analyser = audioCtx.createAnalyser();
   analyser.fftSize = 256;
   analyser.smoothingTimeConstant = 0.4;
   source.connect(analyser);
+
+  log.info("mic_start", { sessionId, audioCtxState: audioCtx.state, url: location.href }, sessionId);
 
   continuousState = {
     sessionId,
@@ -310,6 +371,9 @@ async function handleStopContinuous(sessionId: string): Promise<void> {
   if (state.sessionId !== sessionId) {
     throw new Error("session_mismatch");
   }
+
+  continuousLifecycleCleanup?.();
+  continuousLifecycleCleanup = null;
 
   state.stopping = true;
   if (state.tickTimer !== null) {
