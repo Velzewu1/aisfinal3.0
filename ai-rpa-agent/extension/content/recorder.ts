@@ -1,8 +1,38 @@
 import { createLogger } from "../shared/logger.js";
+import { newCorrelationId } from "../shared/correlation.js";
 
 const log = createLogger("content.recorder");
 
 const DEFAULT_MIME = "audio/webm;codecs=opus";
+
+/**
+ * VAD tuning for continuous listening mode. The AI vs deterministic-execution
+ * boundary is preserved: VAD is a purely deterministic audio-level gate; it
+ * never decides on intent. It only decides WHEN to emit a finished audio
+ * segment to the existing perception pipeline.
+ */
+const VOICE_LEVEL_THRESHOLD = 10;
+const SILENCE_DURATION_MS = 1500;
+const MIN_SPEECH_DURATION_MS = 500;
+const VAD_TICK_MS = 50;
+
+function pickSupportedMime(): string {
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+  ];
+  for (const m of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(m)) {
+      return m;
+    }
+  }
+  return "";
+}
+
+// ---------------------------------------------------------------------------
+// Push-to-talk (single-shot) recording — unchanged public behaviour.
+// ---------------------------------------------------------------------------
 
 let mediaRecorder: MediaRecorder | null = null;
 let mediaStream: MediaStream | null = null;
@@ -99,18 +129,233 @@ async function handleStop(correlationId: string): Promise<void> {
   log.info("mic recording complete", { mimeType }, cid);
 }
 
+// ---------------------------------------------------------------------------
+// Continuous (always-on) recording with Voice Activity Detection.
+// ---------------------------------------------------------------------------
+
+interface ContinuousState {
+  sessionId: string;
+  stream: MediaStream;
+  audioCtx: AudioContext;
+  analyser: AnalyserNode;
+  source: MediaStreamAudioSourceNode;
+  levelBuffer: Uint8Array<ArrayBuffer>;
+  tickTimer: number | null;
+  /** Active MediaRecorder for the CURRENT speech segment, or null between segments. */
+  recorder: MediaRecorder | null;
+  segmentChunks: Blob[];
+  segmentCorrelationId: string | null;
+  segmentStartedAt: number;
+  lastSoundAt: number;
+  isSpeaking: boolean;
+  /** Set when stop has been requested so pending segments are dropped. */
+  stopping: boolean;
+}
+
+let continuousState: ContinuousState | null = null;
+
+function computeAudioLevel(state: ContinuousState): number {
+  state.analyser.getByteFrequencyData(state.levelBuffer);
+  let sum = 0;
+  for (let i = 0; i < state.levelBuffer.length; i += 1) {
+    sum += state.levelBuffer[i] ?? 0;
+  }
+  return sum / state.levelBuffer.length;
+}
+
+function startSegmentRecorder(state: ContinuousState): void {
+  if (state.recorder && state.recorder.state !== "inactive") return;
+
+  const mime = pickSupportedMime();
+  const recorder = mime.length > 0
+    ? new MediaRecorder(state.stream, { mimeType: mime })
+    : new MediaRecorder(state.stream);
+
+  state.segmentChunks = [];
+  state.segmentCorrelationId = newCorrelationId();
+  state.segmentStartedAt = Date.now();
+
+  recorder.ondataavailable = (e: BlobEvent) => {
+    if (e.data.size > 0) state.segmentChunks.push(e.data);
+  };
+
+  recorder.start(250);
+  state.recorder = recorder;
+}
+
+function finalizeSegmentRecorder(state: ContinuousState, publish: boolean): void {
+  const recorder = state.recorder;
+  const cid = state.segmentCorrelationId;
+  const segStart = state.segmentStartedAt;
+  const sessionId = state.sessionId;
+
+  if (!recorder || !cid) {
+    state.recorder = null;
+    state.segmentChunks = [];
+    state.segmentCorrelationId = null;
+    return;
+  }
+
+  const segChunks = state.segmentChunks;
+  const mimeType =
+    recorder.mimeType && recorder.mimeType.length > 0 ? recorder.mimeType : DEFAULT_MIME;
+
+  state.recorder = null;
+  state.segmentChunks = [];
+  state.segmentCorrelationId = null;
+
+  recorder.addEventListener(
+    "stop",
+    () => {
+      if (!publish || segChunks.length === 0) return;
+      const blob = new Blob(segChunks, { type: mimeType });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.split(",")[1];
+        if (!base64) return;
+        chrome.runtime.sendMessage({
+          type: "audio_complete",
+          correlationId: cid,
+          sessionId,
+          mimeType,
+          startedAt: segStart,
+          base64,
+        });
+      };
+      reader.readAsDataURL(blob);
+    },
+    { once: true },
+  );
+
+  try {
+    recorder.stop();
+  } catch {
+    // recorder may already be inactive; ignore.
+  }
+}
+
+function vadTick(): void {
+  const state = continuousState;
+  if (!state || state.stopping) return;
+
+  const now = Date.now();
+  const level = computeAudioLevel(state);
+
+  if (level > VOICE_LEVEL_THRESHOLD) {
+    state.lastSoundAt = now;
+    if (!state.isSpeaking) {
+      state.isSpeaking = true;
+      startSegmentRecorder(state);
+    }
+  } else if (state.isSpeaking) {
+    const silenceFor = now - state.lastSoundAt;
+    if (silenceFor >= SILENCE_DURATION_MS) {
+      const speechDurationMs = Math.max(0, state.lastSoundAt - state.segmentStartedAt);
+      const publish = speechDurationMs >= MIN_SPEECH_DURATION_MS;
+      state.isSpeaking = false;
+      finalizeSegmentRecorder(state, publish);
+    }
+  }
+}
+
+async function handleStartContinuous(sessionId: string): Promise<void> {
+  if (continuousState !== null) {
+    throw new Error("already_continuous");
+  }
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+    throw new Error("media_devices_unavailable");
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const AudioCtxCtor: typeof AudioContext =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!;
+  if (!AudioCtxCtor) {
+    stream.getTracks().forEach((t) => t.stop());
+    throw new Error("audio_context_unavailable");
+  }
+
+  const audioCtx = new AudioCtxCtor();
+  const source = audioCtx.createMediaStreamSource(stream);
+  const analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.4;
+  source.connect(analyser);
+
+  continuousState = {
+    sessionId,
+    stream,
+    audioCtx,
+    analyser,
+    source,
+    levelBuffer: new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount)),
+    tickTimer: null,
+    recorder: null,
+    segmentChunks: [],
+    segmentCorrelationId: null,
+    segmentStartedAt: 0,
+    lastSoundAt: 0,
+    isSpeaking: false,
+    stopping: false,
+  };
+
+  continuousState.tickTimer = window.setInterval(vadTick, VAD_TICK_MS);
+  log.info("continuous recording started", { sessionId });
+}
+
+async function handleStopContinuous(sessionId: string): Promise<void> {
+  const state = continuousState;
+  if (!state) return;
+  if (state.sessionId !== sessionId) {
+    throw new Error("session_mismatch");
+  }
+
+  state.stopping = true;
+  if (state.tickTimer !== null) {
+    window.clearInterval(state.tickTimer);
+    state.tickTimer = null;
+  }
+
+  if (state.recorder && state.isSpeaking) {
+    const speechDurationMs = Math.max(0, Date.now() - state.segmentStartedAt);
+    const publish = speechDurationMs >= MIN_SPEECH_DURATION_MS;
+    finalizeSegmentRecorder(state, publish);
+  } else if (state.recorder) {
+    finalizeSegmentRecorder(state, false);
+  }
+
+  state.isSpeaking = false;
+
+  try {
+    await state.audioCtx.close();
+  } catch {
+    // ignore
+  }
+  state.stream.getTracks().forEach((t) => t.stop());
+
+  continuousState = null;
+  log.info("continuous recording stopped", { sessionId });
+}
+
+// ---------------------------------------------------------------------------
+// Message plumbing.
+// ---------------------------------------------------------------------------
+
 type MicMsg =
   | { type: "start_mic_recording"; correlationId: string }
-  | { type: "stop_mic_recording"; correlationId: string };
+  | { type: "stop_mic_recording"; correlationId: string }
+  | { type: "start_continuous_mic"; sessionId: string }
+  | { type: "stop_continuous_mic"; sessionId: string };
 
 function isMicMsg(msg: unknown): msg is MicMsg {
   if (typeof msg !== "object" || msg === null) return false;
-  const m = msg as { type?: unknown; correlationId?: unknown };
-  if (m.type === "start_mic_recording") {
+  const m = msg as { type?: unknown; correlationId?: unknown; sessionId?: unknown };
+  if (m.type === "start_mic_recording" || m.type === "stop_mic_recording") {
     return typeof m.correlationId === "string" && m.correlationId.length > 0;
   }
-  if (m.type === "stop_mic_recording") {
-    return typeof m.correlationId === "string" && m.correlationId.length > 0;
+  if (m.type === "start_continuous_mic" || m.type === "stop_continuous_mic") {
+    return typeof m.sessionId === "string" && m.sessionId.length > 0;
   }
   return false;
 }
@@ -133,6 +378,20 @@ export function initMicRecorder(): void {
 
       if (msg.type === "stop_mic_recording") {
         void handleStop(msg.correlationId)
+          .then(() => sendResponse({ ok: true }))
+          .catch((err: unknown) => sendResponse({ ok: false, error: String(err) }));
+        return true;
+      }
+
+      if (msg.type === "start_continuous_mic") {
+        void handleStartContinuous(msg.sessionId)
+          .then(() => sendResponse({ ok: true }))
+          .catch((err: unknown) => sendResponse({ ok: false, error: String(err) }));
+        return true;
+      }
+
+      if (msg.type === "stop_continuous_mic") {
+        void handleStopContinuous(msg.sessionId)
           .then(() => sendResponse({ ok: true }))
           .catch((err: unknown) => sendResponse({ ok: false, error: String(err) }));
         return true;

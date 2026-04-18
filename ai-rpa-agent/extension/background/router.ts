@@ -65,6 +65,44 @@ export function recordingStopFromSidepanel(correlationId: string): Promise<{ sto
   });
 }
 
+export function continuousStartFromSidepanel(sessionId: string): Promise<{ started: true }> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      if (!tab?.id) {
+        log.error("no active tab found for continuous mic");
+        reject(new Error("no_active_tab"));
+        return;
+      }
+      void sendToContentScript(tab.id, { type: "start_continuous_mic", sessionId })
+        .then(() => resolve({ started: true }))
+        .catch((e: unknown) => {
+          log.error("continuous mic start failed", String(e));
+          reject(e instanceof Error ? e : new Error(String(e)));
+        });
+    });
+  });
+}
+
+export function continuousStopFromSidepanel(sessionId: string): Promise<{ stopped: true }> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      if (!tab?.id) {
+        log.error("no active tab found for continuous mic");
+        reject(new Error("no_active_tab"));
+        return;
+      }
+      void sendToContentScript(tab.id, { type: "stop_continuous_mic", sessionId })
+        .then(() => resolve({ stopped: true }))
+        .catch((e: unknown) => {
+          log.error("continuous mic stop failed", String(e));
+          reject(e instanceof Error ? e : new Error(String(e)));
+        });
+    });
+  });
+}
+
 export async function forwardAudioChunkToSidepanel(correlationId: string, chunk: string): Promise<void> {
   await chrome.runtime
     .sendMessage({
@@ -84,6 +122,7 @@ export async function relayAudioCompleteFromContent(msg: {
   mimeType: string;
   startedAt: number;
   base64: string;
+  sessionId?: string;
 }): Promise<void> {
   await chrome.runtime
     .sendMessage({
@@ -92,6 +131,9 @@ export async function relayAudioCompleteFromContent(msg: {
       mimeType: msg.mimeType,
       startedAt: msg.startedAt,
       base64: msg.base64,
+      ...(typeof msg.sessionId === "string" && msg.sessionId.length > 0
+        ? { sessionId: msg.sessionId }
+        : {}),
     })
     .catch(() => {});
 }

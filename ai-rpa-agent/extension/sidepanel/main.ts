@@ -1,4 +1,5 @@
 import { ContentTabVoiceRecorder } from "../voice/index.js";
+import type { VoiceCapturedEvent } from "../voice/index.js";
 import { newCorrelationId } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
 import { suggestNext, SUGGESTION_TEXT, type ProactiveSuggestion } from "../controller/proactivity.js";
@@ -7,6 +8,10 @@ import type { AgentEvent, IntentKind } from "@ai-rpa/schemas";
 const log = createLogger("sidepanel");
 const recorder = new ContentTabVoiceRecorder();
 let lastCorrelationId: string | null = null;
+
+type AssistantMode = "inactive" | "listening" | "processing";
+let assistantMode: AssistantMode = "inactive";
+let processingSegmentCount = 0;
 
 const timelineEl = document.getElementById("timeline") as HTMLDivElement | null;
 const timelineEmptyEl = document.getElementById("timelineEmpty") as HTMLDivElement | null;
@@ -249,8 +254,7 @@ function appendAgentTimeline(ev: AgentEvent): void {
 }
 
 function updateHeaderState(): void {
-  const recording = recorder.isRecording();
-  const busy = recording || headerAsyncOps > 0;
+  const busy = assistantMode !== "inactive" || headerAsyncOps > 0;
   if (statusDotEl) {
     statusDotEl.classList.toggle("ready", !busy);
     statusDotEl.classList.toggle("processing", busy);
@@ -260,15 +264,42 @@ function updateHeaderState(): void {
   }
 }
 
-function setRecordingVisual(on: boolean): void {
-  recordBtn?.classList.toggle("is-recording", on);
-  recordBtn?.setAttribute("aria-pressed", on ? "true" : "false");
-  waveformEl?.classList.toggle("active", on);
+function renderAssistantMode(): void {
+  if (!recordBtn) return;
+  recordBtn.classList.remove("is-inactive", "is-listening", "is-processing");
+
+  let label: string;
+  switch (assistantMode) {
+    case "listening":
+      recordBtn.classList.add("is-listening");
+      recordBtn.setAttribute("aria-pressed", "true");
+      label = "Ассистент активен — говорите";
+      break;
+    case "processing":
+      recordBtn.classList.add("is-processing");
+      recordBtn.setAttribute("aria-pressed", "true");
+      label = "Обрабатываю…";
+      break;
+    case "inactive":
+    default:
+      recordBtn.classList.add("is-inactive");
+      recordBtn.setAttribute("aria-pressed", "false");
+      label = "Активировать ассистента";
+      break;
+  }
+
+  waveformEl?.classList.toggle("active", assistantMode === "listening");
   if (pttLabelEl) {
-    pttLabelEl.textContent = on ? "Идёт запись…" : "Нажмите для записи";
-    pttLabelEl.classList.toggle("recording", on);
+    pttLabelEl.textContent = label;
+    pttLabelEl.classList.toggle("recording", assistantMode === "listening");
+    pttLabelEl.classList.toggle("processing", assistantMode === "processing");
   }
   updateHeaderState();
+}
+
+function setAssistantMode(mode: AssistantMode): void {
+  assistantMode = mode;
+  renderAssistantMode();
 }
 
 function beginAsync(): void {
@@ -322,11 +353,15 @@ function showProactiveConfirm(correlationId: string, message: string): void {
   proactiveCardEl.classList.remove("hidden");
 }
 
-async function stopRecordingAndDispatch(): Promise<void> {
+async function dispatchVoiceSegment(capture: VoiceCapturedEvent): Promise<void> {
+  processingSegmentCount += 1;
+  if (assistantMode === "listening") {
+    setAssistantMode("processing");
+  } else {
+    renderAssistantMode();
+  }
   beginAsync();
-  setRecordingVisual(false);
   try {
-    const capture = await recorder.stopRecording();
     lastCorrelationId = capture.correlationId;
     const audioData = await capture.audioBlob.arrayBuffer();
     const voiceRes = (await chrome.runtime.sendMessage({
@@ -386,27 +421,50 @@ async function stopRecordingAndDispatch(): Promise<void> {
     pushLocalTimeline("error", "Запись", String(err));
   } finally {
     endAsync();
-    updateHeaderState();
+    processingSegmentCount = Math.max(0, processingSegmentCount - 1);
+    // Only return to listening if the session is still active and no other
+    // segments are still in-flight; otherwise keep current mode.
+    if (processingSegmentCount === 0 && recorder.isContinuous()) {
+      setAssistantMode("listening");
+    } else {
+      updateHeaderState();
+    }
+  }
+}
+
+async function activateAssistant(): Promise<void> {
+  try {
+    const sessionId = await recorder.startContinuous((segment) => {
+      void dispatchVoiceSegment(segment);
+    });
+    setAssistantMode("listening");
+    pushLocalTimeline("info", "Ассистент", `Активен · ${sessionId.slice(0, 8)}…`);
+  } catch (err: unknown) {
+    log.error("activate failed", String(err));
+    pushLocalTimeline("error", "Микрофон", String(err));
+    setAssistantMode("inactive");
+  }
+}
+
+async function deactivateAssistant(): Promise<void> {
+  try {
+    await recorder.stopContinuous();
+    pushLocalTimeline("info", "Ассистент", "Деактивирован");
+  } catch (err: unknown) {
+    log.error("deactivate failed", String(err));
+    pushLocalTimeline("error", "Ассистент", String(err));
+  } finally {
+    processingSegmentCount = 0;
+    setAssistantMode("inactive");
   }
 }
 
 recordBtn?.addEventListener("click", () => {
-  if (recorder.isRecording()) {
-    void stopRecordingAndDispatch();
-    return;
+  if (assistantMode === "inactive") {
+    void activateAssistant();
+  } else {
+    void deactivateAssistant();
   }
-  void (async () => {
-    try {
-      const correlationId = await recorder.startRecording();
-      lastCorrelationId = correlationId;
-      setRecordingVisual(true);
-      pushLocalTimeline("info", "Запись", `Сессия ${correlationId.slice(0, 8)}…`);
-    } catch (err: unknown) {
-      log.error("record failed", String(err));
-      pushLocalTimeline("error", "Микрофон", String(err));
-      setRecordingVisual(false);
-    }
-  })();
 });
 
 sendBtn?.addEventListener("click", () => {
@@ -533,5 +591,5 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
   }
 });
 
-updateHeaderState();
+renderAssistantMode();
 refreshTimelineEmpty();

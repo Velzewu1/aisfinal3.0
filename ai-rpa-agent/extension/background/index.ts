@@ -3,6 +3,8 @@ import { isExtensionMessage, type ExtensionMessage } from "../shared/messages.js
 import { eventBus } from "./event-bus.js";
 import { syncEvent } from "./supabase-sync.js";
 import {
+  continuousStartFromSidepanel,
+  continuousStopFromSidepanel,
   forwardAudioChunkToSidepanel,
   recordingStartFromSidepanel,
   recordingStopFromSidepanel,
@@ -31,6 +33,18 @@ function isRecordingDispatch(
   );
 }
 
+function isContinuousDispatch(
+  msg: unknown,
+): msg is { type: "start_continuous_recording" | "stop_continuous_recording"; sessionId: string } {
+  if (typeof msg !== "object" || msg === null) return false;
+  const m = msg as { type?: unknown; sessionId?: unknown };
+  return (
+    (m.type === "start_continuous_recording" || m.type === "stop_continuous_recording") &&
+    typeof m.sessionId === "string" &&
+    m.sessionId.length > 0
+  );
+}
+
 function isAudioChunk(
   msg: unknown,
 ): msg is { type: "audio_chunk"; correlationId: string; chunk: string } {
@@ -52,6 +66,7 @@ function isAudioComplete(
   mimeType: string;
   startedAt: number;
   base64: string;
+  sessionId?: string;
 } {
   if (typeof msg !== "object" || msg === null) return false;
   const m = msg as {
@@ -60,6 +75,7 @@ function isAudioComplete(
     mimeType?: unknown;
     startedAt?: unknown;
     base64?: unknown;
+    sessionId?: unknown;
   };
   return (
     m.type === "audio_complete" &&
@@ -68,7 +84,8 @@ function isAudioComplete(
     typeof m.mimeType === "string" &&
     typeof m.startedAt === "number" &&
     typeof m.base64 === "string" &&
-    m.base64.length > 0
+    m.base64.length > 0 &&
+    (m.sessionId === undefined || typeof m.sessionId === "string")
   );
 }
 
@@ -90,6 +107,23 @@ chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
     })();
     return true;
   }
+  if (isContinuousDispatch(msg)) {
+    void (async () => {
+      try {
+        if (msg.type === "start_continuous_recording") {
+          const result = await continuousStartFromSidepanel(msg.sessionId);
+          sendResponse({ ok: true, result });
+        } else {
+          const result = await continuousStopFromSidepanel(msg.sessionId);
+          sendResponse({ ok: true, result });
+        }
+      } catch (err: unknown) {
+        log.error("continuous handler error", String(err));
+        sendResponse({ ok: false, error: String(err) });
+      }
+    })();
+    return true;
+  }
   if (sender.tab?.id !== undefined && isAudioChunk(msg)) {
     void (async () => {
       try {
@@ -105,7 +139,15 @@ chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
   if (sender.tab?.id !== undefined && isAudioComplete(msg)) {
     void (async () => {
       try {
-        await relayAudioCompleteFromContent(msg);
+        await relayAudioCompleteFromContent({
+          correlationId: msg.correlationId,
+          mimeType: msg.mimeType,
+          startedAt: msg.startedAt,
+          base64: msg.base64,
+          ...(typeof msg.sessionId === "string" && msg.sessionId.length > 0
+            ? { sessionId: msg.sessionId }
+            : {}),
+        });
         sendResponse({ ok: true });
       } catch (err: unknown) {
         log.error("audio_complete forward failed", String(err));

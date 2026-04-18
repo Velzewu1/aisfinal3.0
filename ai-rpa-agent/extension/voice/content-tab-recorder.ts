@@ -4,9 +4,19 @@ import { newCorrelationId } from "../shared/correlation.js";
 /**
  * Records via the active tab's content script (localhost:5173 mock UI) so
  * getUserMedia runs in a context that supports microphone capture.
+ *
+ * Two modes are supported:
+ *   1. Push-to-talk: `startRecording()` / `stopRecording()` wrap a single
+ *      capture tied to a single correlation id.
+ *   2. Continuous: `startContinuous(onSegment)` / `stopContinuous()` keep the
+ *      microphone open and invoke `onSegment` every time VAD detects a
+ *      completed utterance. Each segment carries a FRESH correlation id so
+ *      the downstream controller treats it as a distinct interpret → decide
+ *      → execute cycle.
  */
 
 type CompleteMeta = { mimeType: string; startedAt: number };
+export type ContinuousSegmentCallback = (event: VoiceCapturedEvent) => void;
 
 function unwrapSendMessageResponse<T>(raw: unknown): T {
   if (typeof raw !== "object" || raw === null) {
@@ -43,6 +53,9 @@ export class ContentTabVoiceRecorder {
     reject: (e: Error) => void;
   } | null = null;
 
+  private continuousSessionId: string | null = null;
+  private continuousSegmentCallback: ContinuousSegmentCallback | null = null;
+
   constructor() {
     chrome.runtime.onMessage.addListener(this.onRuntimeMessage);
   }
@@ -56,6 +69,7 @@ export class ContentTabVoiceRecorder {
       mimeType?: string;
       startedAt?: number;
       base64?: string;
+      sessionId?: string;
     };
 
     if (
@@ -67,19 +81,49 @@ export class ContentTabVoiceRecorder {
       return;
     }
 
-    if (
-      m.type === "audio_complete_forward" &&
-      m.correlationId === this.activeCorrelationId &&
-      this.pendingComplete &&
-      m.correlationId === this.pendingComplete.correlationId
-    ) {
-      const mimeType = typeof m.mimeType === "string" ? m.mimeType : "audio/webm";
-      const startedAt = typeof m.startedAt === "number" ? m.startedAt : Date.now();
-      if (typeof m.base64 === "string" && m.base64.length > 0) {
-        this.base64Chunks = [m.base64];
+    if (m.type === "audio_complete_forward") {
+      // Continuous mode: each segment ships its own correlationId plus the
+      // shared sessionId we set up at `startContinuous`. Route those to the
+      // segment callback instead of the single-shot pendingComplete slot.
+      if (
+        typeof m.sessionId === "string" &&
+        m.sessionId.length > 0 &&
+        m.sessionId === this.continuousSessionId &&
+        this.continuousSegmentCallback &&
+        typeof m.correlationId === "string" &&
+        typeof m.base64 === "string" &&
+        m.base64.length > 0
+      ) {
+        const mimeType = typeof m.mimeType === "string" ? m.mimeType : "audio/webm";
+        const startedAt = typeof m.startedAt === "number" ? m.startedAt : Date.now();
+        const audioBlob = base64ToBlob(m.base64, mimeType);
+        const durationMs = Math.max(0, Date.now() - startedAt);
+        const event: VoiceCapturedEvent = Object.freeze({
+          type: "voice_captured",
+          timestamp: startedAt,
+          correlationId: m.correlationId,
+          audioBlob,
+          mimeType,
+          durationMs,
+          base64: m.base64,
+        });
+        this.continuousSegmentCallback(event);
+        return;
       }
-      this.pendingComplete.resolve({ mimeType, startedAt });
-      this.pendingComplete = null;
+
+      if (
+        m.correlationId === this.activeCorrelationId &&
+        this.pendingComplete &&
+        m.correlationId === this.pendingComplete.correlationId
+      ) {
+        const mimeType = typeof m.mimeType === "string" ? m.mimeType : "audio/webm";
+        const startedAt = typeof m.startedAt === "number" ? m.startedAt : Date.now();
+        if (typeof m.base64 === "string" && m.base64.length > 0) {
+          this.base64Chunks = [m.base64];
+        }
+        this.pendingComplete.resolve({ mimeType, startedAt });
+        this.pendingComplete = null;
+      }
     }
   };
 
@@ -154,6 +198,49 @@ export class ContentTabVoiceRecorder {
       this.base64Chunks = [];
       this.activeCorrelationId = null;
       throw err instanceof Error ? err : new Error(String(err));
+    }
+  }
+
+  isContinuous(): boolean {
+    return this.continuousSessionId !== null;
+  }
+
+  async startContinuous(onSegment: ContinuousSegmentCallback): Promise<string> {
+    if (this.continuousSessionId !== null) {
+      throw new Error("already_continuous");
+    }
+    if (this.activeCorrelationId !== null) {
+      throw new Error("ptt_in_progress");
+    }
+    const sessionId = newCorrelationId();
+    this.continuousSessionId = sessionId;
+    this.continuousSegmentCallback = onSegment;
+    try {
+      const raw = await chrome.runtime.sendMessage({
+        type: "start_continuous_recording",
+        sessionId,
+      });
+      unwrapSendMessageResponse<{ started: true }>(raw);
+      return sessionId;
+    } catch (err: unknown) {
+      this.continuousSessionId = null;
+      this.continuousSegmentCallback = null;
+      throw err instanceof Error ? err : new Error(String(err));
+    }
+  }
+
+  async stopContinuous(): Promise<void> {
+    const sessionId = this.continuousSessionId;
+    if (!sessionId) return;
+    try {
+      const raw = await chrome.runtime.sendMessage({
+        type: "stop_continuous_recording",
+        sessionId,
+      });
+      unwrapSendMessageResponse<{ stopped: true }>(raw);
+    } finally {
+      this.continuousSessionId = null;
+      this.continuousSegmentCallback = null;
     }
   }
 }
