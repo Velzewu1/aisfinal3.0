@@ -19,6 +19,9 @@ const PAGE_BY_FILE: Readonly<Record<string, string>> = {
   "schedule.html": "schedule",
 };
 
+/** Logical ids allowed as `data-page` / `data-page-title` (mock-ui DOM contract). */
+const KNOWN_PAGE_IDS: ReadonlySet<string> = new Set(Object.values(PAGE_BY_FILE));
+
 /** Maximum number of field descriptors returned (DoS guard). */
 const MAX_FIELDS = 200;
 
@@ -55,8 +58,34 @@ export function extractCurrentPageContext(): {
   const filename = rawPath.split("/").pop() ?? "";
   const url = filename.length > 0 ? filename : rawPath;
 
-  // 2. Logical page id.
-  const currentPage = PAGE_BY_FILE[filename] ?? filename;
+  // 2. Logical page id — URL filename first; override from mock-ui markers when present.
+  let currentPage = PAGE_BY_FILE[filename] ?? filename;
+  const bodyPage =
+    document.body instanceof HTMLElement && document.body.dataset.page !== undefined
+      ? document.body.dataset.page.trim()
+      : "";
+  const titleEl = document.querySelector("[data-page-title]");
+  const titlePage =
+    titleEl instanceof HTMLElement && titleEl.dataset.pageTitle !== undefined
+      ? titleEl.dataset.pageTitle.trim()
+      : "";
+  if (bodyPage !== "" && KNOWN_PAGE_IDS.has(bodyPage)) {
+    currentPage = bodyPage;
+  } else if (titlePage !== "" && KNOWN_PAGE_IDS.has(titlePage)) {
+    currentPage = titlePage;
+  }
+  if (
+    bodyPage !== "" &&
+    titlePage !== "" &&
+    bodyPage !== titlePage &&
+    KNOWN_PAGE_IDS.has(bodyPage) &&
+    KNOWN_PAGE_IDS.has(titlePage)
+  ) {
+    log.warn("page marker mismatch: data-page vs data-page-title", {
+      dataPage: bodyPage,
+      dataPageTitle: titlePage,
+    });
+  }
 
   // 3. Patient snapshot (read from Document dataset as bridge).
   let patientId = document.documentElement.dataset.patientId;

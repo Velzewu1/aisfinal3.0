@@ -176,9 +176,12 @@ function intentKindRu(kind: IntentKind): string {
 function pageRu(page: string): string {
   const map: Record<string, string> = {
     primary_exam: "Первичный осмотр",
+    specialist_exam: "Осмотр специалиста",
+    epicrisis: "Эпикриз",
     diary: "Дневник",
     schedule: "Расписание",
     care_plan: "План лечения",
+    patient_list: "Список пациентов",
     unknown: "—",
   };
   return map[page] ?? page;
