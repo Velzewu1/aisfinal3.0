@@ -5,15 +5,25 @@
  *   - Displays the DECISION layer (assigned treatment courses).
  *   - Is INDEPENDENT of the calendar (execution layer) — never reads
  *     `window.__SCHEDULE_STATE__`, never inspects grid cells.
- *   - Only renders from `window.__CARE_PLAN__` (array of preview rows).
+ *   - Only renders from the plans array passed to `renderCarePlan(plans)`
+ *     (canonical) or from `window.__CARE_PLAN__` as a fallback.
  *   - The "Сформировать расписание" button dispatches a page-level
  *     `ai-rpa-build-schedule` CustomEvent; the content-script bridge
  *     relays it to the controller. The page NEVER calls the scheduler
  *     directly.
  *
- * Status flip ("не запланировано" → "запланировано") is driven by an
- * explicit state update from the controller (push via bridge), NOT by
- * DOM parsing of schedule cells.
+ * Reactivity contract:
+ *   The controller broadcasts a fresh snapshot on every CarePlan state
+ *   change (create / confirm / schedule-commit). That message traverses
+ *   content-script → `ai-rpa-care-plan-state` CustomEvent → bridge →
+ *   `window.__CARE_PLAN__` = plans + `window` dispatch of
+ *   `care_plan_updated` (detail.plans). This renderer subscribes to
+ *   `care_plan_updated` and calls `renderCarePlan(detail.plans)`, which
+ *   fully clears and rebuilds the `#care-plan-list` container.
+ *
+ *   Status flip ("не запланировано" → "запланировано") is driven by an
+ *   explicit state update from the controller (push via bridge), NOT by
+ *   DOM parsing of schedule cells.
  */
 (function () {
   "use strict";
@@ -33,7 +43,7 @@
 
   /**
    * Map CarePlan lifecycle status → user-facing label.
-   *   draft / confirmed          → "не запланировано"
+   *   draft / confirmed              → "не запланировано"
    *   scheduled / active / completed → "запланировано"
    */
   function statusLabel(status) {
@@ -46,7 +56,6 @@
   function serviceLabel(service) {
     if (typeof service !== "string") return "Назначение";
     if (SERVICE_LABELS[service]) return SERVICE_LABELS[service];
-    // Fallback: humanize unknown service id without leaking the raw id.
     return service
       .replace(/[_-]+/g, " ")
       .replace(/\b\w/g, function (c) {
@@ -54,8 +63,12 @@
       });
   }
 
-  function readCarePlans() {
-    var raw = window.__CARE_PLAN__;
+  /**
+   * Normalizes and defensively validates a raw plans list from any
+   * source (event detail, global, or argument). Returns a plain array
+   * of `{ service, sessionsCount, status }` — never null.
+   */
+  function normalizePlans(raw) {
     if (!Array.isArray(raw)) return [];
     var out = [];
     for (var i = 0; i < raw.length; i += 1) {
@@ -112,26 +125,47 @@
     return "занятий";
   }
 
-  function render() {
+  /**
+   * Canonical entry point: clears and fully rebuilds the CarePlan list.
+   * Accepts an optional plans array; when omitted, falls back to the
+   * latest page-level snapshot at `window.__CARE_PLAN__`.
+   *
+   *   renderCarePlan([])            → "Нет назначений"
+   *   renderCarePlan(undefined)     → reads window.__CARE_PLAN__
+   *   renderCarePlan(plans)         → rebuild from plans
+   *
+   * Exposed on `window` so other page modules (and the bridge listener)
+   * can invoke it directly without relying on implicit globals.
+   */
+  function renderCarePlan(plans) {
     var listEl = document.getElementById(LIST_ID);
     var buildBtn = document.getElementById(BUILD_BUTTON_ID);
     if (!listEl) return;
+
+    var source = plans === undefined ? window.__CARE_PLAN__ : plans;
+    var normalized = normalizePlans(source);
+
+    // Keep the page-level snapshot in sync when called with explicit
+    // plans — other modules may read __CARE_PLAN__ directly.
+    if (plans !== undefined) {
+      window.__CARE_PLAN__ = normalized;
+    }
+
     listEl.replaceChildren();
 
-    var plans = readCarePlans();
-    if (plans.length === 0) {
+    if (normalized.length === 0) {
       renderEmpty(listEl);
       if (buildBtn) buildBtn.setAttribute("disabled", "");
       return;
     }
 
-    plans.forEach(function (plan) {
+    normalized.forEach(function (plan) {
       listEl.appendChild(renderItem(plan));
     });
 
     // Button is only meaningful when at least one plan is not yet
     // scheduled — otherwise the scheduler has nothing left to do.
-    var hasUnscheduled = plans.some(function (p) {
+    var hasUnscheduled = normalized.some(function (p) {
       return statusLabel(p.status) === "не запланировано";
     });
     if (buildBtn) {
@@ -141,6 +175,14 @@
         buildBtn.setAttribute("disabled", "");
       }
     }
+  }
+
+  function onCarePlanUpdated(event) {
+    var detailPlans =
+      event && event.detail && Array.isArray(event.detail.plans)
+        ? event.detail.plans
+        : undefined;
+    renderCarePlan(detailPlans);
   }
 
   function onBuildClick(ev) {
@@ -173,11 +215,18 @@
     var buildBtn = document.getElementById(BUILD_BUTTON_ID);
     if (buildBtn) buildBtn.addEventListener("click", onBuildClick);
 
-    window.addEventListener("care_plan_updated", render);
+    // Canonical reactivity channel — fired by schedule-bridge-listener
+    // whenever the controller broadcasts a new snapshot.
+    window.addEventListener("care_plan_updated", onCarePlanUpdated);
 
-    render();
+    // Initial paint from whatever snapshot is already on the page, then
+    // ask the controller for the authoritative state.
+    renderCarePlan();
     requestStateFromExtension();
   }
+
+  // Expose canonical entry point for other page modules / tests.
+  window.renderCarePlan = renderCarePlan;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

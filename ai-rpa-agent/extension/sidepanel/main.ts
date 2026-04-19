@@ -64,12 +64,35 @@ type VerifyPdf = {
 };
 type VerifyContent = VerifyFill | VerifySchedule | VerifyConfirm | VerifyPdf;
 
+/**
+ * Schedule-build progress phases (clinician-facing, never technical).
+ * Maps directly to the UX spec:
+ *   confirmed  → "Назначение подтверждено"
+ *   generating → "Формирую расписание"
+ *   ready      → "Расписание готово"
+ */
+type ScheduleProgressPhase = "confirmed" | "generating" | "ready";
+
 type PaneState =
   | { mode: "idle" }
-  | { mode: "processing" }
+  | { mode: "processing"; label?: string; hint?: string }
   | { mode: "verify"; content: VerifyContent }
   | { mode: "success"; message: string }
   | { mode: "error"; message: string };
+
+const SCHEDULE_PROGRESS_LABEL: Readonly<Record<ScheduleProgressPhase, string>> =
+  Object.freeze({
+    confirmed: "Назначение подтверждено",
+    generating: "Формирую расписание",
+    ready: "Расписание готово",
+  });
+
+const SCHEDULE_PROGRESS_HINT: Readonly<Record<ScheduleProgressPhase, string>> =
+  Object.freeze({
+    confirmed: "Курс сохранён в плане лечения",
+    generating: "Подбираю слоты и специалистов…",
+    ready: "Подтвердите результат или откройте расписание",
+  });
 
 type DotKind = "success" | "info" | "warning" | "error" | "muted";
 
@@ -84,6 +107,12 @@ type ShortEvent = {
 const MAX_VISIBLE_EVENTS = 5;
 let paneState: PaneState = { mode: "idle" };
 let recentEvents: ShortEvent[] = [];
+
+/**
+ * Current schedule-build progress phase, if any. Drives both the main
+ * pane title and the header badge. Cleared on idle / error / verify.
+ */
+let scheduleProgressPhase: ScheduleProgressPhase | null = null;
 
 // ------------------------------------------------------------------ //
 // DOM references                                                      //
@@ -175,6 +204,33 @@ function nowLabel(): string {
   });
 }
 
+function confirmButtonLabelsForIntent(
+  intentKind: string | undefined,
+): { accept: string; reject: string } {
+  switch (intentKind) {
+    case "build_schedule":
+      return { accept: "Построить", reject: "Отмена" };
+    case "schedule":
+      return { accept: "Сформировать", reject: "Отмена" };
+    case "assign":
+      return { accept: "Назначить", reject: "Отмена" };
+    case "navigate":
+      return { accept: "Перейти", reject: "Отмена" };
+    case "set_status":
+      return { accept: "Изменить", reject: "Отмена" };
+    default:
+      return { accept: "Подтвердить", reject: "Отмена" };
+  }
+}
+
+function pluralizeSessionsRu(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "занятие";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "занятия";
+  return "занятий";
+}
+
 // ------------------------------------------------------------------ //
 // Header                                                              //
 // ------------------------------------------------------------------ //
@@ -202,9 +258,22 @@ function updateHeaderState(): void {
   if (assistantMode === "listening") {
     state = "recording";
     label = "Запись";
-  } else if (assistantMode === "processing" || headerAsyncOps > 0 || paneState.mode === "processing") {
+  } else if (
+    assistantMode === "processing" ||
+    headerAsyncOps > 0 ||
+    paneState.mode === "processing"
+  ) {
     state = "processing";
-    label = "Обработка";
+    // Prefer the clinician-facing progress label over the generic
+    // "Обработка" badge — the header must always say what is happening,
+    // never a placeholder.
+    if (paneState.mode === "processing" && paneState.label) {
+      label = paneState.label;
+    } else if (scheduleProgressPhase) {
+      label = SCHEDULE_PROGRESS_LABEL[scheduleProgressPhase];
+    } else {
+      label = "Работаю";
+    }
   } else if (paneState.mode === "verify") {
     state = "verify";
     label = "Проверка";
@@ -292,11 +361,21 @@ function renderPane(): void {
       paneTitleEl.textContent = "Готов к команде";
       renderIdleBody(paneBodyEl);
       break;
-    case "processing":
-      paneTitleEl.textContent = "Процесс";
-      paneMetaEl.textContent = `${recentEvents.length} шаг.`;
-      renderEventsBody(paneBodyEl);
+    case "processing": {
+      // The main pane MUST always express what the system is doing in
+      // clinician language. If a progress label is set (e.g. schedule
+      // build phases), it takes priority over the generic event log.
+      if (paneState.label) {
+        paneTitleEl.textContent = paneState.label;
+        paneMetaEl.textContent = "";
+        renderProgressBody(paneBodyEl, paneState.label, paneState.hint);
+      } else {
+        paneTitleEl.textContent = "Работаю";
+        paneMetaEl.textContent = `${recentEvents.length} шаг.`;
+        renderEventsBody(paneBodyEl);
+      }
       break;
+    }
     case "verify":
       paneTitleEl.textContent = "Проверка результата";
       renderVerifyBody(paneBodyEl, paneState.content);
@@ -385,6 +464,49 @@ function renderEventsBody(root: HTMLElement): void {
     list.appendChild(row);
   }
   root.appendChild(list);
+}
+
+// ---- progress (clinician-facing schedule build phases) ----
+function renderProgressBody(root: HTMLElement, label: string, hint?: string): void {
+  const wrap = document.createElement("div");
+  wrap.className = "pane-progress";
+
+  const spinner = document.createElement("div");
+  spinner.className = "pane-progress-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+  wrap.appendChild(spinner);
+
+  const title = document.createElement("div");
+  title.className = "pane-progress-title";
+  title.textContent = label;
+  wrap.appendChild(title);
+
+  if (hint && hint.length > 0) {
+    const hintEl = document.createElement("div");
+    hintEl.className = "pane-progress-hint";
+    hintEl.textContent = hint;
+    wrap.appendChild(hintEl);
+  }
+
+  root.appendChild(wrap);
+}
+
+/**
+ * Single entry point for clinician-facing schedule-build progress.
+ * Never accepts raw pipeline terms — callers must use the typed phase.
+ * Passing `null` clears the phase but does NOT change the pane mode.
+ */
+function setScheduleProgress(phase: ScheduleProgressPhase | null): void {
+  scheduleProgressPhase = phase;
+  if (phase === null) {
+    updateHeaderState();
+    return;
+  }
+  setPaneState({
+    mode: "processing",
+    label: SCHEDULE_PROGRESS_LABEL[phase],
+    hint: SCHEDULE_PROGRESS_HINT[phase],
+  });
 }
 
 // ---- verify ----
@@ -646,8 +768,8 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
     case "validation_passed":
       return {
         dot: "success",
-        title: "Валидация пройдена",
-        description: `Схема ${ev.payload.schemaVersion}`,
+        title: "Разбор выполнен",
+        description: "Команда распознана",
       };
     case "validation_failed": {
       const errors = ev.payload.errors.slice(0, 2);
@@ -699,7 +821,7 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
       return {
         dot: "info",
         title: "План действий",
-        description: `${ev.payload.intentKind}: ${ev.payload.actionCount} шаг.`,
+        description: `${intentKindRu(ev.payload.intentKind as IntentKind)}: ${ev.payload.actionCount} шаг.`,
       };
     case "dom_action_executed":
       return {
@@ -1053,11 +1175,14 @@ async function acceptProactiveSuggestion(suggestion: ProactiveSuggestion): Promi
   }
   if (suggestion === "suggest_build_schedule") {
     const correlationId = newCorrelationId();
+    // Step 2 of the clinician-facing flow:
+    //   decision → schedule building → result
+    // Flip UI immediately so the user is never in a vague loading state.
+    setScheduleProgress("generating");
     void chrome.runtime
       .sendMessage({ type: "build_schedule_from_plans", correlationId })
       .then(() => pushShortEvent("info", "Расписание", "Формирование"))
       .catch((err: unknown) => pushShortEvent("error", "Расписание", String(err)));
-    setPaneState({ mode: "processing" });
     return;
   }
 
@@ -1167,17 +1292,33 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
   }
 
   if (ev.type === "care_plan_confirmed") {
-    enterVerifyConfirm({
-      title: `Назначение подтверждено: ${ev.payload.service} — ${ev.payload.sessionsCount} занятий. Сформировать расписание?`,
-      suggestion: "suggest_build_schedule",
-      acceptLabel: "Сформировать",
-      rejectLabel: "Позже",
-    });
+    // Step 1 of the clinician-facing flow: "Назначение подтверждено".
+    // Show the phase momentarily so the user sees progress, then hand
+    // over to the decision card that asks whether to build the schedule.
+    setScheduleProgress("confirmed");
+    const sessions = ev.payload.sessionsCount;
+    const sessionsWord = pluralizeSessionsRu(sessions);
+    setTimeout(() => {
+      scheduleProgressPhase = null;
+      enterVerifyConfirm({
+        title: `Построить расписание на ${sessions} ${sessionsWord}?`,
+        suggestion: "suggest_build_schedule",
+        acceptLabel: "Построить",
+        rejectLabel: "Отмена",
+      });
+    }, 900);
     return;
   }
 
   if (ev.type === "schedule_generated") {
-    enterVerifySchedule(ev.payload);
+    // Step 3: "Расписание готово" — a short confirming beat, then the
+    // verify card where the clinician reviews and opens the schedule.
+    setScheduleProgress("ready");
+    const payload = ev.payload;
+    setTimeout(() => {
+      scheduleProgressPhase = null;
+      enterVerifySchedule(payload);
+    }, 700);
     return;
   }
 
@@ -1189,14 +1330,17 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
     };
     if (payload.draftFields && payload.draftFields.length > 0) {
       enterVerifyFill(ev.correlationId, payload.summary, payload.draftFields);
-    } else {
-      enterVerifyConfirm({
-        title: payload.summary,
-        correlationId: ev.correlationId,
-        acceptLabel: "Да",
-        rejectLabel: "Отмена",
-      });
+      return;
     }
+    // Intent-specific button labels (clinician-facing, never technical).
+    // The summary itself is already humanized by the controller.
+    const labels = confirmButtonLabelsForIntent(payload.intentKind);
+    enterVerifyConfirm({
+      title: payload.summary,
+      correlationId: ev.correlationId,
+      acceptLabel: labels.accept,
+      rejectLabel: labels.reject,
+    });
   }
 });
 

@@ -643,6 +643,44 @@
         line-height: 1.45;
       }
 
+      /* --- State: processing (schedule-build progress) --- */
+      .pane-progress {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 20px 10px 12px;
+        text-align: center;
+      }
+
+      .pane-progress-spinner {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid var(--border, rgba(0, 0, 0, 0.12));
+        border-top-color: var(--accent, #3b82f6);
+        animation: pane-progress-spin 0.9s linear infinite;
+      }
+
+      @keyframes pane-progress-spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .pane-progress-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.35;
+      }
+
+      .pane-progress-hint {
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        max-width: 280px;
+      }
+
       /* --- State: error --- */
       .pane-error {
         display: flex;

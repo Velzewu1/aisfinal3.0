@@ -180,6 +180,72 @@ async function emit(event: AgentEvent): Promise<void> {
 // and any field that would mix the two concerns (UX rule).           //
 // ------------------------------------------------------------------ //
 
+// ------------------------------------------------------------------ //
+// Human-readable confirmation summary                                 //
+//                                                                    //
+// Produces the *clinician-facing* text of a `user_confirmation_      //
+// requested` event. Internal identifiers (intent.kind, decision      //
+// reason codes like `high_risk_operation`, `low_confidence`) are     //
+// never shown — they remain in audit logs only. Accept/reject button //
+// labels are chosen by the sidepanel based on `intentKind`.          //
+// ------------------------------------------------------------------ //
+function pageRu(page: string): string {
+  const map: Record<string, string> = {
+    primary_exam: "Первичный осмотр",
+    diary: "Дневник",
+    schedule: "Расписание",
+    care_plan: "План лечения",
+    specialist_exam: "Осмотр специалиста",
+    epicrisis: "Эпикриз",
+    index: "Главная",
+  };
+  return map[page] ?? "страницу";
+}
+
+function totalSessionsInConfirmedPlans(): number {
+  let total = 0;
+  for (const p of getConfirmedCarePlans()) total += p.sessionsCount;
+  return total;
+}
+
+function buildHumanConfirmSummary(intent: Intent): string {
+  switch (intent.kind) {
+    case "build_schedule": {
+      const total = totalSessionsInConfirmedPlans();
+      if (total > 0) {
+        return `Построить расписание на ${total} ${pluralizeSessionsRu(total)}?`;
+      }
+      return "Построить расписание?";
+    }
+    case "schedule":
+      return "Сформировать расписание?";
+    case "navigate":
+      return `Перейти в раздел «${pageRu(intent.target)}»?`;
+    case "set_status":
+      return "Изменить статус?";
+    case "fill":
+      return "Предпросмотр заполнения — подтвердите для сохранения";
+    case "assign": {
+      const serviceName =
+        SERVICE_DISPLAY_NAMES[intent.service as ClinicalService] ?? intent.service;
+      if (intent.type === "initial") return `Назначить первичный осмотр: ${serviceName}?`;
+      const sessions = intent.sessionsCount ?? 10;
+      return `Назначить курс: ${serviceName} — ${sessions} ${pluralizeSessionsRu(sessions)}?`;
+    }
+    case "unknown":
+    default:
+      return "Подтвердить действие?";
+  }
+}
+
+function pluralizeSessionsRu(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "занятие";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "занятия";
+  return "занятий";
+}
+
 /** Snapshot of all current CarePlans projected for the schedule-page UI. */
 export function getCarePlanPreviewSnapshot(): CarePlanPreview[] {
   return getAllCarePlans().map((plan) => ({
@@ -190,20 +256,54 @@ export function getCarePlanPreviewSnapshot(): CarePlanPreview[] {
 }
 
 /**
- * Pushes the current CarePlan preview to the active tab's content script.
- * Best-effort: if there is no active tab, or the content script is not
- * present on the target page, we silently skip — the page re-requests
- * state on load via `care_plan_state_request`.
+ * Mock-ui host matches — must stay in sync with `manifest.json` content
+ * script matches. Only tabs whose URL matches these patterns may receive
+ * the care-plan preview broadcast.
  */
-async function pushCarePlanStateToActiveTab(): Promise<void> {
+const CARE_PLAN_BROADCAST_TAB_URLS: ReadonlyArray<string> = [
+  "http://localhost:5173/*",
+];
+
+/**
+ * Broadcasts the current CarePlan preview to every tab where the content
+ * script runs. This is the primary reactivity channel: any state change
+ * (create / confirm / schedule-commit) fans out to all mock-ui tabs, so
+ * a schedule page already open in another tab — or the current tab —
+ * re-renders without a reload and without DOM parsing.
+ *
+ * Delivery is best-effort per tab: tabs without the content script loaded
+ * (e.g. `chrome://` pages, or a tab just opening) fail the message send
+ * silently; the page's own init request (`care_plan_state_request`) will
+ * pick up state when the content script is ready.
+ */
+export async function broadcastCarePlanState(): Promise<void> {
   const plans = getCarePlanPreviewSnapshot();
+  let tabs: chrome.tabs.Tab[];
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return;
-    await chrome.tabs.sendMessage(tab.id, { type: "care_plan_state", plans });
-  } catch {
-    // No content script on the current page, or tab unreachable — ignore.
+    tabs = await chrome.tabs.query({ url: CARE_PLAN_BROADCAST_TAB_URLS.slice() });
+  } catch (err: unknown) {
+    log.warn("care_plan broadcast query failed", String(err));
+    return;
   }
+
+  let delivered = 0;
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (typeof tab.id !== "number") return;
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: "care_plan_state", plans });
+        delivered += 1;
+      } catch {
+        // Content script not ready on this tab — silently skip.
+      }
+    }),
+  );
+
+  log.info("care_plan_state_broadcast", {
+    plansCount: plans.length,
+    tabsTried: tabs.length,
+    tabsDelivered: delivered,
+  });
 }
 
 function makeEvent<T extends AgentEvent["type"]>(
@@ -439,7 +539,7 @@ async function handleAssignIntent(
 
   // Fire-and-forget: schedule page (if open) refreshes its assignments
   // block. No DOM mutation happens here — state is pushed as data only.
-  void pushCarePlanStateToActiveTab();
+  void broadcastCarePlanState();
 
   const serviceName =
     SERVICE_DISPLAY_NAMES[intent.service as ClinicalService] ?? intent.service;
@@ -592,10 +692,19 @@ async function runWithInterpretation(
             value: String(s.value),
           }))
         : undefined;
+
+    // ── UX RULE ───────────────────────────────────────────────────────── //
+    // The clinician never sees internal pipeline vocabulary: no intent     //
+    // kind strings (`build_schedule`, `fill` …), no decision reason codes  //
+    // (`high_risk_operation`, `low_confidence` …). We compose a Russian    //
+    // human summary here; risk/confidence stays in logs only.              //
+    // ──────────────────────────────────────────────────────────────────── //
+    const summary = buildHumanConfirmSummary(intent);
     await emit(
       makeEvent("user_confirmation_requested", correlationId, {
-        summary: `Confirm ${intent.kind} (${decision.reason})`,
-        ...(draftFields ? { draftFields, intentKind: intent.kind } : {}),
+        summary,
+        intentKind: intent.kind,
+        ...(draftFields ? { draftFields } : {}),
       }),
     );
     return;
@@ -850,7 +959,7 @@ export const controller = {
         }),
       );
 
-      void pushCarePlanStateToActiveTab();
+      void broadcastCarePlanState();
 
       log.info("assign_confirmed_no_schedule", {
         planId: confirmed.id,
@@ -939,7 +1048,7 @@ export const controller = {
 
       // Propagate status flip (confirmed → scheduled) to the schedule
       // page via explicit state push (not DOM parsing).
-      void pushCarePlanStateToActiveTab();
+      void broadcastCarePlanState();
 
       // Step 6: Emit schedule generated
       await emit(makeEvent("schedule_generated", correlationId, { result }));
