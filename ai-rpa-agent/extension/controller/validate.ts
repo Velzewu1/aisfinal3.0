@@ -1,4 +1,4 @@
-import { IntentKind, LlmInterpretation } from "@ai-rpa/schemas";
+import { IntentKind, LlmInterpretation, MAX_COURSE_DAYS } from "@ai-rpa/schemas";
 import type { LlmInterpretation as LlmInterpretationType } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 
@@ -28,7 +28,12 @@ export type ValidationError =
   | "validation_failed"
   | "invalid_schema_version"
   | "missing_intent"
-  | "invalid_intent_shape";
+  | "invalid_intent_shape"
+  // Domain-level assign rejections — surfaced specifically so the
+  // sidepanel can show clinician-facing Russian messages instead of a
+  // generic parse error.
+  | "assign_course_missing_sessions"
+  | "assign_course_exceeds_max_days";
 
 export type ValidationResult =
   | { readonly ok: true; readonly data: LlmInterpretationType }
@@ -95,6 +100,25 @@ function categorizeError(raw: unknown): ValidationError {
   }
   if (!ALLOWED_INTENT_KINDS.has(kind)) {
     return "invalid_intent_shape";
+  }
+
+  // Domain-specific assign failures (detected on the raw JSON — structural
+  // inspection only, no coercion). These are reported BEFORE the generic
+  // "validation_failed" bucket so the UI can render the right Russian
+  // message. See `packages/schemas/src/intent.ts` for the authoritative
+  // constraints.
+  if (kind === "assign" && intent["type"] === "course") {
+    const rawSessions = intent["sessionsCount"];
+    if (rawSessions === undefined || rawSessions === null) {
+      return "assign_course_missing_sessions";
+    }
+    if (
+      typeof rawSessions === "number" &&
+      Number.isInteger(rawSessions) &&
+      rawSessions > MAX_COURSE_DAYS
+    ) {
+      return "assign_course_exceeds_max_days";
+    }
   }
 
   // Schema-version, intent presence, and intent.kind all look structurally

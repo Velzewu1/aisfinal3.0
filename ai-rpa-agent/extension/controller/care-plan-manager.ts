@@ -10,6 +10,7 @@ import {
   SERVICE_DEFAULT_DURATION,
   SERVICE_DOCTOR_ID,
   SERVICE_DISPLAY_NAMES,
+  MAX_COURSE_DAYS,
 } from "@ai-rpa/schemas";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
 import { createLogger } from "../shared/logger.js";
@@ -36,16 +37,63 @@ const sessions = new Map<string, Session>();
 let committedAssignments: ScheduledAssignment[] = [];
 
 /**
+ * Error codes produced by care-plan-manager when a request violates
+ * the hard domain rules. These are the SAME tokens the LLM-validation
+ * path uses, so the sidepanel can map them to a single Russian
+ * user-facing message regardless of where the violation was caught.
+ */
+export type CarePlanDomainError =
+  | "assign_course_missing_sessions"
+  | "assign_course_exceeds_max_days";
+
+export class CarePlanDomainViolation extends Error {
+  readonly code: CarePlanDomainError;
+  readonly sessionsCount?: number;
+  constructor(code: CarePlanDomainError, sessionsCount?: number) {
+    super(code);
+    this.name = "CarePlanDomainViolation";
+    this.code = code;
+    this.sessionsCount = sessionsCount;
+  }
+}
+
+/**
  * Creates a draft CarePlan from an assign intent.
- * Does NOT expand into sessions — that happens after confirmation.
+ *
+ * Domain guarantees (defense-in-depth — upstream schema should already
+ * have caught these, but `createCarePlan` is the LAST line of defense
+ * before state mutation):
+ *
+ *   1. `type: "initial"` always yields `sessionsCount = 1`.
+ *   2. `type: "course"` requires `intent.sessionsCount` to be present;
+ *      missing → throws `assign_course_missing_sessions`. No default
+ *      value (especially not 10) is EVER substituted.
+ *   3. `sessionsCount > MAX_COURSE_DAYS` → throws
+ *      `assign_course_exceeds_max_days`. No silent truncation.
+ *
+ * Callers MUST catch {@link CarePlanDomainViolation} and translate it
+ * into a clinician-facing event — never let it bubble to the executor.
  */
 export function createCarePlan(
   intent: AssignIntent,
   patientId: string,
   createdBy: string,
 ): CarePlan {
-  const sessionsCount =
-    intent.type === "initial" ? 1 : intent.sessionsCount ?? 10;
+  let sessionsCount: number;
+  if (intent.type === "initial") {
+    sessionsCount = 1;
+  } else {
+    if (intent.sessionsCount === undefined) {
+      throw new CarePlanDomainViolation("assign_course_missing_sessions");
+    }
+    if (intent.sessionsCount > MAX_COURSE_DAYS) {
+      throw new CarePlanDomainViolation(
+        "assign_course_exceeds_max_days",
+        intent.sessionsCount,
+      );
+    }
+    sessionsCount = intent.sessionsCount;
+  }
   const durationMinutes =
     intent.durationMinutes ?? SERVICE_DEFAULT_DURATION[intent.service];
 
@@ -216,8 +264,16 @@ export function buildScheduleRequestFromSessions(
   horizonDays?: number,
 ): ScheduleRequest {
   const doctorId = SERVICE_DOCTOR_ID[plan.service];
-  const effectiveHorizon = horizonDays ?? Math.max(plan.sessionsCount, 9);
-  const cappedHorizon = Math.min(effectiveHorizon, 9); // Mock grid max
+  // Scheduler "horizon" is the calendar window the solver places sessions
+  // into — NOT the number of sessions. The two are independent: a 2-day
+  // course still needs a valid working-hour window on 2 days. We clamp
+  // explicitly to `MAX_COURSE_DAYS` (the mock grid max); `plan.sessionsCount`
+  // has already been validated to lie in [1, MAX_COURSE_DAYS].
+  const requestedHorizon = horizonDays ?? plan.sessionsCount;
+  const cappedHorizon = Math.max(
+    1,
+    Math.min(requestedHorizon, MAX_COURSE_DAYS),
+  );
 
   // Build procedures: one per session
   const procedures = newSessions.map((s) => ({

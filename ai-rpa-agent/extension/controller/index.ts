@@ -35,6 +35,7 @@ import {
   getSessionsForPlan,
   getConfirmedCarePlans,
   getAllCarePlans,
+  CarePlanDomainViolation,
 } from "./care-plan-manager.js";
 
 const log = createLogger("controller");
@@ -229,7 +230,13 @@ function buildHumanConfirmSummary(intent: Intent): string {
       const serviceName =
         SERVICE_DISPLAY_NAMES[intent.service as ClinicalService] ?? intent.service;
       if (intent.type === "initial") return `Назначить первичный осмотр: ${serviceName}?`;
-      const sessions = intent.sessionsCount ?? 10;
+      // No silent default: if the LLM produced `course` without a
+      // sessionsCount, upstream validation has already rejected the
+      // intent, so we reach this branch only with a valid integer.
+      const sessions = intent.sessionsCount;
+      if (typeof sessions !== "number") {
+        return `Назначить курс: ${serviceName}?`;
+      }
       return `Назначить курс: ${serviceName} — ${sessions} ${pluralizeSessionsRu(sessions)}?`;
     }
     case "unknown":
@@ -523,7 +530,30 @@ async function handleAssignIntent(
   }
 
   const patientId = scheduleContext?.patientId ?? "MOCK-PED-INPT-001";
-  const plan = createCarePlan(intent, patientId, "doctor");
+
+  let plan;
+  try {
+    plan = createCarePlan(intent, patientId, "doctor");
+  } catch (err: unknown) {
+    // Domain violations (missing sessionsCount, > MAX_COURSE_DAYS) MUST
+    // NOT mutate state. Emit a validation_failed event using a stable
+    // code token; the sidepanel translates it to Russian for the
+    // clinician. No CarePlan, no planner, no scheduler.
+    if (err instanceof CarePlanDomainViolation) {
+      log.warn(
+        "assign_rejected_domain_violation",
+        { code: err.code, sessionsCount: err.sessionsCount },
+        correlationId,
+      );
+      await emit(
+        makeEvent("validation_failed", correlationId, {
+          errors: [err.code],
+        }),
+      );
+      return;
+    }
+    throw err;
+  }
 
   await emit(
     makeEvent("care_plan_created", correlationId, {

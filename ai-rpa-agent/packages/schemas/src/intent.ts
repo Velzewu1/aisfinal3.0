@@ -54,12 +54,32 @@ export const UnknownIntent = z.object({
 });
 
 /**
+ * Maximum course horizon (working days) — hard domain rule.
+ *
+ * The rehabilitation grid supports at most 9 working days; a course
+ * may not exceed this. The controller, schema, and LLM prompt all
+ * agree on this constant — if the doctor asks for more, the system
+ * MUST refuse (user-facing message: "Максимальная длительность курса
+ * — 9 дней") rather than silently truncating.
+ */
+export const MAX_COURSE_DAYS = 9 as const;
+
+/**
  * Clinical assignment intent: referral to specialist (initial) or
  * treatment course prescription (course with sessionsCount).
  *
  * Created by primary doctor ("Назначь логопеда") or specialist
- * ("Назначить логопеда на 10 дней"). The controller uses this to
- * create a CarePlan, NOT to directly manipulate the schedule.
+ * ("Назначить курс массажа на 6 дней"). The controller uses this
+ * to create a CarePlan, NOT to directly manipulate the schedule.
+ *
+ * Domain rules:
+ *   1. `type: "course"` → `sessionsCount` is REQUIRED and must be an
+ *      integer in [1, MAX_COURSE_DAYS]. There is NO default — the LLM
+ *      must copy the doctor's spoken number exactly.
+ *   2. `type: "initial"` → `sessionsCount` is ignored (always 1 session).
+ *   3. A course longer than {@link MAX_COURSE_DAYS} is rejected at the
+ *      schema boundary and surfaced as a user-facing error, NEVER
+ *      truncated or normalized.
  */
 export const AssignIntent = z.object({
   kind: z.literal("assign"),
@@ -67,8 +87,17 @@ export const AssignIntent = z.object({
   service: ClinicalService,
   /** Single referral vs multi-session treatment course. */
   type: z.enum(["initial", "course"]),
-  /** Number of sessions (required for "course", default 1 for "initial"). */
-  sessionsCount: z.number().int().positive().optional(),
+  /**
+   * Number of sessions/days in the course.
+   *
+   * - Required for `type: "course"` (enforced by {@link LlmInterpretation}
+   *   refinement — kept here as `.optional()` so Zod's discriminatedUnion
+   *   remains happy with a plain ZodObject).
+   * - Must equal the number the doctor spoke; the LLM MUST NOT
+   *   substitute a default value.
+   * - Hard bounds: `1 <= sessionsCount <= MAX_COURSE_DAYS`.
+   */
+  sessionsCount: z.number().int().min(1).max(MAX_COURSE_DAYS).optional(),
   /** Session duration override (minutes); defaults from SERVICE_DEFAULT_DURATION. */
   durationMinutes: z.number().int().positive().optional(),
 });
@@ -103,11 +132,31 @@ export type Intent = z.infer<typeof Intent>;
 /**
  * The exact contract the LLM must return.
  * If JSON fails this schema, the controller MUST reject and retry/clarify.
+ *
+ * Cross-field domain refinement (kept at this layer, not on AssignIntent,
+ * because `z.discriminatedUnion` requires plain ZodObject members):
+ *   - For `intent.kind === "assign"` with `type: "course"`, `sessionsCount`
+ *     is REQUIRED — the controller uses the specific issue message to
+ *     surface a clinician-facing error ("Укажите длительность курса").
  */
-export const LlmInterpretation = z.object({
-  schemaVersion: z.literal("1.0.0"),
-  intent: Intent,
-  confidence: Confidence,
-  rationale: z.string().max(2000).optional(),
-});
+export const LlmInterpretation = z
+  .object({
+    schemaVersion: z.literal("1.0.0"),
+    intent: Intent,
+    confidence: Confidence,
+    rationale: z.string().max(2000).optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      val.intent.kind === "assign" &&
+      val.intent.type === "course" &&
+      val.intent.sessionsCount === undefined
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["intent", "sessionsCount"],
+        message: "assign_course_missing_sessions",
+      });
+    }
+  });
 export type LlmInterpretation = z.infer<typeof LlmInterpretation>;

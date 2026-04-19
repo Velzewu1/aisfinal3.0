@@ -783,11 +783,19 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
         if (e.startsWith("out_of_policy_value")) return "Вне политики";
         if (e === "normalize_failed") return "Ошибка нормализации";
         if (e === "field_not_on_current_page") return "Поле не на странице";
+        // Domain rejections for treatment courses — clinician-facing,
+        // short and unambiguous.
+        if (e === "assign_course_missing_sessions") {
+          return "Укажите длительность курса";
+        }
+        if (e === "assign_course_exceeds_max_days") {
+          return "Максимальная длительность курса — 9 дней";
+        }
         return e;
       });
       return {
         dot: "error",
-        title: "Ошибка",
+        title: "Назначение отклонено",
         description: human.join("; "),
       };
     }
@@ -1214,6 +1222,26 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
   if (!isEventEnvelope(msg)) return;
   const ev = msg.event;
   ingestAgentEvent(ev);
+
+  // Domain-level assign rejections surface as `validation_failed` with a
+  // stable code token. Flip the main pane to error mode so the clinician
+  // sees the Russian message front-and-center, not only in the log.
+  if (ev.type === "validation_failed") {
+    const first = ev.payload.errors[0];
+    if (first === "assign_course_missing_sessions") {
+      setPaneState({ mode: "error", message: "Укажите длительность курса" });
+      scheduleProgressPhase = null;
+      return;
+    }
+    if (first === "assign_course_exceeds_max_days") {
+      setPaneState({
+        mode: "error",
+        message: "Максимальная длительность курса — 9 дней",
+      });
+      scheduleProgressPhase = null;
+      return;
+    }
+  }
 
   if (ev.type === "context_attached") {
     lastAttachedContextPage = ev.payload.currentPage;
