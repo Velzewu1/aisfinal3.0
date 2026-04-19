@@ -96,6 +96,58 @@ chrome.runtime.onInstalled.addListener(() => {
     .catch((err: unknown) => log.error("sidePanel.setPanelBehavior failed", String(err)));
 });
 
+// --------------------------------------------------------------------- //
+// Global hotkey → perception trigger (voice only).                       //
+//                                                                        //
+// The hotkey is perception only: it NEVER talks to the LLM, NEVER mutates //
+// DOM, and NEVER bypasses the controller. It just tells the sidepanel to  //
+// toggle its voice recorder. The sidepanel already owns the recorder and  //
+// feeds captured audio through the normal perception → controller path.   //
+// --------------------------------------------------------------------- //
+
+const HOTKEY_DEBOUNCE_MS = 300;
+let lastHotkeyAt = 0;
+
+async function relayHotkeyToggleVoice(ts: number): Promise<void> {
+  // Persist intent in session storage so the sidepanel can consume it on
+  // load if it was closed when the hotkey fired. Keyed by `ts` so both the
+  // storage and runtime paths converge on the same idempotent event.
+  try {
+    await chrome.storage.session.set({ pendingVoiceToggle: { ts } });
+  } catch (err: unknown) {
+    log.warn("storage.session set failed", String(err));
+  }
+
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = tabs[0];
+  if (tab?.windowId !== undefined) {
+    try {
+      await chrome.sidePanel.open({ windowId: tab.windowId });
+    } catch (err: unknown) {
+      log.warn("sidePanel.open failed (may already be open)", String(err));
+    }
+  }
+
+  // Fire-and-forget: if the panel is already loaded it handles immediately;
+  // otherwise the pendingVoiceToggle storage entry will be consumed on load.
+  try {
+    await chrome.runtime.sendMessage({ type: "hotkey_toggle_voice", ts });
+  } catch {
+    // No receiver yet (panel still loading); storage fallback covers it.
+  }
+}
+
+chrome.commands.onCommand.addListener((command: string) => {
+  if (command !== "toggle-voice") return;
+  const now = Date.now();
+  if (now - lastHotkeyAt < HOTKEY_DEBOUNCE_MS) {
+    log.info("hotkey debounced", { command, now });
+    return;
+  }
+  lastHotkeyAt = now;
+  void relayHotkeyToggleVoice(now);
+});
+
 function isRecordingDispatch(
   msg: unknown,
 ): msg is { type: "start_recording" | "stop_recording"; correlationId: string } {

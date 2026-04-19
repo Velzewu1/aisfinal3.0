@@ -25,6 +25,15 @@
   "action": {
     "default_title": "Open AI RPA side panel"
   },
+  "commands": {
+    "toggle-voice": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+V",
+        "mac": "Command+Shift+V"
+      },
+      "description": "Toggle voice recording"
+    }
+  },
   "content_scripts": [
     {
       "matches": [

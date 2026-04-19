@@ -561,6 +561,19 @@ async function dispatchVoiceSegment(capture: VoiceCapturedEvent): Promise<void> 
   }
 }
 
+function describeMicError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  // Chrome surfaces permission denials as DOMException name/message like
+  // `NotAllowedError` / `Permission dismissed`. Surface a clear UX string.
+  if (/NotAllowed|Permission|denied|dismissed/i.test(raw)) {
+    return "Microphone access required";
+  }
+  if (/NotFound|device/i.test(raw)) {
+    return "Микрофон не найден";
+  }
+  return raw;
+}
+
 async function activateAssistant(): Promise<void> {
   try {
     const sessionId = await recorder.startContinuous((segment) => {
@@ -570,7 +583,7 @@ async function activateAssistant(): Promise<void> {
     pushLocalTimeline("info", "Ассистент", `Активен · ${sessionId.slice(0, 8)}…`);
   } catch (err: unknown) {
     log.error("activate failed", String(err));
-    pushLocalTimeline("error", "Микрофон", String(err));
+    pushLocalTimeline("error", "Микрофон", describeMicError(err));
     setAssistantMode("inactive");
   }
 }
@@ -897,6 +910,107 @@ quickActionsEl?.addEventListener("click", (e: Event) => {
 
 renderAssistantMode();
 refreshTimelineEmpty();
+
+// ------------------------------------------------------------------ //
+// Global hotkey (Ctrl/Cmd+Shift+V) — perception trigger only.         //
+// The hotkey is detected in the background service worker; the panel  //
+// only reacts to the relayed `hotkey_toggle_voice` message and updates //
+// the recorder state. No DOM mutation, no LLM, no controller bypass.  //
+// ------------------------------------------------------------------ //
+
+const HOTKEY_DEBOUNCE_MS = 300;
+let lastHotkeyTs = 0;
+
+function isHotkeyToggleMessage(m: unknown): m is { type: "hotkey_toggle_voice"; ts: number } {
+  if (typeof m !== "object" || m === null) return false;
+  const obj = m as { type?: unknown; ts?: unknown };
+  return obj.type === "hotkey_toggle_voice" && typeof obj.ts === "number";
+}
+
+async function handleHotkeyToggle(ts: number): Promise<void> {
+  if (ts <= lastHotkeyTs) return;
+  if (Date.now() - lastHotkeyTs < HOTKEY_DEBOUNCE_MS && lastHotkeyTs > 0) return;
+  lastHotkeyTs = ts;
+
+  if (assistantMode === "inactive") {
+    pushLocalTimeline("info", "Горячая клавиша", "Старт записи (Ctrl/⌘+Shift+V)");
+    await activateAssistant();
+  } else {
+    pushLocalTimeline("info", "Горячая клавиша", "Стоп записи (Ctrl/⌘+Shift+V)");
+    await deactivateAssistant();
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg: unknown) => {
+  if (!isHotkeyToggleMessage(msg)) return;
+  void handleHotkeyToggle(msg.ts);
+});
+
+async function consumePendingHotkey(): Promise<void> {
+  try {
+    const res = (await chrome.storage.session.get("pendingVoiceToggle")) as {
+      pendingVoiceToggle?: { ts?: number };
+    };
+    const pending = res.pendingVoiceToggle;
+    if (!pending || typeof pending.ts !== "number") return;
+    // Ignore stale intents (panel was reopened long after the hotkey fired).
+    if (Date.now() - pending.ts > 5000) {
+      await chrome.storage.session.remove("pendingVoiceToggle");
+      return;
+    }
+    await chrome.storage.session.remove("pendingVoiceToggle");
+    await handleHotkeyToggle(pending.ts);
+  } catch (err: unknown) {
+    log.warn("consumePendingHotkey failed", String(err));
+  }
+}
+
+void consumePendingHotkey();
+
+// ------------------------------------------------------------------ //
+// Push-to-talk: hold Space to record while the side panel is focused. //
+// Only fires when the user is NOT typing in an input/textarea/editable //
+// region, to avoid hijacking the text fallback and upload controls.   //
+// ------------------------------------------------------------------ //
+
+let pttOwnsRecording = false;
+
+function isEditableTarget(t: EventTarget | null): boolean {
+  if (!(t instanceof HTMLElement)) return false;
+  if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT") return true;
+  if (t.isContentEditable) return true;
+  return false;
+}
+
+window.addEventListener("keydown", (e: KeyboardEvent) => {
+  if (e.code !== "Space" && e.key !== " ") return;
+  if (e.repeat) return;
+  if (isEditableTarget(e.target)) return;
+  // Only start PTT when fully idle; never preempt a running session.
+  if (assistantMode !== "inactive") return;
+  e.preventDefault();
+  pttOwnsRecording = true;
+  pushLocalTimeline("info", "Push-to-talk", "Space зажат — запись");
+  void activateAssistant();
+});
+
+window.addEventListener("keyup", (e: KeyboardEvent) => {
+  if (e.code !== "Space" && e.key !== " ") return;
+  if (!pttOwnsRecording) return;
+  pttOwnsRecording = false;
+  e.preventDefault();
+  pushLocalTimeline("info", "Push-to-talk", "Space отпущен — стоп");
+  void deactivateAssistant();
+});
+
+window.addEventListener("blur", () => {
+  // If focus leaves the panel while PTT is active, stop cleanly so the
+  // recorder never stays on after a keyup is lost in another window.
+  if (!pttOwnsRecording) return;
+  pttOwnsRecording = false;
+  pushLocalTimeline("warning", "Push-to-talk", "Фокус потерян — стоп");
+  void deactivateAssistant();
+});
 
 // ------------------------------------------------------------------ //
 // File upload — UI separation for Patient vs Reusable scopes          //
