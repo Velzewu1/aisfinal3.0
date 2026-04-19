@@ -2,7 +2,7 @@ import type { AgentEvent } from "@ai-rpa/schemas";
 import { LlmInterpretation } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import type { ExtensionMessage } from "../shared/messages.js";
-import { controller } from "../controller/index.js";
+import { controller, getCarePlanPreviewSnapshot } from "../controller/index.js";
 import { newCorrelationId } from "../shared/correlation.js";
 
 const log = createLogger("router");
@@ -214,6 +214,48 @@ export const router = {
       case "ingest_file":
         // Handled by the dedicated isIngestFileMessage guard in background/index.ts.
         // If it reaches the router, it's a no-op.
+        return { forwarded: true };
+
+      case "care_plan_confirm":
+        // CarePlan confirmations go through the standard confirmation flow
+        // with the planId preserved in pendingCarePlanIds
+        return controller.onUserConfirmation({
+          type: "user_confirmation",
+          correlationId: msg.correlationId,
+          accepted: msg.accepted,
+        });
+
+      case "session_complete":
+        return controller.onSessionComplete({
+          correlationId: msg.correlationId,
+          sessionId: msg.sessionId,
+          service: msg.service as import("@ai-rpa/schemas").ClinicalService | undefined,
+          diaryNote: msg.diaryNote,
+        });
+
+      case "build_schedule_from_plans":
+        return controller.onBuildScheduleFromPlans(msg.correlationId);
+
+      case "care_plan_state_request": {
+        // Schedule page is requesting the current CarePlan snapshot.
+        // Respond by pushing the state back to the requesting tab's
+        // content script (bridge pattern, same as schedule state).
+        const plans = getCarePlanPreviewSnapshot();
+        const tabId = sender.tab?.id;
+        if (typeof tabId === "number") {
+          void sendToContentScript(tabId, { type: "care_plan_state", plans }).catch(
+            (err: unknown) => {
+              log.warn("care_plan_state push failed", String(err), msg.correlationId);
+            },
+          );
+        }
+        return { ok: true, count: plans.length };
+      }
+
+      case "care_plan_state":
+        // Push from controller is handled directly at the sender (content
+        // script listens on `chrome.runtime.onMessage`). Reaching the
+        // router means a misrouted echo — acknowledge without side effects.
         return { forwarded: true };
 
       default: {

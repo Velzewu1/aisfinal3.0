@@ -83,6 +83,8 @@ const SUGGESTION_ACCEPT_UTTERANCE: Readonly<Record<ProactiveSuggestion, string>>
   suggest_exam_progress: "",
   suggest_next_form: "Да, заполните форму голосом.",
   suggest_finish_visit: "Да, завершите визит.",
+  suggest_assign_course: "Да, назначьте курс лечения.",
+  suggest_build_schedule: "Да, сформируйте расписание.",
 });
 
 type VoicePipelineResult =
@@ -95,6 +97,8 @@ type VoicePipelineResult =
 
 function intentKindRu(kind: IntentKind): string {
   const labels: Record<IntentKind, string> = {
+    assign: "НАЗНАЧЕНИЕ",
+    build_schedule: "РАСПИСАНИЕ",
     fill: "ЗАПОЛНЕНИЕ",
     navigate: "НАВИГАЦИЯ",
     schedule: "РАСПИСАНИЕ",
@@ -308,6 +312,34 @@ function describeAgentEvent(ev: AgentEvent): { dot: DotKind; title: string; desc
         dot: ev.payload.accepted ? "success" : "warning",
         title: "Ответ врача",
         description: ev.payload.accepted ? "Подтверждено" : "Отклонено",
+      };
+    case "care_plan_created":
+      return {
+        dot: "info",
+        title: "📋 Назначение",
+        description: ev.payload.type === "initial"
+          ? `Первичный осмотр: ${ev.payload.service}`
+          : `Курс: ${ev.payload.service} — ${ev.payload.sessionsCount} сеансов`,
+      };
+    case "care_plan_confirmed":
+      return {
+        dot: "success",
+        title: "📋 Назначение подтверждено",
+        description: ev.payload.type === "initial"
+          ? `Первичный осмотр: ${ev.payload.service}`
+          : `Курс: ${ev.payload.service} — ${ev.payload.sessionsCount} сеансов`,
+      };
+    case "care_plan_expanded":
+      return {
+        dot: "success",
+        title: "📋 План лечения",
+        description: `${ev.payload.sessionsCount} сеансов создано`,
+      };
+    case "session_completed":
+      return {
+        dot: "success",
+        title: "✅ Сеанс",
+        description: `${ev.payload.service} — ${ev.payload.sessionNumber}/${ev.payload.totalSessions}`,
       };
     default: {
       const _exhaustive: never = ev;
@@ -682,6 +714,20 @@ async function acceptProactiveSuggestion(suggestion: ProactiveSuggestion): Promi
     hideProactiveCard();
     return;
   }
+  if (suggestion === "suggest_build_schedule") {
+    const correlationId = newCorrelationId();
+    lastCorrelationId = correlationId;
+    void chrome.runtime
+      .sendMessage({ type: "build_schedule_from_plans", correlationId })
+      .then(() => {
+        pushLocalTimeline("info", "Расписание", "Формирование расписания из назначений...");
+      })
+      .catch((err: unknown) => {
+        pushLocalTimeline("error", "Расписание", String(err));
+      });
+    hideProactiveCard();
+    return;
+  }
 
   const text = SUGGESTION_ACCEPT_UTTERANCE[suggestion];
   beginAsync();
@@ -779,6 +825,17 @@ chrome.runtime.onMessage.addListener((msg: unknown) => {
         showProactiveSuggestion(hint.suggestion, `\u2713 ${hint.displayMessage}`);
       }
     }
+    return;
+  }
+
+  if (ev.type === "care_plan_confirmed") {
+    // SEPARATION OF CONCERNS: confirmation ONLY persists the CarePlan.
+    // Scheduling is a separate user action (`build_schedule` intent).
+    // Surface the proactive suggestion so the clinician can trigger it.
+    showProactiveSuggestion(
+      "suggest_build_schedule",
+      `📋 Назначение подтверждено: ${ev.payload.service} — ${ev.payload.sessionsCount} занятий. Сформировать расписание?`,
+    );
     return;
   }
 

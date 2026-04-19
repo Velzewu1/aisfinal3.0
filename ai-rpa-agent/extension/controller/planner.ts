@@ -31,6 +31,17 @@ export function planActions(
   correlationId: string,
   scheduleResult?: ScheduleResult,
 ): DomAction[] {
+  // `assign` is a clinical state change, NOT an executable action. The
+  // planner must never observe it; treat a stray call as a controller
+  // contract violation and refuse without emitting an ActionPlan.
+  if (intent.kind === "assign") {
+    log.warn("planner_refused_assign_intent", {
+      correlationId,
+      note: "assign_is_state_change_no_action_plan_allowed",
+    });
+    return [];
+  }
+
   const actions = buildActions(intent, scheduleResult);
   emitActionPlanCreated(correlationId, intent.kind, actions);
   return actions;
@@ -95,6 +106,17 @@ function buildActions(intent: Intent, scheduleResult?: ScheduleResult): DomActio
         },
       ];
     }
+
+    case "assign":
+      // Unreachable: `planActions` refuses `assign` before reaching here.
+      // Assign is a clinical state change handled by the controller's
+      // CarePlan flow; it MUST NOT produce any DomAction.
+      return [];
+
+    case "build_schedule":
+      // Logistics step. The controller expands confirmed CarePlans
+      // and calls the scheduler. No direct DOM actions needed.
+      return [];
 
     case "unknown":
       return [];

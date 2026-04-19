@@ -1,4 +1,12 @@
-import type { AgentEvent, DomAction, ExecutorResult, LlmInterpretation, PageFieldDescriptor } from "@ai-rpa/schemas";
+import type {
+  AgentEvent,
+  DomAction,
+  ExecutorResult,
+  LlmInterpretation,
+  PageFieldDescriptor,
+  ClinicalService,
+  CarePlanStatus,
+} from "@ai-rpa/schemas";
 import type { ScheduleRequestBuildInput } from "../controller/schedule-request-from-context.js";
 
 /**
@@ -62,7 +70,38 @@ export type ExtensionMessage =
       /** Asset content type override. */
       contentType?: "diagnosis_history" | "allergy_snapshot" | "treatment_plan" | "observation_note" | "custom" | "primary_exam" | "epicrisis" | "diary";
     }
+  | { type: "care_plan_confirm"; correlationId: string; planId: string; accepted: boolean }
+  | {
+      type: "session_complete";
+      correlationId: string;
+      sessionId?: string;
+      service?: string;
+      diaryNote?: string;
+    }
+  | { type: "build_schedule_from_plans"; correlationId: string }
+  /**
+   * Page-facing CarePlan preview rows pushed from background → content
+   * script → page main world. Intentionally minimal: no ids, no
+   * timestamps, no sensitive fields (UX rule: clean layout only).
+   */
+  | {
+      type: "care_plan_state";
+      plans: ReadonlyArray<CarePlanPreview>;
+    }
+  /** Content script requests current CarePlan state from the controller. */
+  | { type: "care_plan_state_request"; correlationId: string }
   | { type: "event"; event: AgentEvent };
+
+/**
+ * Minimal projection of a CarePlan for the schedule-page UI.
+ * Keeps the decision layer (clinical data) decoupled from the execution
+ * layer (scheduled slots).
+ */
+export interface CarePlanPreview {
+  readonly service: ClinicalService;
+  readonly sessionsCount: number;
+  readonly status: CarePlanStatus;
+}
 
 
 export type MessageOf<T extends ExtensionMessage["type"]> = Extract<ExtensionMessage, { type: T }>;

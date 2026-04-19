@@ -21,7 +21,7 @@ export const CONFIDENCE_THRESHOLD = 0.7;
 export const HIGH_CONFIDENCE_THRESHOLD = 0.85;
 
 export function isHighRisk(intentKind: string): boolean {
-  return intentKind === "set_status" || intentKind === "schedule";
+  return intentKind === "assign" || intentKind === "build_schedule" || intentKind === "set_status" || intentKind === "schedule";
 }
 
 // ------------------------------------------------------------------ //

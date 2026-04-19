@@ -53,4 +53,34 @@
     },
     false,
   );
+
+  /**
+   * CarePlan preview bridge: content script (isolated world) dispatches
+   * `ai-rpa-care-plan-state` with { plans } → page main world updates
+   * `window.__CARE_PLAN__` and fires `care_plan_updated` so the renderer
+   * can re-draw the assignments block without DOM parsing.
+   *
+   * CarePlan state is INTENTIONALLY separate from __SCHEDULE_STATE__:
+   * clinical decisions (data layer) must not be conflated with
+   * scheduled slots (execution layer).
+   */
+  root.addEventListener(
+    "ai-rpa-care-plan-state",
+    function (e) {
+      if (!e || !e.detail) return;
+      try {
+        var plans = Array.isArray(e.detail.plans) ? e.detail.plans : [];
+        window.__CARE_PLAN__ = plans;
+        window.dispatchEvent(
+          new CustomEvent("care_plan_updated", {
+            bubbles: true,
+            detail: { plans: plans },
+          }),
+        );
+      } catch (err) {
+        console.error("[ai-rpa] care_plan bridge listener failed", err);
+      }
+    },
+    false,
+  );
 })();

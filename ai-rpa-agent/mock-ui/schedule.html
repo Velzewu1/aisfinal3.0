@@ -270,6 +270,85 @@
       color: #1a2035;
       white-space: nowrap;
     }
+
+    /* --- CarePlan block (decision layer — assignments preview) --- */
+    #care-plan-block {
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 6px;
+      padding: 18px 22px 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(26, 32, 53, 0.05);
+    }
+    #care-plan-block h3 {
+      margin: 0 0 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a2035;
+      letter-spacing: 0.01em;
+    }
+    #care-plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .care-plan-item {
+      border: 1px solid #eef0f5;
+      border-left: 3px solid #4a7fd4;
+      border-radius: 4px;
+      padding: 10px 14px;
+      background: #fafbfd;
+    }
+    .care-plan-item[data-care-plan-status="scheduled"],
+    .care-plan-item[data-care-plan-status="active"],
+    .care-plan-item[data-care-plan-status="completed"] {
+      border-left-color: #2e7d32;
+      background: #f3f9f4;
+    }
+    .care-plan-item-service {
+      font-weight: 600;
+      color: #1a2035;
+      font-size: 14px;
+    }
+    .care-plan-item-sessions {
+      color: #5a6178;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .care-plan-item-status {
+      color: #6b7394;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .care-plan-item-status[data-status-label="запланировано"] {
+      color: #2e7d32;
+      font-weight: 500;
+    }
+    .care-plan-empty {
+      color: #8a92b0;
+      font-size: 13px;
+      padding: 6px 0 2px;
+    }
+    .care-plan-actions {
+      margin-top: 16px;
+      display: flex;
+      justify-content: flex-start;
+    }
+    #care-plan-build-schedule {
+      padding: 9px 16px;
+      background: #4a7fd4;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    #care-plan-build-schedule[disabled] {
+      background: #c9cfdd;
+      color: #f2f4f9;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
@@ -284,6 +363,7 @@
         <a href="index.html" data-nav="patient_list" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Список пациентов</a>
         <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">История болезни</div>
         <a href="primary_exam.html" data-nav="primary_exam" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Первичный осмотр</a>
+        <a href="specialist_exam.html" data-nav="specialist_exam" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Осмотр специалиста</a>
         <a href="epicrisis.html" data-nav="epicrisis" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Выписной эпикриз</a>
         <a href="diary.html" data-nav="diary" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Дневниковая запись</a>
         <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Назначения и расписание</div>
@@ -318,6 +398,18 @@
         <div style="font-size:12px;color:#6b7394;margin-top:4px;">Строки — специальности из medical-context; ячейки: <code style="background:#f0f2f7;padding:2px 6px;border-radius:2px;">data-schedule-cell</code></div>
       </header>
       <main style="flex:1;padding:24px;overflow:auto;">
+        <div id="care-plan-block">
+          <h3>Назначения</h3>
+          <div id="care-plan-list"></div>
+          <div class="care-plan-actions">
+            <button
+              type="button"
+              id="care-plan-build-schedule"
+              disabled
+              aria-disabled="true"
+            >Сформировать расписание</button>
+          </div>
+        </div>
         <div class="sched-wrap">
           <div class="sched-toolbar">
             <span class="title">Осмотр по записи</span>
@@ -373,9 +465,11 @@
   </div>
 
   <script defer src="schedule-init-state.js"></script>
+  <script defer src="care-plan-init-state.js"></script>
   <script defer src="schedule-bridge-listener.js"></script>
   <script defer src="schedule-bootstrap.js"></script>
   <script defer src="schedule-ui-map.js"></script>
   <script defer src="schedule-renderer.js"></script>
+  <script defer src="care-plan-renderer.js"></script>
 </body>
 </html>

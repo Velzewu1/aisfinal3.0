@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { Confidence } from "./common.js";
 import { ScheduleRequest } from "./schedule.js";
+import { ClinicalService } from "./care-plan.js";
 
 export const IntentKind = z.enum([
+  "assign",
+  "build_schedule",
   "fill",
   "navigate",
   "schedule",
@@ -50,7 +53,45 @@ export const UnknownIntent = z.object({
   reason: z.string().min(1).optional(),
 });
 
+/**
+ * Clinical assignment intent: referral to specialist (initial) or
+ * treatment course prescription (course with sessionsCount).
+ *
+ * Created by primary doctor ("Назначь логопеда") or specialist
+ * ("Назначить логопеда на 10 дней"). The controller uses this to
+ * create a CarePlan, NOT to directly manipulate the schedule.
+ */
+export const AssignIntent = z.object({
+  kind: z.literal("assign"),
+  /** Clinical service type. */
+  service: ClinicalService,
+  /** Single referral vs multi-session treatment course. */
+  type: z.enum(["initial", "course"]),
+  /** Number of sessions (required for "course", default 1 for "initial"). */
+  sessionsCount: z.number().int().positive().optional(),
+  /** Session duration override (minutes); defaults from SERVICE_DEFAULT_DURATION. */
+  durationMinutes: z.number().int().positive().optional(),
+});
+export type AssignIntent = z.infer<typeof AssignIntent>;
+
+/**
+ * Logistics-only intent: schedule what's been assigned.
+ *
+ * Triggered by "составь расписание", "разложи по дням", "запланируй курс".
+ * The controller finds all confirmed CarePlans and expands them into
+ * a conflict-aware schedule via the CP-SAT backend.
+ *
+ * MUST NOT be confused with AssignIntent — build_schedule never creates
+ * a CarePlan, only consumes confirmed ones.
+ */
+export const BuildScheduleIntent = z.object({
+  kind: z.literal("build_schedule"),
+});
+export type BuildScheduleIntent = z.infer<typeof BuildScheduleIntent>;
+
 export const Intent = z.discriminatedUnion("kind", [
+  AssignIntent,
+  BuildScheduleIntent,
   FillIntent,
   NavigateIntent,
   ScheduleIntent,

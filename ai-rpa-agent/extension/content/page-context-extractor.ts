@@ -13,6 +13,7 @@ const PAGE_BY_FILE: Readonly<Record<string, string>> = {
   "index.html": "patient_list",
   "": "patient_list",
   "primary_exam.html": "primary_exam",
+  "specialist_exam.html": "specialist_exam",
   "epicrisis.html": "epicrisis",
   "diary.html": "diary",
   "schedule.html": "schedule",

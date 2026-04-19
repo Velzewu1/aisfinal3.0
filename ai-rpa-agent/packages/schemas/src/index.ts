@@ -5,3 +5,4 @@ export * from "./schedule.js";
 export * from "./events.js";
 export * from "./page-context.js";
 export * from "./knowledge-assets.js";
+export * from "./care-plan.js";

@@ -4,6 +4,7 @@ import { isExtensionMessage } from "../shared/messages.js";
 import { executor } from "./executor.js";
 import { extractCurrentPageContext } from "./page-context-extractor.js";
 import { injectNavigateToScheduleEvent } from "./navigate-bridge.js";
+import { initCarePlanBridge, publishCarePlanStateToPage } from "./care-plan-bridge.js";
 import { initMicRecorder } from "./recorder.js";
 
 const log = createLogger("content");
@@ -36,6 +37,14 @@ chrome.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse) => {
     return true;
   }
   if (!isExtensionMessage(msg)) return false;
+
+  // ── Read-only data bridge: CarePlan preview rows → page main world ──
+  if (msg.type === "care_plan_state") {
+    publishCarePlanStateToPage(msg.plans);
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (msg.type !== "execute_plan") return false;
 
   // ── Write: deterministic DOM execution ──────────────────────────────
@@ -68,3 +77,4 @@ log.info("content script ready", { url: location.href });
 void ({} as { _enforce?: DomAction });
 
 initMicRecorder();
+initCarePlanBridge();

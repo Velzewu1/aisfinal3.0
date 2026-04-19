@@ -1,8 +1,8 @@
 import type { AgentEvent, Intent, ScheduleResult } from "@ai-rpa/schemas";
-import { ActionPlan, DomAction, LlmInterpretation } from "@ai-rpa/schemas";
+import { ActionPlan, DomAction, LlmInterpretation, SERVICE_DISPLAY_NAMES, ClinicalService } from "@ai-rpa/schemas";
 import { createLogger } from "../shared/logger.js";
 import { newCorrelationId, nowIso } from "../shared/correlation.js";
-import type { MessageOf } from "../shared/messages.js";
+import type { CarePlanPreview, MessageOf } from "../shared/messages.js";
 import { decideAction } from "./decision.js";
 import { planActions } from "./planner.js";
 import { BackendClient } from "./backend-client.js";
@@ -22,6 +22,20 @@ import {
   DEFAULT_SCHEDULE_CONTEXT,
   type ValidatedScheduleContext,
 } from "./schedule-request-from-context.js";
+import {
+  createCarePlan,
+  confirmPlan,
+  expandConfirmedPlan,
+  confirmAndExpand,
+  buildScheduleRequestFromSessions,
+  commitScheduleResult,
+  markSessionCompleted,
+  getCarePlan,
+  getNextPendingSession,
+  getSessionsForPlan,
+  getConfirmedCarePlans,
+  getAllCarePlans,
+} from "./care-plan-manager.js";
 
 const log = createLogger("controller");
 const backend = new BackendClient();
@@ -79,6 +93,7 @@ const ALLOWED_NAV_TARGETS: ReadonlySet<string> = new Set([
   "patient_list",
   "primary_exam",
   "schedule",
+  "specialist_exam",
 ]);
 const ALLOWED_STATUS_ENTITIES: ReadonlySet<string> = new Set([
   "primary_exam",
@@ -93,6 +108,14 @@ const ALLOWED_STATUSES: ReadonlySet<string> = new Set([
   "submitted",
   "final",
   "completed",
+]);
+/** Allowed clinical services for assign intents. */
+const ALLOWED_ASSIGN_SERVICES: ReadonlySet<string> = new Set([
+  "lfk",
+  "massage",
+  "psychologist",
+  "speech_therapy",
+  "physio",
 ]);
 
 function checkIntentPolicy(
@@ -122,6 +145,11 @@ function checkIntentPolicy(
       return `fill_field:${bad.field}`;
     }
   }
+  if (intent.kind === "assign") {
+    if (!ALLOWED_ASSIGN_SERVICES.has(intent.service)) {
+      return `assign_service:${intent.service}`;
+    }
+  }
   return null;
 }
 
@@ -131,12 +159,50 @@ interface PendingDecision {
 }
 
 const pendingConfirmations = new Map<string, PendingDecision>();
+/** Maps correlationId → carePlanId for assign confirmation flow. */
+const pendingCarePlanIds = new Map<string, string>();
 
 async function emit(event: AgentEvent): Promise<void> {
   try {
     await chrome.runtime.sendMessage({ type: "event", event });
   } catch (err: unknown) {
     log.warn("emit failed", String(err), event.correlationId);
+  }
+}
+
+// ------------------------------------------------------------------ //
+// CarePlan → UI state projection                                     //
+//                                                                    //
+// The schedule page displays a *preview* of assignments (clinical    //
+// decisions) independently from the calendar (execution). The        //
+// projection below is the ONLY view that leaves the decision layer   //
+// for rendering. It intentionally omits ids, timestamps, createdBy   //
+// and any field that would mix the two concerns (UX rule).           //
+// ------------------------------------------------------------------ //
+
+/** Snapshot of all current CarePlans projected for the schedule-page UI. */
+export function getCarePlanPreviewSnapshot(): CarePlanPreview[] {
+  return getAllCarePlans().map((plan) => ({
+    service: plan.service as ClinicalService,
+    sessionsCount: plan.sessionsCount,
+    status: plan.status,
+  }));
+}
+
+/**
+ * Pushes the current CarePlan preview to the active tab's content script.
+ * Best-effort: if there is no active tab, or the content script is not
+ * present on the target page, we silently skip — the page re-requests
+ * state on load via `care_plan_state_request`.
+ */
+async function pushCarePlanStateToActiveTab(): Promise<void> {
+  const plans = getCarePlanPreviewSnapshot();
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+    await chrome.tabs.sendMessage(tab.id, { type: "care_plan_state", plans });
+  } catch {
+    // No content script on the current page, or tab unreachable — ignore.
   }
 }
 
@@ -155,6 +221,18 @@ function makeEvent<T extends AgentEvent["type"]>(
 }
 
 async function dispatchExecution(correlationId: string, intent: Intent, scheduleResult?: ScheduleResult): Promise<void> {
+  // `assign` is a state change, not an action. The planner/executor must
+  // never observe it. If we reach here with `assign`, a caller violated
+  // the controller contract — refuse loudly.
+  if (intent.kind === "assign") {
+    log.warn(
+      "dispatch_execution_refused_for_assign",
+      { note: "assign_is_state_change_not_action" },
+      correlationId,
+    );
+    return;
+  }
+
   const actions = planActions(intent, correlationId, scheduleResult);
   if (actions.length === 0) {
     log.warn("no actions planned", { intentKind: intent.kind }, correlationId);
@@ -297,6 +375,92 @@ async function runFromUtterance(
   await runWithInterpretation(correlationId, validation.data, contextualized.context);
 }
 
+/**
+ * Handle an `assign` intent. This is the ONLY code path that may consume
+ * an AssignIntent after policy validation.
+ *
+ * Invariants enforced here:
+ *   - Always creates a draft CarePlan and emits `care_plan_created`.
+ *   - Always requests explicit user confirmation.
+ *   - NEVER calls `planActions`, `dispatchExecution`,
+ *     `executeScheduleBackendAndInject`, or `onBuildScheduleFromPlans`.
+ *   - NEVER produces an `ActionPlan` or any `DomAction`.
+ *   - A `reject` decision (unknown intent / low confidence) is honored
+ *     as a hard stop — no CarePlan is created.
+ */
+async function handleAssignIntent(
+  correlationId: string,
+  interpretation: LlmInterpretation,
+  intent: Extract<Intent, { kind: "assign" }>,
+  decision: { kind: "execute" | "confirm" | "reject"; reason: string; confidence: number },
+  scheduleContext?: ValidatedScheduleContext,
+): Promise<void> {
+  log.info(
+    "assign_intent_received",
+    {
+      service: intent.service,
+      type: intent.type,
+      sessionsCount: intent.sessionsCount,
+      decision: decision.kind,
+      note: "clinical_decision_state_change_only",
+    },
+    correlationId,
+  );
+
+  await emit(
+    makeEvent("decision_made", correlationId, {
+      decision: decision.kind,
+      confidence: decision.confidence,
+      reason: decision.reason,
+    }),
+  );
+
+  // A `reject` decision is a hard stop: do NOT create or persist a
+  // CarePlan. Low confidence / unknown intents must never mutate state.
+  if (decision.kind === "reject") {
+    log.info("assign_rejected", { reason: decision.reason }, correlationId);
+    return;
+  }
+
+  const patientId = scheduleContext?.patientId ?? "MOCK-PED-INPT-001";
+  const plan = createCarePlan(intent, patientId, "doctor");
+
+  await emit(
+    makeEvent("care_plan_created", correlationId, {
+      planId: plan.id,
+      service: plan.service as ClinicalService,
+      type: plan.type,
+      sessionsCount: plan.sessionsCount,
+      durationMinutes: plan.durationMinutes,
+      status: plan.status,
+      patientId: plan.patientId,
+    }),
+  );
+
+  // Fire-and-forget: schedule page (if open) refreshes its assignments
+  // block. No DOM mutation happens here — state is pushed as data only.
+  void pushCarePlanStateToActiveTab();
+
+  const serviceName =
+    SERVICE_DISPLAY_NAMES[intent.service as ClinicalService] ?? intent.service;
+  const summary =
+    intent.type === "initial"
+      ? `Назначен первичный осмотр: ${serviceName}`
+      : `Назначен курс: ${serviceName} \u2014 ${plan.sessionsCount} занятий по ${plan.durationMinutes} мин`;
+
+  pendingConfirmations.set(correlationId, { correlationId, interpretation });
+  pendingCarePlanIds.set(correlationId, plan.id);
+
+  await emit(
+    makeEvent("user_confirmation_requested", correlationId, {
+      summary,
+      intentKind: "assign",
+    }),
+  );
+
+  // STOP. No planner. No executor. No scheduler. No ActionPlan.
+}
+
 async function runWithInterpretation(
   correlationId: string,
   interpretation: LlmInterpretation,
@@ -375,6 +539,23 @@ async function runWithInterpretation(
 
   const decision = decideAction(interpretation, correlationId);
 
+  // ---------------------------------------------------------------- //
+  // STRICT BOUNDARY: `assign` is a CLINICAL DECISION (state change), //
+  // NEVER an executable action.                                      //
+  //                                                                  //
+  //   - MUST NOT call planner / executor / scheduler                 //
+  //   - MUST NOT produce an ActionPlan or any DomAction              //
+  //   - MUST NOT trigger schedule generation                         //
+  //                                                                  //
+  // All assign intents are routed through the CarePlan preview →     //
+  // user confirmation flow. A separate `build_schedule` intent (the  //
+  // planning layer) is the only path to scheduling.                  //
+  // ---------------------------------------------------------------- //
+  if (intent.kind === "assign") {
+    await handleAssignIntent(correlationId, interpretation, intent, decision, scheduleContext);
+    return;
+  }
+
   log.info(
     "step9_decision",
     {
@@ -401,6 +582,7 @@ async function runWithInterpretation(
 
   if (decision.kind === "confirm") {
     pendingConfirmations.set(correlationId, { correlationId, interpretation });
+
     // Build draft preview payload for fill intents
     const draftFields =
       intent.kind === "fill"
@@ -441,6 +623,11 @@ async function runWithInterpretation(
 
   if (intent.kind === "schedule") {
     await executeScheduleBackendAndInject(correlationId, intent);
+    return;
+  }
+
+  if (intent.kind === "build_schedule") {
+    await controller.onBuildScheduleFromPlans(correlationId);
     return;
   }
 
@@ -631,15 +818,224 @@ export const controller = {
     );
     const pending = pendingConfirmations.get(msg.correlationId);
     pendingConfirmations.delete(msg.correlationId);
+
+    // Check for CarePlan confirmation flow
+    const planId = pendingCarePlanIds.get(msg.correlationId);
+    pendingCarePlanIds.delete(msg.correlationId);
+
     if (!pending || !msg.accepted) return { executed: false };
 
     const { intent } = pending.interpretation;
+
+    // ASSIGN: doctor confirmed the CLINICAL DECISION.
+    //
+    // STRICT: persist the CarePlan and STOP. No planner, no executor,
+    // no scheduler, no ActionPlan, no DomAction, no schedule request.
+    // Scheduling is a separate `build_schedule` intent.
+    if (intent.kind === "assign" && planId) {
+      const confirmed = confirmPlan(planId);
+      if (!confirmed) {
+        return { ok: false, error: "care_plan_confirm_failed" };
+      }
+
+      await emit(
+        makeEvent("care_plan_confirmed", msg.correlationId, {
+          planId: confirmed.id,
+          service: confirmed.service as ClinicalService,
+          type: confirmed.type,
+          sessionsCount: confirmed.sessionsCount,
+          durationMinutes: confirmed.durationMinutes,
+          status: confirmed.status,
+          patientId: confirmed.patientId,
+        }),
+      );
+
+      void pushCarePlanStateToActiveTab();
+
+      log.info("assign_confirmed_no_schedule", {
+        planId: confirmed.id,
+        service: confirmed.service,
+        sessionsCount: confirmed.sessionsCount,
+        note: "state_change_only_no_execution",
+      }, msg.correlationId);
+
+      // STOP HERE. No scheduling. No expansion. No calendar entries.
+      return { executed: true, planId: confirmed.id };
+    }
+
+    // Defense-in-depth: an `assign` intent must NEVER reach the executor
+    // or scheduler, even if the CarePlan bookkeeping above failed.
+    if (intent.kind === "assign") {
+      log.warn(
+        "assign_confirmation_without_plan_id",
+        { note: "refusing_to_execute_assign_intent" },
+        msg.correlationId,
+      );
+      return { executed: false, error: "assign_missing_plan_id" };
+    }
+
     if (intent.kind === "schedule") {
       await executeScheduleBackendAndInject(msg.correlationId, intent);
     } else {
       await dispatchExecution(msg.correlationId, intent);
     }
     return { executed: true };
+  },
+
+  /**
+   * CarePlan expansion + scheduling pipeline.
+   * Called ONLY from build_schedule flow — NEVER from assign.
+   *
+   * Flow: find confirmed plans → expand → build request → CP-SAT → inject
+   */
+  async executeCarePlanScheduling(
+    correlationId: string,
+    planId: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const plan = getCarePlan(planId);
+    if (!plan) {
+      return { ok: false, error: "care_plan_not_found" };
+    }
+
+    // Step 1: Expand confirmed plan into sessions
+    const sessions = expandConfirmedPlan(planId);
+    if (sessions.length === 0) {
+      // Fallback for draft plans (backward compat)
+      const fallback = confirmAndExpand(planId);
+      if (fallback.length === 0) {
+        return { ok: false, error: "care_plan_expansion_failed" };
+      }
+      return controller.executeCarePlanScheduling(correlationId, planId);
+    }
+
+    // Step 2: Emit expansion event
+    await emit(
+      makeEvent("care_plan_expanded", correlationId, {
+        planId,
+        sessionsCount: sessions.length,
+        service: plan.service as ClinicalService,
+      }),
+    );
+
+    // Step 3: Build schedule request from sessions
+    const scheduleRequest = buildScheduleRequestFromSessions(sessions, plan);
+
+    // Step 4: Send to CP-SAT backend
+    await emit(
+      makeEvent("schedule_requested", correlationId, {
+        request: scheduleRequest,
+      }),
+    );
+
+    try {
+      const result = await backend.schedule(scheduleRequest, correlationId);
+      if (result === null) {
+        log.warn("care_plan schedule unavailable", undefined, correlationId);
+        return { ok: false, error: "schedule_backend_unavailable" };
+      }
+
+      // Step 5: Commit results to care plan manager
+      commitScheduleResult(planId, result.assignments);
+
+      // Propagate status flip (confirmed → scheduled) to the schedule
+      // page via explicit state push (not DOM parsing).
+      void pushCarePlanStateToActiveTab();
+
+      // Step 6: Emit schedule generated
+      await emit(makeEvent("schedule_generated", correlationId, { result }));
+
+      // Step 7: Navigate to schedule page and inject
+      const scheduleIntent: Extract<Intent, { kind: "schedule" }> = {
+        kind: "schedule",
+        request: scheduleRequest,
+      };
+      await dispatchExecution(correlationId, scheduleIntent, result);
+
+      return { ok: true };
+    } catch (err: unknown) {
+      log.error("care_plan scheduling failed", String(err), correlationId);
+      return { ok: false, error: String(err) };
+    }
+  },
+
+  /**
+   * Entry point for build_schedule: finds all confirmed CarePlans,
+   * expands and schedules them. Called from:
+   * - build_schedule intent (voice: "составь расписание")
+   * - "Сформировать расписание" button in sidepanel
+   */
+  async onBuildScheduleFromPlans(
+    correlationId: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const confirmed = getConfirmedCarePlans();
+    if (confirmed.length === 0) {
+      log.warn("build_schedule: no confirmed plans", undefined, correlationId);
+      return { ok: false, error: "no_confirmed_plans" };
+    }
+
+    log.info("build_schedule: scheduling confirmed plans", {
+      count: confirmed.length,
+      services: confirmed.map((p) => p.service),
+    }, correlationId);
+
+    // Schedule each confirmed plan
+    let lastResult: { ok: boolean; error?: string } = { ok: false };
+    for (const plan of confirmed) {
+      lastResult = await controller.executeCarePlanScheduling(correlationId, plan.id);
+      if (!lastResult.ok) {
+        log.warn("build_schedule: plan failed", {
+          planId: plan.id,
+          error: lastResult.error,
+        }, correlationId);
+      }
+    }
+
+    return lastResult;
+  },
+
+  /**
+   * Marks a session as completed (specialist daily workflow).
+   * Service can be inferred from context or explicitly provided.
+   */
+  async onSessionComplete(msg: {
+    correlationId: string;
+    sessionId?: string;
+    service?: ClinicalService;
+    diaryNote?: string;
+  }): Promise<{ ok: boolean; sessionId?: string }> {
+    let sessionId = msg.sessionId;
+
+    // If no explicit sessionId, find the next pending session for this service
+    if (!sessionId) {
+      const next = getNextPendingSession(msg.service);
+      if (!next) {
+        log.warn("no pending session found", { service: msg.service }, msg.correlationId);
+        return { ok: false };
+      }
+      sessionId = next.id;
+    }
+
+    const session = markSessionCompleted(sessionId, msg.diaryNote);
+    if (!session) {
+      return { ok: false };
+    }
+
+    const plan = getCarePlan(session.carePlanId);
+    const totalSessions = plan ? getSessionsForPlan(session.carePlanId).length : 1;
+
+    await emit(
+      makeEvent("session_completed", msg.correlationId, {
+        sessionId: session.id,
+        carePlanId: session.carePlanId,
+        service: session.service as ClinicalService,
+        sessionNumber: session.sessionNumber,
+        totalSessions,
+        status: session.status,
+        diaryNote: session.diaryNote,
+      }),
+    );
+
+    return { ok: true, sessionId: session.id };
   },
 
   async onExecutorFinished(msg: MessageOf<"executor_finished">): Promise<unknown> {

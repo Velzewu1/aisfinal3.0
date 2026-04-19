@@ -3,6 +3,7 @@ import { CorrelationId, IsoTimestamp } from "./common.js";
 import { LlmInterpretation } from "./intent.js";
 import { DomAction, ExecutorResult } from "./action.js";
 import { ScheduleRequest, ScheduleResult } from "./schedule.js";
+import { ClinicalService, CarePlanStatus, SessionStatus } from "./care-plan.js";
 
 /**
  * `AgentEvent.type` values map to the agent loop in `docs/02_agent_loop.md`.
@@ -35,6 +36,10 @@ export const EventType = z.enum([
   "schedule_generated",
   "user_confirmation_requested",
   "user_confirmation_received",
+  "care_plan_created",
+  "care_plan_confirmed",
+  "care_plan_expanded",
+  "session_completed",
 ]);
 export type EventType = z.infer<typeof EventType>;
 
@@ -213,6 +218,67 @@ export const UserConfirmationReceivedEvent = BaseEvent.extend({
   }),
 });
 
+/** Emitted when a CarePlan is created from an assign intent (before confirmation). */
+export const CarePlanCreatedEvent = BaseEvent.extend({
+  type: z.literal("care_plan_created"),
+  payload: z.object({
+    planId: z.string().min(1),
+    service: ClinicalService,
+    type: z.enum(["initial", "course"]),
+    sessionsCount: z.number().int().positive(),
+    durationMinutes: z.number().int().positive(),
+    status: CarePlanStatus,
+    patientId: z.string().optional(),
+  }),
+});
+
+/**
+ * Emitted when a doctor confirms a draft CarePlan.
+ *
+ * SEPARATION OF CONCERNS:
+ *   `assign` is a CLINICAL DECISION in the data layer. Confirmation
+ *   persists the CarePlan and STOPS. No ActionPlan, no DOM actions,
+ *   no scheduler invocation may follow this event in the same turn.
+ *   Scheduling is a distinct `build_schedule` intent handled by the
+ *   planning layer.
+ */
+export const CarePlanConfirmedEvent = BaseEvent.extend({
+  type: z.literal("care_plan_confirmed"),
+  payload: z.object({
+    planId: z.string().min(1),
+    service: ClinicalService,
+    type: z.enum(["initial", "course"]),
+    sessionsCount: z.number().int().positive(),
+    durationMinutes: z.number().int().positive(),
+    status: CarePlanStatus,
+    patientId: z.string().optional(),
+  }),
+});
+
+/** Emitted when a confirmed CarePlan is expanded into sessions. */
+export const CarePlanExpandedEvent = BaseEvent.extend({
+  type: z.literal("care_plan_expanded"),
+  payload: z.object({
+    planId: z.string().min(1),
+    sessionsCount: z.number().int().positive(),
+    service: ClinicalService,
+  }),
+});
+
+/** Emitted when a specialist marks a session as completed. */
+export const SessionCompletedEvent = BaseEvent.extend({
+  type: z.literal("session_completed"),
+  payload: z.object({
+    sessionId: z.string().min(1),
+    carePlanId: z.string().min(1),
+    service: ClinicalService,
+    sessionNumber: z.number().int().positive(),
+    totalSessions: z.number().int().positive(),
+    status: SessionStatus,
+    diaryNote: z.string().optional(),
+  }),
+});
+
 export const AgentEvent = z.discriminatedUnion("type", [
   VoiceCapturedEvent,
   AudioPreprocessedEvent,
@@ -233,5 +299,9 @@ export const AgentEvent = z.discriminatedUnion("type", [
   ScheduleGeneratedEvent,
   UserConfirmationRequestedEvent,
   UserConfirmationReceivedEvent,
+  CarePlanCreatedEvent,
+  CarePlanConfirmedEvent,
+  CarePlanExpandedEvent,
+  SessionCompletedEvent,
 ]);
 export type AgentEvent = z.infer<typeof AgentEvent>;

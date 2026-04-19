@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Осмотр специалиста</title>
+  <script src="patient-loader.js"></script>
+</head>
+<body style="margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f7;color:#1a1a2e;font-size:14px;">
+  <div style="display:flex;min-height:100vh;">
+    <aside style="width:248px;min-width:248px;background:#1a2035;color:#c5cbe4;display:flex;flex-direction:column;border-right:1px solid #121728;">
+      <div style="padding:18px 16px;border-bottom:1px solid #2a3148;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7394;">Dmed / Damumed mock</div>
+        <div style="font-weight:600;font-size:15px;margin-top:4px;color:#fff;">Клиника · Стационар</div>
+      </div>
+      <nav style="flex:1;overflow-y:auto;padding:12px 0;">
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;">Пациент</div>
+        <a href="index.html" data-nav="patient_list" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Список пациентов</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">История болезни</div>
+        <a href="primary_exam.html" data-nav="primary_exam" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Первичный осмотр</a>
+        <a href="specialist_exam.html" data-nav="specialist_exam" style="display:block;padding:10px 16px;color:#fff;background:rgba(74,127,212,0.25);border-left:3px solid #4a7fd4;text-decoration:none;">Осмотр специалиста</a>
+        <a href="epicrisis.html" data-nav="epicrisis" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Выписной эпикриз</a>
+        <a href="diary.html" data-nav="diary" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Дневниковая запись</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Назначения и расписание</div>
+        <a href="schedule.html" data-nav="schedule" style="display:block;padding:10px 16px;color:#c5cbe4;text-decoration:none;border-left:3px solid transparent;">Расписание консультаций</a>
+        <a href="#" data-nav="assignments_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Назначения (лист)</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Диагностика</div>
+        <a href="#" data-nav="lab_results_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Результаты лаб. исследований</a>
+        <a href="#" data-nav="diagnoses_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Диагнозы</a>
+        <div style="padding:8px 16px;font-size:11px;color:#6b7394;text-transform:uppercase;margin-top:12px;">Документы</div>
+        <a href="#" data-nav="digital_docs_stub" style="display:block;padding:10px 16px;color:#8a92b0;text-decoration:none;border-left:3px solid transparent;">Цифровые документы</a>
+      </nav>
+      <div style="padding:14px 16px;border-top:1px solid #2a3148;font-size:12px;color:#6b7394;">Версия UI · mock 1.0</div>
+    </aside>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div style="background:linear-gradient(90deg,#1a2035 0%,#252b45 100%);color:#e8eaf2;padding:8px 24px;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+        <span><strong>Пациент:</strong> <span data-patient-display-name>—</span> <span style="opacity:0.75;">(mock)</span></span>
+        <span style="opacity:0.6;">|</span>
+        <span><strong>Диагноз:</strong> <span data-patient-display-diagnosis>—</span></span>
+        <span style="opacity:0.6;">|</span>
+        <span data-patient-display-bed>Койка: —</span>
+        <span style="opacity:0.6;">|</span>
+        <span data-patient-display-doctor>Врач: —</span>
+      </div>
+      <header style="background:#fff;border-bottom:1px solid #dde1ea;padding:12px 24px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+          <a href="primary_exam.html" data-nav="primary_exam" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Первичный осмотр</a>
+          <a href="specialist_exam.html" data-nav="specialist_exam" style="padding:8px 14px;background:#4a7fd4;color:#fff;text-decoration:none;border-radius:3px;font-size:13px;font-weight:500;">Осмотр специалиста</a>
+          <a href="epicrisis.html" data-nav="epicrisis" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Выписной эпикриз</a>
+          <a href="schedule.html" data-nav="schedule" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Расписание</a>
+          <a href="diary.html" data-nav="diary" style="padding:8px 14px;background:#eef0f5;color:#1a2035;text-decoration:none;border-radius:3px;font-size:13px;border:1px solid #dde1ea;">Дневник</a>
+        </div>
+        <div style="font-weight:600;font-size:17px;color:#1a2035;">Осмотр специалиста</div>
+        <div style="font-size:12px;color:#6b7394;margin-top:4px;">Специалист проводит осмотр и назначает курс лечения</div>
+      </header>
+      <main style="flex:1;padding:24px;overflow:auto;">
+        <form style="max-width:920px;background:#fff;border:1px solid #dde1ea;border-radius:4px;padding:24px 28px 32px;box-shadow:0 1px 3px rgba(26,32,53,0.06);">
+          <!-- Specialist Type Selector -->
+          <div style="margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid #eef0f5;">
+            <label style="display:block;font-size:12px;color:#5a6178;margin-bottom:6px;font-weight:600;">Тип специалиста</label>
+            <div data-field="specialist_type" style="display:flex;flex-wrap:wrap;gap:8px;">
+              <button type="button" data-specialist="speech_therapy" class="spec-btn" style="padding:10px 18px;background:#4a7fd4;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;font-weight:500;">Логопед</button>
+              <button type="button" data-specialist="psychologist" class="spec-btn" style="padding:10px 18px;background:#eef0f5;color:#1a2035;border:1px solid #dde1ea;border-radius:4px;font-size:13px;cursor:pointer;">Психолог</button>
+              <button type="button" data-specialist="lfk" class="spec-btn" style="padding:10px 18px;background:#eef0f5;color:#1a2035;border:1px solid #dde1ea;border-radius:4px;font-size:13px;cursor:pointer;">ЛФК</button>
+              <button type="button" data-specialist="massage" class="spec-btn" style="padding:10px 18px;background:#eef0f5;color:#1a2035;border:1px solid #dde1ea;border-radius:4px;font-size:13px;cursor:pointer;">Массажист</button>
+              <button type="button" data-specialist="physio" class="spec-btn" style="padding:10px 18px;background:#eef0f5;color:#1a2035;border:1px solid #dde1ea;border-radius:4px;font-size:13px;cursor:pointer;">Физиотерапевт</button>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid #eef0f5;padding-top:22px;margin-top:8px;">
+            <h2 style="margin:0 0 16px;font-size:15px;color:#1a2035;font-weight:600;">Клинический осмотр</h2>
+            <div style="display:flex;flex-direction:column;gap:22px;">
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">1. Жалобы пациента (со слов родителя / самого пациента)</label>
+                <textarea data-field="specialist_complaints" rows="4" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;" placeholder="Жалобы при осмотре специалистом...">Ребёнок 11 лет. Мать отмечает задержку речевого развития, невнятность речи при утомлении, трудности в формулировке длинных предложений. Коммуникация со сверстниками затруднена.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">2. Объективные данные осмотра специалиста</label>
+                <textarea data-field="specialist_findings" rows="5" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;" placeholder="Результаты специализированного осмотра...">Артикуляционная моторика снижена. Звукопроизношение: нарушены свистящие и шипящие (сигматизм межзубный). Фонематический слух — дифференциация затруднена. Связная речь — бедный словарный запас, аграмматизмы в сложных конструкциях. Чтение: темп замедлен, ошибки при чтении незнакомых слов.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">3. Заключение специалиста</label>
+                <textarea data-field="specialist_conclusion" rows="3" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;" placeholder="Профессиональное заключение...">Дислалия смешанная форма (F80.0). Нарушение темпо-ритмической организации речи. Рекомендован курс логопедической коррекции.</textarea>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:#4a7fd4;margin-bottom:6px;font-weight:600;">4. Рекомендации по лечению</label>
+                <textarea data-field="specialist_recommendation" rows="4" style="width:100%;padding:12px;border:1px solid #c8ced9;border-radius:3px;resize:vertical;font-size:14px;line-height:1.45;box-sizing:border-box;" placeholder="Рекомендации специалиста...">Назначен курс индивидуальных логопедических занятий — 10 сеансов по 40 минут. Артикуляционная гимнастика, постановка свистящих и шипящих звуков, развитие фонематического слуха. Повторный осмотр через 2 недели для оценки динамики.</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Care Plan Summary -->
+          <div style="margin-top:24px;padding:16px 20px;background:linear-gradient(135deg,#f0f4ff 0%,#e8f0fe 100%);border:1px solid #c4d6f0;border-radius:6px;">
+            <div style="font-weight:600;font-size:14px;color:#1a2035;margin-bottom:10px;">📋 Назначение курса лечения</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+              <div>
+                <span style="color:#5a6178;">Услуга:</span>
+                <span style="color:#1a2035;font-weight:500;" data-field="care_plan_service">Логопедия</span>
+              </div>
+              <div>
+                <span style="color:#5a6178;">Количество сеансов:</span>
+                <span style="color:#1a2035;font-weight:500;" data-field="care_plan_sessions_count">10</span>
+              </div>
+              <div>
+                <span style="color:#5a6178;">Длительность:</span>
+                <span style="color:#1a2035;font-weight:500;" data-field="care_plan_duration">40 мин</span>
+              </div>
+              <div>
+                <span style="color:#5a6178;">Статус:</span>
+                <span data-status-entity="specialist_exam" data-status="draft" style="display:inline-block;padding:2px 8px;border-radius:3px;background:#fff3cd;color:#856404;font-size:12px;">Ожидает назначения</span>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;">
+              <button type="button" data-action="assign-course" style="padding:9px 18px;background:#4a7fd4;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;font-weight:500;">Назначить курс</button>
+              <button type="button" data-action="save-form" style="padding:9px 18px;background:#eef2fa;color:#1a2035;border:1px solid #c8ced9;border-radius:4px;font-size:13px;cursor:pointer;">Сохранить осмотр</button>
+            </div>
+          </div>
+
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eef0f5;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <button type="button" data-action="save-form" style="padding:10px 22px;background:#4a7fd4;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Сохранить</button>
+            <button type="button" data-action="submit-form" style="padding:10px 22px;background:#1a2035;color:#fff;border:none;border-radius:3px;font-size:14px;cursor:pointer;font-weight:500;">Подписать и отправить</button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+  <script>
+    // Specialist type selector
+    document.querySelectorAll('.spec-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.spec-btn').forEach(function(b) {
+          b.style.background = '#eef0f5';
+          b.style.color = '#1a2035';
+          b.style.border = '1px solid #dde1ea';
+        });
+        btn.style.background = '#4a7fd4';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+      });
+    });
+  </script>
+</body>
+</html>

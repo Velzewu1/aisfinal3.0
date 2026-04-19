@@ -22,7 +22,9 @@ export type ProactiveSuggestion =
   | "suggest_schedule"
   | "suggest_exam_progress"
   | "suggest_next_form"
-  | "suggest_finish_visit";
+  | "suggest_finish_visit"
+  | "suggest_assign_course"
+  | "suggest_build_schedule";
 
 /** Key primary-exam fields that must be filled before offering CP-SAT scheduling. */
 export const EXAM_COMPLETE_FIELDS: readonly string[] = Object.freeze([
@@ -119,9 +121,12 @@ export function suggestNext(intentKind: IntentKind): ProactiveSuggestion | null 
     case "fill":
       return null;
     case "schedule":
+    case "build_schedule":
       return "suggest_finish_visit";
     case "navigate":
       return "suggest_next_form";
+    case "assign":
+      return "suggest_build_schedule";
     case "set_status":
     case "unknown":
       return null;
@@ -139,4 +144,8 @@ export const SUGGESTION_TEXT: Readonly<Record<ProactiveSuggestion, string>> = Ob
   suggest_exam_progress: "",
   suggest_next_form: "Форма открыта. Заполнить по голосу?",
   suggest_finish_visit: "Расписание готово. Завершить визит?",
+  suggest_assign_course:
+    "Осмотр специалиста завершён. Назначить курс лечения?",
+  suggest_build_schedule:
+    "Назначения созданы. Сформировать расписание?",
 });
