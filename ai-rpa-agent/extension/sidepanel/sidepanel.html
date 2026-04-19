@@ -7,26 +7,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
+      /* ---------- Design tokens — business-minimal medical UI ---------- */
       :root {
-        --bg: #0f1117;
-        --surface: #1a1d27;
-        --border: #2a2d3a;
-        --accent: #4f8ef7;
-        --accent-hover: #6b9ef9;
-        --accent-active: #3b7ae0;
-        --success: #34d399;
-        --warning: #fbbf24;
-        --error: #f87171;
-        --text: #f1f5f9;
-        --text-secondary: #94a3b8;
-        --radius-lg: 8px;
-        --radius-xl: 12px;
+        --bg: #f6f7f9;
+        --surface: #ffffff;
+        --surface-muted: #f1f3f6;
+        --border: #e3e6eb;
+        --border-strong: #d4d9e0;
+        --accent: #2f6bff;
+        --accent-soft: rgba(47, 107, 255, 0.08);
+        --accent-strong: rgba(47, 107, 255, 0.16);
+        --accent-hover: #1d57e6;
+        --success: #16a36b;
+        --success-soft: rgba(22, 163, 107, 0.1);
+        --warning: #c07400;
+        --warning-soft: rgba(192, 116, 0, 0.1);
+        --error: #c82b3d;
+        --error-soft: rgba(200, 43, 61, 0.08);
+        --text: #0f172a;
+        --text-secondary: #5a6473;
+        --text-muted: #8a94a3;
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-lg: 10px;
         --ease: cubic-bezier(0.4, 0, 0.2, 1);
-        --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
         font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
@@ -49,7 +57,7 @@
         line-height: 1.45;
         -webkit-font-smoothing: antialiased;
         min-width: 320px;
-        max-width: 400px;
+        max-width: 420px;
         width: 100%;
         margin: 0 auto;
       }
@@ -58,51 +66,57 @@
         display: flex;
         flex-direction: column;
         min-height: 100%;
-        padding: 14px 14px 16px;
-        gap: 14px;
+        padding: 14px 14px 14px;
+        gap: 12px;
       }
 
-      /* Header */
+      /* ======================================================
+         1. HEADER — compact context bar
+         ====================================================== */
       .header {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         padding: 10px 12px;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-card);
+        border-radius: var(--radius);
       }
 
-      .header-logo {
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
-        display: grid;
-        place-items: center;
-        background: rgba(79, 142, 247, 0.12);
-        border-radius: var(--radius-lg);
-        color: var(--accent);
-      }
-
-      .header-text {
-        flex: 1;
+      .header-main {
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
       }
 
-      .header-title {
-        margin: 0;
-        font-size: 15px;
+      .header-patient {
+        font-size: 13px;
         font-weight: 600;
-        letter-spacing: -0.01em;
         color: var(--text);
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .header-sub {
-        margin: 2px 0 0;
+      .header-patient .placeholder {
+        color: var(--text-muted);
+        font-weight: 450;
+      }
+
+      .header-context {
         font-size: 11px;
         color: var(--text-secondary);
-        font-weight: 400;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .header-context-doc {
+        color: var(--text);
+        font-weight: 500;
       }
 
       .header-status {
@@ -110,163 +124,106 @@
         display: flex;
         align-items: center;
         gap: 6px;
+        padding: 3px 8px 3px 7px;
+        border-radius: 999px;
+        background: var(--surface-muted);
+        font-size: 10.5px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        letter-spacing: 0.02em;
       }
 
       .status-dot {
-        width: 10px;
-        height: 10px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: var(--success);
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
-        transition: background 200ms var(--ease), box-shadow 200ms var(--ease);
+        transition: background 200ms var(--ease);
       }
 
-      .status-dot.ready {
-        animation: pulse-green 2s var(--ease) infinite;
+      .header-status[data-state="idle"] .status-dot {
+        background: var(--success);
       }
-
-      .status-dot.processing {
+      .header-status[data-state="recording"] .status-dot {
+        background: var(--error);
+        animation: dot-pulse 1.2s var(--ease) infinite;
+      }
+      .header-status[data-state="processing"] .status-dot {
+        background: var(--accent);
+        animation: dot-pulse 1.2s var(--ease) infinite;
+      }
+      .header-status[data-state="verify"] .status-dot {
         background: var(--warning);
-        animation: pulse-yellow 1.2s var(--ease) infinite;
+      }
+      .header-status[data-state="error"] .status-dot {
+        background: var(--error);
       }
 
-      @keyframes pulse-green {
+      @keyframes dot-pulse {
         0%,
         100% {
-          box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35);
+          opacity: 1;
+          transform: scale(1);
         }
         50% {
-          box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+          opacity: 0.55;
+          transform: scale(0.85);
         }
       }
 
-      @keyframes pulse-yellow {
-        0%,
-        100% {
-          box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
-        }
-        50% {
-          box-shadow: 0 0 0 7px rgba(251, 191, 36, 0);
-        }
-      }
-
-      .status-label {
-        font-size: 10px;
-        font-weight: 500;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        max-width: 72px;
-        text-align: right;
-      }
-
-      /* Voice section */
-      .section-label {
-        font-size: 10px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--text-secondary);
-        margin: 0 0 8px 2px;
-      }
-
-      .voice-card {
+      /* ======================================================
+         2. COMMAND BLOCK — mic + input, single row
+         ====================================================== */
+      .command-block {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 8px 8px 8px;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        padding: 18px 16px 16px;
-        box-shadow: var(--shadow-card);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        border-radius: var(--radius-lg);
+        transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
       }
 
-      .ptt-wrap {
-        position: relative;
-        width: 72px;
-        height: 72px;
-        display: grid;
-        place-items: center;
-      }
-
-      .ptt-ring {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 2px solid transparent;
-        pointer-events: none;
-        transition: border-color 200ms var(--ease), transform 200ms var(--ease);
-      }
-
-      #record.is-listening .ptt-ring {
-        border-color: var(--success);
-        animation: ring-pulse 1.3s var(--ease) infinite;
-      }
-
-      #record.is-processing .ptt-ring {
+      .command-block:focus-within {
         border-color: var(--accent);
-        animation: ring-pulse 1s var(--ease) infinite;
+        box-shadow: 0 0 0 3px var(--accent-soft);
       }
 
-      @keyframes ring-pulse {
-        0%,
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: scale(1.08);
-          opacity: 0.65;
-        }
+      .command-block[data-state="recording"] {
+        border-color: var(--error);
+        box-shadow: 0 0 0 3px var(--error-soft);
+      }
+
+      .command-block[data-state="processing"] {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
       }
 
       #record {
         position: relative;
-        z-index: 1;
-        width: 64px;
-        height: 64px;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
         border-radius: 50%;
         border: none;
         padding: 0;
         cursor: pointer;
-        background: linear-gradient(145deg, #4b5160 0%, #363a47 100%);
+        background: var(--accent);
         color: #fff;
         display: grid;
         place-items: center;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-        transition: transform 200ms var(--ease), box-shadow 200ms var(--ease), background 200ms var(--ease),
-          filter 200ms var(--ease);
-      }
-
-      #record.is-listening {
-        background: linear-gradient(145deg, var(--success) 0%, #20a37a 100%);
-        box-shadow: 0 4px 18px rgba(52, 211, 153, 0.45);
-        animation: btn-breathe 1.8s var(--ease) infinite;
-      }
-
-      #record.is-processing {
-        background: linear-gradient(145deg, var(--accent) 0%, #3d7de8 100%);
-        box-shadow: 0 4px 18px rgba(79, 142, 247, 0.45);
-      }
-
-      @keyframes btn-breathe {
-        0%,
-        100% {
-          filter: brightness(1);
-        }
-        50% {
-          filter: brightness(1.12);
-        }
+        transition: background 180ms var(--ease), transform 120ms var(--ease),
+          box-shadow 180ms var(--ease);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
       }
 
       #record:hover {
-        transform: scale(1.03);
-        filter: brightness(1.05);
+        background: var(--accent-hover);
       }
 
       #record:active {
-        transform: scale(0.97);
-        filter: brightness(0.95);
+        transform: scale(0.96);
       }
 
       #record:focus-visible {
@@ -274,29 +231,40 @@
         outline-offset: 3px;
       }
 
-      #record:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-        transform: none;
+      #record.is-listening {
+        background: var(--error);
+        box-shadow: 0 0 0 4px var(--error-soft);
+        animation: mic-breathe 1.8s var(--ease) infinite;
       }
 
-      #record .icon-mic,
-      #record .icon-wave,
-      #record .icon-spin {
+      #record.is-processing {
+        background: var(--accent);
+      }
+
+      @keyframes mic-breathe {
+        0%,
+        100% {
+          box-shadow: 0 0 0 4px var(--error-soft);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(200, 43, 61, 0.05);
+        }
+      }
+
+      #record .icon {
         position: absolute;
-        transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+        transition: opacity 160ms var(--ease), transform 160ms var(--ease);
       }
 
       #record .icon-wave,
       #record .icon-spin {
         opacity: 0;
-        transform: scale(0.85);
+        transform: scale(0.8);
       }
 
-      #record.is-listening .icon-mic,
-      #record.is-processing .icon-mic {
+      #record.is-listening .icon-mic {
         opacity: 0;
-        transform: scale(0.85);
+        transform: scale(0.8);
       }
 
       #record.is-listening .icon-wave {
@@ -304,293 +272,410 @@
         transform: scale(1);
       }
 
+      #record.is-processing .icon-mic {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
       #record.is-processing .icon-spin {
         opacity: 1;
         transform: scale(1);
-        animation: icon-spin 0.9s linear infinite;
+        animation: spin 0.9s linear infinite;
       }
 
-      @keyframes icon-spin {
+      @keyframes spin {
         to {
           transform: scale(1) rotate(360deg);
         }
       }
 
-      .ptt-caption {
-        margin-top: 12px;
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-align: center;
-        min-height: 1.4em;
-        transition: color 200ms var(--ease);
-      }
-
-      .ptt-caption.recording {
-        color: var(--success);
-        font-weight: 500;
-      }
-
-      .ptt-caption.processing {
-        color: var(--accent);
-        font-weight: 500;
-      }
-
-      /* Waveform */
-      .waveform {
+      .command-input-wrap {
+        flex: 1;
+        min-width: 0;
         display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 3px;
-        height: 28px;
-        margin-top: 14px;
-        width: 100%;
-        max-width: 220px;
-        opacity: 0.35;
-        transition: opacity 200ms var(--ease);
-      }
-
-      .waveform.active {
-        opacity: 1;
-      }
-
-      .waveform span {
-        width: 3px;
-        border-radius: 2px;
-        background: var(--accent);
-        height: 6px;
-        transition: height 120ms var(--ease);
-      }
-
-      .waveform.active span {
-        animation: wave 0.9s var(--ease) infinite;
-      }
-
-      .waveform.active span:nth-child(1) {
-        animation-delay: 0ms;
-      }
-      .waveform.active span:nth-child(2) {
-        animation-delay: 0.08s;
-      }
-      .waveform.active span:nth-child(3) {
-        animation-delay: 0.16s;
-      }
-      .waveform.active span:nth-child(4) {
-        animation-delay: 0.24s;
-      }
-      .waveform.active span:nth-child(5) {
-        animation-delay: 0.32s;
-      }
-      .waveform.active span:nth-child(6) {
-        animation-delay: 0.4s;
-      }
-      .waveform.active span:nth-child(7) {
-        animation-delay: 0.48s;
-      }
-      .waveform.active span:nth-child(8) {
-        animation-delay: 0.56s;
-      }
-      .waveform.active span:nth-child(9) {
-        animation-delay: 0.64s;
-      }
-
-      @keyframes wave {
-        0%,
-        100% {
-          height: 6px;
-        }
-        50% {
-          height: 22px;
-        }
-      }
-
-      /* Text input */
-      .text-fallback {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        padding: 12px;
-        box-shadow: var(--shadow-card);
-      }
-
-      .input-row {
-        display: flex;
-        align-items: stretch;
-        gap: 0;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease);
-      }
-
-      .input-row:focus-within {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.22);
+        align-items: center;
+        gap: 8px;
       }
 
       #utter {
         flex: 1;
+        min-width: 0;
         border: none;
         background: transparent;
         color: var(--text);
         font: inherit;
-        padding: 10px 12px;
-        min-width: 0;
+        font-size: 13px;
+        padding: 8px 4px 8px 2px;
         outline: none;
       }
 
       #utter::placeholder {
-        color: var(--text-secondary);
-        opacity: 0.85;
+        color: var(--text-muted);
+        font-weight: 450;
       }
 
-      #send {
+      .command-hint {
         flex-shrink: 0;
-        width: 40px;
-        border: none;
-        background: transparent;
-        color: var(--accent);
-        cursor: pointer;
-        display: grid;
-        place-items: center;
-        transition: background 200ms var(--ease), color 200ms var(--ease);
+        font-size: 10px;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 0 8px 0 6px;
+        border-left: 1px solid var(--border);
+        white-space: nowrap;
       }
 
-      #send:hover {
-        background: rgba(79, 142, 247, 0.12);
-        color: var(--accent-hover);
+      .command-hint .kbd {
+        display: inline-block;
+        padding: 1px 5px;
+        font-size: 9.5px;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-secondary);
+        font-family: inherit;
+        margin-right: 3px;
       }
 
-      #send:active {
-        background: rgba(79, 142, 247, 0.2);
-        color: var(--accent-active);
-      }
-
-      #send:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
-      }
-
-      /* Confidence */
-      .confidence-bar {
+      /* ======================================================
+         3. MAIN PANE — single state-driven container
+         ====================================================== */
+      .main-pane {
+        flex: 1;
+        min-height: 220px;
         display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        padding: 10px 12px;
+        flex-direction: column;
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-card);
-        transition: opacity 200ms var(--ease);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
       }
 
-      .confidence-bar.hidden {
-        display: none;
-      }
-
-      .badge-intent {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        padding: 4px 8px;
-        border-radius: 6px;
-        background: rgba(79, 142, 247, 0.15);
-        color: var(--accent);
-        border: 1px solid rgba(79, 142, 247, 0.35);
-      }
-
-      .confidence-meta {
+      .pane-header {
         display: flex;
-        align-items: baseline;
-        gap: 6px;
-        margin-left: auto;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--border);
       }
 
-      #confidencePercent {
-        font-size: 16px;
-        font-weight: 700;
+      .pane-title {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0;
+      }
+
+      .pane-meta {
+        font-size: 10.5px;
+        color: var(--text-muted);
+      }
+
+      .pane-body {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 10px 12px 12px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-strong) transparent;
+      }
+
+      .pane-body::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .pane-body::-webkit-scrollbar-thumb {
+        background: var(--border-strong);
+        border-radius: 4px;
+      }
+
+      /* --- State: idle --- */
+      .pane-idle {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .pane-idle-hint {
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+        padding: 6px 4px 4px;
+      }
+
+      .pane-idle-hint strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .quick-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+      }
+
+      .quick-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: border-color 160ms var(--ease), color 160ms var(--ease),
+          background 160ms var(--ease);
+        font-family: inherit;
+      }
+
+      .quick-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .quick-chip:active {
+        transform: scale(0.98);
+      }
+
+      /* --- State: processing (events) --- */
+      .pane-events {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .event-row {
+        display: grid;
+        grid-template-columns: 8px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 2px 7px 2px;
+        border-bottom: 1px solid var(--border);
+        animation: fade-up 180ms var(--ease);
+      }
+
+      .event-row:last-child {
+        border-bottom: none;
+      }
+
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .event-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-muted);
+      }
+
+      .event-dot.success {
+        background: var(--success);
+      }
+      .event-dot.info {
+        background: var(--accent);
+      }
+      .event-dot.warning {
+        background: var(--warning);
+      }
+      .event-dot.error {
+        background: var(--error);
+      }
+
+      .event-body {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .event-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        line-height: 1.3;
+      }
+
+      .event-desc {
+        font-size: 11px;
+        color: var(--text-secondary);
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .event-time {
+        font-size: 10px;
+        color: var(--text-muted);
         font-variant-numeric: tabular-nums;
       }
 
-      #confidencePercent.level-high {
-        color: var(--success);
-      }
-
-      #confidencePercent.level-mid {
-        color: var(--warning);
-      }
-
-      #confidencePercent.level-low {
-        color: var(--error);
-      }
-
-      .confidence-word {
-        font-size: 11px;
-        color: var(--text-secondary);
-      }
-
-      /* Proactive card */
-      .proactive-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        border-left: 4px solid var(--accent);
-        padding: 12px 12px 12px 14px;
-        box-shadow: var(--shadow-card);
-      }
-
-      .proactive-card.hidden {
-        display: none;
-      }
-
-      .proactive-inner {
+      /* --- State: verify --- */
+      .pane-verify {
         display: flex;
-        gap: 10px;
-        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .proactive-icon {
-        flex-shrink: 0;
-        width: 28px;
-        height: 28px;
-        border-radius: var(--radius-lg);
-        background: rgba(52, 211, 153, 0.12);
-        color: var(--success);
-        display: grid;
-        place-items: center;
-        font-size: 14px;
-      }
-
-      .proactive-icon.confirm {
-        background: rgba(251, 191, 36, 0.12);
-        color: var(--warning);
-      }
-
-      #proactiveText {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.5;
+      .verify-summary {
+        font-size: 12.5px;
         color: var(--text);
+        line-height: 1.5;
+        margin: 0;
       }
 
-      .proactive-actions {
+      .verify-summary strong {
+        font-weight: 600;
+      }
+
+      .verify-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .verify-field {
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface-muted);
+      }
+
+      .verify-field-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 3px;
+      }
+
+      .verify-field-value {
+        font-size: 12.5px;
+        color: var(--text);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 80px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+
+      .verify-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+
+      .verify-stat {
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface-muted);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .verify-stat-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+
+      .verify-stat-label {
+        font-size: 10px;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+      }
+
+      .verify-actions {
         display: flex;
         gap: 8px;
-        margin-top: 12px;
         justify-content: flex-end;
       }
 
+      /* --- State: success --- */
+      .pane-success {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 18px 8px;
+        color: var(--success);
+      }
+
+      .pane-success-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--success-soft);
+        display: grid;
+        place-items: center;
+      }
+
+      .pane-success-text {
+        font-size: 12.5px;
+        color: var(--text);
+        text-align: center;
+        line-height: 1.45;
+      }
+
+      /* --- State: error --- */
+      .pane-error {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .pane-error-msg {
+        padding: 10px 12px;
+        border: 1px solid var(--error);
+        border-left-width: 3px;
+        border-radius: var(--radius);
+        background: var(--error-soft);
+        color: var(--text);
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+
+      /* ======================================================
+         Buttons
+         ====================================================== */
       .btn {
         font-family: inherit;
         font-size: 12px;
         font-weight: 500;
-        padding: 8px 14px;
-        border-radius: var(--radius-lg);
+        padding: 7px 14px;
+        border-radius: var(--radius);
         border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
         cursor: pointer;
-        transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease),
-          transform 200ms var(--ease);
+        transition: background 160ms var(--ease), border-color 160ms var(--ease),
+          color 160ms var(--ease), transform 120ms var(--ease);
       }
 
       .btn:active {
@@ -613,669 +698,262 @@
         border-color: var(--accent-hover);
       }
 
-      .btn-primary:active {
-        background: var(--accent-active);
-        border-color: var(--accent-active);
-      }
-
       .btn-ghost {
         background: transparent;
         color: var(--text-secondary);
       }
 
       .btn-ghost:hover {
-        background: rgba(148, 163, 184, 0.08);
+        background: var(--surface-muted);
         color: var(--text);
+      }
+
+      .btn-danger-ghost {
+        background: transparent;
+        color: var(--error);
         border-color: var(--border);
       }
 
-      .btn-ghost:active {
-        background: rgba(148, 163, 184, 0.14);
+      .btn-danger-ghost:hover {
+        background: var(--error-soft);
+        border-color: var(--error);
       }
 
-      /* Schedule summary card */
-      .schedule-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-left: 4px solid var(--success);
-        border-radius: var(--radius-xl);
-        padding: 14px 14px 14px 16px;
-        box-shadow: var(--shadow-card);
+      /* ======================================================
+         4. FILES BLOCK — utility, bottom, low visual weight
+         ====================================================== */
+      .files-block {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        animation: fade-in 220ms var(--ease);
+        gap: 6px;
       }
 
-      .schedule-card.hidden {
-        display: none;
-      }
-
-      .schedule-card-header {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-
-      .schedule-card-icon {
-        flex-shrink: 0;
-        width: 30px;
-        height: 30px;
-        border-radius: var(--radius-lg);
-        background: rgba(52, 211, 153, 0.14);
-        color: var(--success);
-        display: grid;
-        place-items: center;
-        font-size: 16px;
-        font-weight: 700;
-      }
-
-      .schedule-card-title {
-        flex: 1;
-        min-width: 0;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text);
-        line-height: 1.35;
-      }
-
-      .schedule-card-status {
-        flex-shrink: 0;
+      .files-title {
         font-size: 10px;
         font-weight: 600;
-        letter-spacing: 0.04em;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: rgba(52, 211, 153, 0.12);
-        color: var(--success);
+        color: var(--text-muted);
         text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0 0 0 2px;
       }
 
-      .schedule-card-status[data-status="infeasible"],
-      .schedule-card-status[data-status="unknown"] {
-        background: rgba(248, 113, 113, 0.14);
-        color: var(--error);
-      }
-
-      .schedule-card-summary {
-        font-size: 11px;
-        color: var(--text-secondary);
-        line-height: 1.5;
-        margin: 0;
-      }
-
-      .schedule-card-summary strong {
-        color: var(--text);
-        font-weight: 600;
-      }
-
-      .schedule-card-stats {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .schedule-stat {
-        flex: 1 1 0;
-        min-width: 80px;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        padding: 8px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .schedule-stat .stat-value {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--text);
-        font-variant-numeric: tabular-nums;
-        line-height: 1.1;
-      }
-
-      .schedule-stat .stat-label {
-        font-size: 10px;
-        color: var(--text-secondary);
-        letter-spacing: 0.02em;
-      }
-
-      .schedule-card-actions {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-
-      /* Timeline */
-      .timeline-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .timeline-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-      }
-
-      .timeline-header .section-label {
-        margin: 0;
-      }
-
-      #timeline {
-        flex: 1;
-        min-height: 120px;
-        max-height: min(40vh, 320px);
-        overflow-y: auto;
-        padding: 4px 2px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        scrollbar-width: thin;
-        scrollbar-color: var(--border) transparent;
-      }
-
-      #timeline::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      #timeline::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 4px;
-      }
-
-      .timeline-item {
+      .files-row {
         display: grid;
-        grid-template-columns: 10px 1fr;
-        gap: 10px;
-        align-items: start;
-        padding: 8px 10px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        animation: fade-in 200ms var(--ease);
-      }
-
-      @keyframes fade-in {
-        from {
-          opacity: 0;
-          transform: translateY(4px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .timeline-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-top: 4px;
-      }
-
-      .timeline-dot.success {
-        background: var(--success);
-      }
-      .timeline-dot.info {
-        background: var(--accent);
-      }
-      .timeline-dot.warning {
-        background: var(--warning);
-      }
-      .timeline-dot.error {
-        background: var(--error);
-      }
-
-      .timeline-body {
-        min-width: 0;
-      }
-
-      .timeline-type {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text);
-        letter-spacing: 0.02em;
-      }
-
-      .timeline-time {
-        font-size: 10px;
-        color: var(--text-secondary);
-        margin-top: 2px;
-      }
-
-      .timeline-desc {
-        font-size: 11px;
-        color: var(--text-secondary);
-        margin-top: 4px;
-        line-height: 1.4;
-        word-break: break-word;
-      }
-
-      .timeline-empty {
-        flex: 1;
-        min-height: 140px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        text-align: center;
-        padding: 20px;
-        border: 1px dashed var(--border);
-        border-radius: var(--radius-xl);
-        background: rgba(26, 29, 39, 0.5);
-      }
-
-      .timeline-empty.hidden {
-        display: none;
-      }
-
-      .timeline-empty svg {
-        opacity: 0.45;
-      }
-
-      /* File upload section */
-      .upload-section {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        padding: 14px 14px 12px;
-        box-shadow: var(--shadow-card);
-      }
-
-      .upload-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 10px;
-      }
-
-      .upload-patient-badge {
-        font-size: 10px;
-        font-weight: 500;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: rgba(79, 142, 247, 0.1);
-        color: var(--accent);
-        border: 1px solid rgba(79, 142, 247, 0.2);
-        max-width: 140px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .upload-dropzone {
-        position: relative;
-        border: 2px dashed var(--border);
-        border-radius: var(--radius-lg);
-        padding: 20px 14px;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color 200ms var(--ease), background 200ms var(--ease), box-shadow 200ms var(--ease);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
       }
 
-      .upload-dropzone:hover {
-        border-color: var(--accent);
-        background: rgba(79, 142, 247, 0.04);
-      }
-
-      .upload-dropzone.dragover {
-        border-color: var(--accent);
-        background: rgba(79, 142, 247, 0.08);
-        box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
-      }
-
-      .upload-dropzone-icon {
-        color: var(--text-secondary);
-        opacity: 0.6;
-        transition: opacity 200ms var(--ease), color 200ms var(--ease);
-      }
-
-      .upload-dropzone:hover .upload-dropzone-icon,
-      .upload-dropzone.dragover .upload-dropzone-icon {
-        color: var(--accent);
-        opacity: 1;
-      }
-
-      .upload-dropzone-text {
-        font-size: 12px;
-        color: var(--text-secondary);
-        line-height: 1.5;
-      }
-
-      .upload-dropzone-text strong {
-        color: var(--accent);
-        font-weight: 500;
-      }
-
-      .upload-dropzone-hint {
-        font-size: 10px;
-        color: var(--text-secondary);
-        opacity: 0.7;
-      }
-
-      .upload-file-input {
-        display: none;
-      }
-
-      .upload-file-list {
+      .file-slot {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        margin-top: 10px;
       }
 
-      .upload-file-list:empty {
+      .file-dropzone {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: var(--surface);
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: border-color 160ms var(--ease), background 160ms var(--ease);
+        min-height: 46px;
+      }
+
+      .file-dropzone:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .file-dropzone.dragover {
+        border-color: var(--accent);
+        border-style: solid;
+        background: var(--accent-soft);
+      }
+
+      .file-dropzone-icon {
+        flex-shrink: 0;
+        color: var(--text-muted);
+      }
+
+      .file-dropzone-text {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .file-dropzone-label {
+        font-size: 11.5px;
+        color: var(--text);
+        font-weight: 500;
+        line-height: 1.2;
+      }
+
+      .file-dropzone-hint {
+        font-size: 10px;
+        color: var(--text-muted);
+        line-height: 1.2;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .file-list:empty {
         display: none;
       }
 
       .file-chip {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        background: var(--bg);
+        gap: 6px;
+        padding: 5px 8px;
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        animation: fade-in 200ms var(--ease);
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        animation: fade-up 180ms var(--ease);
       }
 
-      .file-chip-icon {
+      .file-chip-tag {
         flex-shrink: 0;
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-        display: grid;
-        place-items: center;
-        font-size: 11px;
+        font-size: 9px;
         font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--surface-muted);
+        color: var(--text-secondary);
         text-transform: uppercase;
       }
 
-      .file-chip-icon.pdf {
-        background: rgba(248, 113, 113, 0.12);
+      .file-chip-tag.pdf {
+        background: var(--error-soft);
         color: var(--error);
       }
 
-      .file-chip-icon.txt {
-        background: rgba(79, 142, 247, 0.12);
+      .file-chip-tag.txt {
+        background: var(--accent-soft);
         color: var(--accent);
       }
 
-      .file-chip-body {
+      .file-chip-name {
         flex: 1;
         min-width: 0;
-      }
-
-      .file-chip-name {
-        font-size: 11px;
-        font-weight: 500;
         color: var(--text);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .file-chip-meta {
-        font-size: 10px;
-        color: var(--text-secondary);
-        margin-top: 1px;
-      }
-
       .file-chip-status {
         flex-shrink: 0;
         font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        padding: 2px 7px;
-        border-radius: 999px;
-        text-transform: uppercase;
-      }
-
-      .file-chip-status.parsing {
-        background: rgba(251, 191, 36, 0.12);
-        color: var(--warning);
+        color: var(--text-muted);
       }
 
       .file-chip-status.done {
-        background: rgba(52, 211, 153, 0.12);
         color: var(--success);
       }
-
       .file-chip-status.error {
-        background: rgba(248, 113, 113, 0.12);
         color: var(--error);
       }
 
       .file-chip-remove {
         flex-shrink: 0;
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
         border: none;
         background: transparent;
-        color: var(--text-secondary);
+        color: var(--text-muted);
         cursor: pointer;
         display: grid;
         place-items: center;
-        border-radius: 4px;
+        border-radius: 3px;
         padding: 0;
-        transition: background 200ms var(--ease), color 200ms var(--ease);
       }
 
       .file-chip-remove:hover {
-        background: rgba(248, 113, 113, 0.12);
+        background: var(--error-soft);
         color: var(--error);
       }
 
-      /* Draft preview card */
-      .draft-preview {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-xl);
-        border-left: 4px solid var(--warning);
-        padding: 14px 14px 12px;
-        box-shadow: var(--shadow-card);
-        animation: fade-in 220ms var(--ease);
-      }
-
-      .draft-preview.hidden {
-        display: none;
-      }
-
-      .draft-preview-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 12px;
-      }
-
-      .draft-preview-icon {
-        flex-shrink: 0;
-        width: 30px;
-        height: 30px;
-        border-radius: var(--radius-lg);
-        background: rgba(251, 191, 36, 0.12);
-        color: var(--warning);
-        display: grid;
-        place-items: center;
-        font-size: 15px;
-        font-weight: 700;
-      }
-
-      .draft-preview-title {
-        flex: 1;
-        min-width: 0;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text);
-        line-height: 1.35;
-      }
-
-      .draft-preview-badge {
-        flex-shrink: 0;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: rgba(251, 191, 36, 0.12);
-        color: var(--warning);
-        text-transform: uppercase;
-      }
-
-      .draft-preview-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 12px;
-      }
-
-      .draft-field {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+      .file-fallback {
         padding: 8px 10px;
-        transition: border-color 200ms var(--ease);
-      }
-
-      .draft-field:hover {
-        border-color: rgba(251, 191, 36, 0.4);
-      }
-
-      .draft-field-label {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-bottom: 3px;
-      }
-
-      .draft-field-value {
-        font-size: 12px;
-        color: var(--text);
-        line-height: 1.5;
-        white-space: pre-wrap;
-        word-break: break-word;
-        max-height: 80px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--border) transparent;
-      }
-
-      .draft-field-value::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      .draft-field-value::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 2px;
-      }
-
-      .draft-preview-actions {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-
-      .draft-preview-actions .btn-primary {
-        background: var(--success);
-        border-color: var(--success);
-      }
-
-      .draft-preview-actions .btn-primary:hover {
-        background: #2bc68a;
-        border-color: #2bc68a;
-      }
-
-      /* Quick-action chips — guided workflow shortcuts */
-      .quick-actions {
-        display: flex;
-        gap: 6px;
-        overflow-x: auto;
-        padding: 0 2px 4px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .quick-actions::-webkit-scrollbar {
-        display: none;
-      }
-
-      .quick-chip {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 11px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--surface);
-        color: var(--text-secondary);
+        background: var(--warning-soft);
+        border: 1px solid var(--warning);
+        border-radius: var(--radius);
         font-size: 11px;
-        font-weight: 500;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: border-color 200ms var(--ease), background 200ms var(--ease), color 200ms var(--ease), box-shadow 200ms var(--ease);
-        user-select: none;
-      }
-
-      .quick-chip:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(79, 142, 247, 0.06);
-      }
-
-      .quick-chip:active {
-        transform: scale(0.97);
-      }
-
-      .quick-chip-icon {
-        font-size: 13px;
-        line-height: 1;
-      }
-
-      .upload-fallback {
-        background: var(--surface-hover);
-        border-radius: 8px;
-        padding: 16px;
-        text-align: center;
-        border: 1px dashed var(--border-color);
+        color: var(--text);
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 6px;
       }
 
-      .upload-fallback-text {
-        margin: 0;
-        font-size: 13px;
-        color: var(--text-secondary);
-        line-height: 1.4;
-      }
-
-      .upload-fallback-actions {
+      .file-fallback-actions {
         display: flex;
-        gap: 8px;
-        justify-content: center;
+        gap: 6px;
+      }
+
+      .file-fallback .btn {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <div class="app">
+      <!-- 1. HEADER -->
       <header class="header" role="banner">
-        <div class="header-logo" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="header-main">
+          <div id="headerPatient" class="header-patient">
+            <span class="placeholder">Пациент не выбран</span>
+          </div>
+          <div id="headerContext" class="header-context">
+            <span class="header-context-doc">Готов к команде</span>
+          </div>
+        </div>
+        <div id="headerStatus" class="header-status" data-state="idle" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusLabel">Готов</span>
+        </div>
+      </header>
+
+      <!-- 2. COMMAND BLOCK — mic + text, one row -->
+      <div class="command-block" id="commandBlock" data-state="idle">
+        <button
+          type="button"
+          id="record"
+          aria-pressed="false"
+          aria-label="Активировать ассистента"
+        >
+          <svg class="icon icon-mic" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
+              stroke="currentColor"
+              stroke-width="1.75"
+            />
+            <path
+              d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v3M8 21h8"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+            />
+          </svg>
+          <svg class="icon icon-wave" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
               d="M4 12h2l1.5-4L10 16l2-8 2.5 6L16 8h2l2 4"
               stroke="currentColor"
@@ -1284,242 +962,96 @@
               stroke-linejoin="round"
             />
           </svg>
-        </div>
-        <div class="header-text">
-          <h1 class="header-title">Акбобек AI</h1>
-          <p class="header-sub">Медицинский ассистент</p>
-        </div>
-        <div class="header-status">
-          <span id="statusDot" class="status-dot ready" aria-hidden="true"></span>
-          <span id="statusLabel" class="status-label">Готов</span>
-        </div>
-      </header>
-
-      <div id="quickActions" class="quick-actions" role="toolbar" aria-label="Быстрые действия">
-        <button type="button" class="quick-chip" data-utterance="открой первичный осмотр">
-          <span class="quick-chip-icon">📋</span> Первичный осмотр
-        </button>
-        <button type="button" class="quick-chip" data-utterance="пациент жалуется на задержку речевого развития, нарушение координации">
-          <span class="quick-chip-icon">💬</span> Заполнить жалобы
-        </button>
-        <button type="button" class="quick-chip" data-utterance="объективно: сознание ясное, мышечный тонус повышен, рефлексы оживлены">
-          <span class="quick-chip-icon">🩺</span> Объективно
-        </button>
-        <button type="button" class="quick-chip" data-utterance="диагноз g80">
-          <span class="quick-chip-icon">🏷️</span> Диагноз
-        </button>
-        <button type="button" class="quick-chip" data-utterance="открой дневниковую запись">
-          <span class="quick-chip-icon">📓</span> Дневник
-        </button>
-        <button type="button" class="quick-chip" data-utterance="массаж выполнен">
-          <span class="quick-chip-icon">✅</span> Статус
-        </button>
-      </div>
-
-      <section class="voice-section" aria-labelledby="voice-heading">
-        <h2 id="voice-heading" class="section-label">Голос</h2>
-        <div class="voice-card">
-          <div class="ptt-wrap">
-            <div class="ptt-ring" aria-hidden="true"></div>
-            <button
-              type="button"
-              id="record"
-              class="is-inactive"
-              aria-pressed="false"
-              aria-label="Активировать или деактивировать ассистента"
-            >
-              <svg class="icon-mic" width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                />
-                <path
-                  d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v3M8 21h8"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                />
-              </svg>
-              <svg class="icon-wave" width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M4 12h2l1.5-4L10 16l2-8 2.5 6L16 8h2l2 4"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <svg class="icon-spin" width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M12 3a9 9 0 1 0 9 9"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <p id="pttLabel" class="ptt-caption">Активировать ассистента</p>
-          <div id="waveform" class="waveform" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span
-            ><span></span><span></span>
-          </div>
-        </div>
-      </section>
-
-      <section class="text-fallback" aria-labelledby="text-heading">
-        <h2 id="text-heading" class="section-label">Текст</h2>
-        <div class="input-row">
-          <input id="utter" type="text" autocomplete="off" placeholder="или введите команду…" />
-          <button type="button" id="send" aria-label="Отправить">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M5 12h11M13 6l6 6-6 6"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-      </section>
-
-      <section id="patientUploadSection" class="upload-section" aria-labelledby="patient-upload-heading">
-        <div class="upload-header">
-          <h2 id="patient-upload-heading" class="section-label" style="margin:0">Файлы пациента</h2>
-          <span id="uploadPatientBadge" class="upload-patient-badge">не указан</span>
-        </div>
-        <div id="patientUploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить файл">
-          <svg class="upload-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="upload-dropzone-text">
-            Перетащите или <strong>нажмите</strong>
-          </div>
-          <div class="upload-dropzone-hint">PDF, TXT · до 5 МБ</div>
-        </div>
-
-        <div id="patientUploadFallback" class="upload-fallback hidden" aria-live="polite">
-          <p class="upload-fallback-text">Пациент не определён. Вы можете открыть профиль пациента или загрузить файл как глобальный шаблон.</p>
-          <div class="upload-fallback-actions">
-            <button type="button" id="btnOpenPatient" class="btn btn-primary btn-sm">Открыть профиль</button>
-            <button type="button" id="btnUploadAsTemplate" class="btn btn-ghost btn-sm">Как шаблон</button>
-          </div>
-        </div>
-        <input type="file" id="patientUploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
-        <div id="patientUploadFileList" class="upload-file-list"></div>
-      </section>
-
-      <section id="reusableUploadSection" class="upload-section" aria-labelledby="reusable-upload-heading" style="margin-top: 1rem;">
-        <div class="upload-header">
-          <h2 id="reusable-upload-heading" class="section-label" style="margin:0">Шаблоны и примеры</h2>
-        </div>
-        <div id="reusableUploadDropzone" class="upload-dropzone" role="button" tabindex="0" aria-label="Загрузить шаблон">
-          <svg class="upload-dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="upload-dropzone-text">
-            Перетащите или <strong>нажмите</strong>
-          </div>
-          <div class="upload-dropzone-hint">PDF, TXT · до 5 МБ</div>
-        </div>
-        <input type="file" id="reusableUploadFileInput" class="upload-file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
-        <div id="reusableUploadFileList" class="upload-file-list"></div>
-      </section>
-
-      <section
-        id="confidenceBar"
-        class="confidence-bar hidden"
-        aria-live="polite"
-        aria-label="Оценка уверенности"
-      >
-        <span id="confidenceBadge" class="badge-intent">—</span>
-        <div class="confidence-meta">
-          <span id="confidencePercent" class="level-high">—</span>
-          <span class="confidence-word">уверенность</span>
-        </div>
-      </section>
-
-      <section id="proactiveCard" class="proactive-card hidden" aria-live="polite">
-        <div class="proactive-inner">
-          <div id="proactiveIcon" class="proactive-icon" aria-hidden="true">✓</div>
-          <p id="proactiveText"></p>
-        </div>
-        <div class="proactive-actions">
-          <button type="button" id="accept" class="btn btn-primary">Да</button>
-          <button type="button" id="reject" class="btn btn-ghost">Пропустить</button>
-        </div>
-      </section>
-
-      <section id="draftPreview" class="draft-preview hidden" aria-live="polite" aria-label="Предпросмотр черновика">
-        <div class="draft-preview-header">
-          <div class="draft-preview-icon" aria-hidden="true">✎</div>
-          <div id="draftPreviewTitle" class="draft-preview-title">Предпросмотр заполнения</div>
-          <span class="draft-preview-badge">Черновик</span>
-        </div>
-        <div id="draftPreviewFields" class="draft-preview-fields"></div>
-        <div class="draft-preview-actions">
-          <button type="button" id="draftApprove" class="btn btn-primary">Подтвердить</button>
-          <button type="button" id="draftReject" class="btn btn-ghost">Отклонить</button>
-        </div>
-      </section>
-
-      <section
-        id="scheduleCard"
-        class="schedule-card hidden"
-        aria-live="polite"
-        aria-label="Результат расписания"
-      >
-        <div class="schedule-card-header">
-          <div class="schedule-card-icon" aria-hidden="true">✓</div>
-          <div id="scheduleCardTitle" class="schedule-card-title">Расписание составлено</div>
-          <span id="scheduleCardStatus" class="schedule-card-status" data-status="optimal">Готово</span>
-        </div>
-        <p id="scheduleCardSummary" class="schedule-card-summary">
-          Назначено <strong><span id="scheduleCount">0</span></strong> процедур для
-          <strong><span id="scheduleSpecialists">0</span></strong> специалистов.
-        </p>
-        <div class="schedule-card-stats">
-          <div class="schedule-stat">
-            <span class="stat-value" id="scheduleDaysValue">9</span>
-            <span class="stat-label">Дней</span>
-          </div>
-          <div class="schedule-stat">
-            <span class="stat-value" id="scheduleProceduresValue">0</span>
-            <span class="stat-label">Процедур</span>
-          </div>
-          <div class="schedule-stat">
-            <span class="stat-value" id="scheduleSpecialistsValue">0</span>
-            <span class="stat-label">Специалистов</span>
-          </div>
-        </div>
-        <div class="schedule-card-actions">
-          <button type="button" id="openSchedule" class="btn btn-primary">
-            Открыть расписание
-          </button>
-          <button type="button" id="scheduleDismiss" class="btn btn-ghost">Скрыть</button>
-        </div>
-      </section>
-
-      <section class="timeline-section" aria-labelledby="timeline-heading">
-        <div class="timeline-header">
-          <h2 id="timeline-heading" class="section-label">События</h2>
-        </div>
-        <div id="timeline" role="log" aria-relevant="additions"></div>
-        <div id="timelineEmpty" class="timeline-empty">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="icon icon-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
-              d="M12 8v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              d="M12 3a9 9 0 1 0 9 9"
               stroke="currentColor"
-              stroke-width="1.25"
+              stroke-width="2"
               stroke-linecap="round"
             />
           </svg>
-          <span>События появятся здесь</span>
+        </button>
+        <div class="command-input-wrap">
+          <input
+            id="utter"
+            type="text"
+            autocomplete="off"
+            placeholder="Команда голосом или текстом…"
+            aria-label="Текстовая команда"
+          />
+          <span class="command-hint" aria-hidden="true">
+            <span class="kbd">↵</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. MAIN PANE — state-driven (idle / processing / verify / success / error) -->
+      <section
+        id="mainPane"
+        class="main-pane"
+        data-state="idle"
+        aria-live="polite"
+        aria-label="Рабочая область"
+      >
+        <header class="pane-header">
+          <h2 id="paneTitle" class="pane-title">Готов к команде</h2>
+          <span id="paneMeta" class="pane-meta"></span>
+        </header>
+        <div id="paneBody" class="pane-body">
+          <!-- Content rendered dynamically based on data-state on #mainPane -->
+        </div>
+      </section>
+
+      <!-- 4. FILES BLOCK — utility, minimal -->
+      <section class="files-block" aria-label="Файлы">
+        <h3 class="files-title">Файлы</h3>
+        <div class="files-row">
+          <div class="file-slot">
+            <div
+              id="patientUploadDropzone"
+              class="file-dropzone"
+              role="button"
+              tabindex="0"
+              aria-label="Загрузить PDF пациента"
+            >
+              <svg class="file-dropzone-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="file-dropzone-text">
+                <span class="file-dropzone-label">PDF пациента</span>
+                <span class="file-dropzone-hint">до 5 МБ</span>
+              </div>
+            </div>
+            <input type="file" id="patientUploadFileInput" class="file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
+            <div id="patientUploadFileList" class="file-list"></div>
+            <div id="patientUploadFallback" class="file-fallback hidden" aria-live="polite">
+              <span>Пациент не определён.</span>
+              <div class="file-fallback-actions">
+                <button type="button" id="btnOpenPatient" class="btn btn-primary">Открыть профиль</button>
+                <button type="button" id="btnUploadAsTemplate" class="btn btn-ghost">Как шаблон</button>
+              </div>
+            </div>
+          </div>
+          <div class="file-slot">
+            <div
+              id="reusableUploadDropzone"
+              class="file-dropzone"
+              role="button"
+              tabindex="0"
+              aria-label="Загрузить шаблон"
+            >
+              <svg class="file-dropzone-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 7V4h10v14h-3M4 9h10v11H4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="file-dropzone-text">
+                <span class="file-dropzone-label">Шаблоны</span>
+                <span class="file-dropzone-hint">PDF, TXT</span>
+              </div>
+            </div>
+            <input type="file" id="reusableUploadFileInput" class="file-input" accept=".pdf,.txt,.text,application/pdf,text/plain" multiple />
+            <div id="reusableUploadFileList" class="file-list"></div>
+          </div>
         </div>
       </section>
     </div>
